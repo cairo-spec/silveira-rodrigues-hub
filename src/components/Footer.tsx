@@ -69,15 +69,11 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-3">
                 <Phone className="w-4 h-4 mt-1 text-gold" />
-                <span className="text-primary-foreground/70 text-sm">
-                  (00) 0000-0000
-                </span>
+                <span className="text-primary-foreground/70 text-sm">(31)  99347-5792 </span>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-1 text-gold" />
-                <span className="text-primary-foreground/70 text-sm">
-                  Brasília - DF
-                </span>
+                <span className="text-primary-foreground/70 text-sm">Belo Horizonte - MG</span>
               </li>
             </ul>
           </div>
