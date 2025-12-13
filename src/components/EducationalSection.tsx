@@ -1,8 +1,6 @@
 import { AlertTriangle, ShieldAlert, TrendingDown } from "lucide-react";
-
 const EducationalSection = () => {
-  return (
-    <section className="section-padding bg-secondary">
+  return <section className="section-padding bg-secondary">
       <div className="container-custom">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Text Content */}
@@ -17,7 +15,7 @@ const EducationalSection = () => {
             </h2>
             
             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              Vencer uma licitação sem analisar a <strong className="text-foreground">Matriz de Riscos</strong> da Lei 14.133/2021 
+              Vencer uma licitação sem analisar a <strong className="text-foreground">Os Riscos de Aplicação</strong> da Lei 14.133/2021 
               pode transformar seu contrato em prejuízo. Custos subestimados, prazos irrealistas e cláusulas 
               onerosas são armadilhas invisíveis para quem não tem assessoria especializada.
             </p>
@@ -75,7 +73,7 @@ const EducationalSection = () => {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-sm">
                     <span className="w-2 h-2 rounded-full bg-destructive" />
-                    <span className="text-muted-foreground">Matriz de Riscos Obrigatória</span>
+                    <span className="text-muted-foreground">Matriz de Riscos </span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="w-2 h-2 rounded-full bg-destructive" />
@@ -101,8 +99,6 @@ const EducationalSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default EducationalSection;
