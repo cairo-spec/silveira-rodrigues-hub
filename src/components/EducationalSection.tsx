@@ -15,7 +15,7 @@ const EducationalSection = () => {
             </h2>
             
             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              Vencer uma licitação sem analisar os <strong className="text-foreground">Riscos de Aplicação</strong> da Lei 14.133/2021 pode transformar seu contrato em prejuízo. Custos subestimados, prazos irrealistas e cláusulas onerosas são armadilhas invisíveis para quem não tem assessoria especializada.
+              Vencer uma licitação sem analisar os <span className="text-primary font-bold">Riscos de Aplicação</span> da Lei 14.133/2021 pode transformar seu contrato em prejuízo. Custos subestimados, prazos irrealistas e cláusulas onerosas são armadilhas invisíveis para quem não tem assessoria especializada.
             </p>
 
             <div className="space-y-4">
