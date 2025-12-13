@@ -1,10 +1,7 @@
 import { Linkedin, Mail, Phone, MapPin } from "lucide-react";
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-
-  return (
-    <footer className="bg-primary text-primary-foreground">
+  return <footer className="bg-primary text-primary-foreground">
       <div className="container-custom py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
@@ -15,18 +12,10 @@ const Footer = () => {
               Venda para o governo com a segurança de quem fiscaliza.
             </p>
             <div className="flex items-center gap-4">
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
-              >
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a
-                href="mailto:contato@silveiraerodigues.adv.br"
-                className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
-              >
+              <a href="mailto:contato@silveiraerodigues.adv.br" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
                 <Mail className="w-5 h-5" />
               </a>
             </div>
@@ -60,7 +49,7 @@ const Footer = () => {
               </li>
               <li>
                 <a href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
-                  Serviços Gerais de Advocacia Empresarial
+                  Advocacia Empresarial
                 </a>
               </li>
             </ul>
@@ -114,8 +103,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
