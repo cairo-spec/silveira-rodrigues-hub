@@ -14,7 +14,7 @@ const EducationalSection = () => {
               <span className="text-destructive">Vitória Tóxica</span>
             </h2>
             
-            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Vencer uma licitação sem analisar Os Riscos de Aplicação da Lei 14.133/2021 pode transformar seu contrato em prejuízo. Custos subestimados, prazos irrealistas e cláusulas onerosas são armadilhas invisíveis para quem não tem assessoria especializada.<strong className="text-foreground">Os Riscos de Aplicação</strong> da Lei 14.133/2021 
+            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Vencer uma licitação sem analisar os Riscos de Aplicação da Lei 14.133/2021 pode transformar seu contrato em prejuízo. Custos subestimados, prazos irrealistas e cláusulas onerosas são armadilhas invisíveis para quem não tem assessoria especializada.<strong className="text-foreground">Os Riscos de Aplicação</strong> da Lei 14.133/2021 
               pode transformar seu contrato em prejuízo. Custos subestimados, prazos irrealistas e cláusulas 
               onerosas são armadilhas invisíveis para quem não tem assessoria especializada.
             </p>
