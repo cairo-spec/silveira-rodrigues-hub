@@ -9,7 +9,7 @@ const benefits = [
   },
   {
     icon: FileText,
-    text: "Relatório de Gestão de Risco (Inorgânico: metodologia COSO ERP)",
+    text: "Relatório de Gestão de Risco (Inorgânico: metodologia COSO ERM)",
   },
   {
     icon: Percent,
