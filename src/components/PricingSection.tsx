@@ -13,7 +13,7 @@ const benefits = [
   },
   {
     icon: Percent,
-    text: "Descontos progressivos na Consultoria Técnica",
+    text: "100% Reembolsável no serviço de BPO",
   },
 ];
 
