@@ -40,11 +40,11 @@ const solutions = [
   },
 ];
 
-const whatsappNumber = "5500000000000"; // Placeholder - update with actual number
+const whatsappNumber = "5531993475792";
 
 const SolutionsSection = () => {
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent("Olá! Gostaria de agendar um diagnóstico para minha empresa.");
+    const message = encodeURIComponent("Olá! Vi as soluções corporativas no site e gostaria de agendar um diagnóstico gratuito para minha empresa.");
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank");
   };
 

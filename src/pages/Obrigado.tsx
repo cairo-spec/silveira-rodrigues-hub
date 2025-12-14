@@ -9,7 +9,7 @@ const generateProtocol = () => {
   return `#REQ-${randomNum}`;
 };
 
-const whatsappNumber = "5500000000000"; // Placeholder - update with actual number
+const whatsappNumber = "5531993475792";
 
 const Obrigado = () => {
   const [protocol, setProtocol] = useState<string>("");
