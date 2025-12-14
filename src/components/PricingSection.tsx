@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 const benefits = [
   {
     icon: Bell,
-    text: "Oportunidades curadas entregues via Zendesk",
+    text: "Oportunidades curadas via Painel de Gestão",
   },
   {
     icon: FileText,
