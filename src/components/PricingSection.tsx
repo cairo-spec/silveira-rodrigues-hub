@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Check, Newspaper, Bell, FileText, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import LeadCaptureModal from "./LeadCaptureModal";
 
 const benefits = [
   {
@@ -17,7 +19,12 @@ const benefits = [
   },
 ];
 
+// TODO: Substitua pela URL do seu checkout Asaas
+const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/seu-link-de-checkout";
+
 const PricingSection = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <section id="jornal" className="section-padding bg-background scroll-mt-20">
       <div className="container-custom">
@@ -63,13 +70,11 @@ const PricingSection = () => {
               </ul>
 
               <Button
-                asChild
+                onClick={() => setIsModalOpen(true)}
                 size="lg"
                 className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity"
               >
-                <a href="#" target="_blank" rel="noopener noreferrer">
-                  Assinar Agora
-                </a>
+                Assinar Agora
               </Button>
 
               <p className="text-center text-sm text-muted-foreground mt-4">
@@ -79,6 +84,12 @@ const PricingSection = () => {
           </Card>
         </div>
       </div>
+
+      <LeadCaptureModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        checkoutUrl={ASAAS_CHECKOUT_URL}
+      />
     </section>
   );
 };
