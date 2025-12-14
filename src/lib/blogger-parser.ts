@@ -34,47 +34,55 @@ const stripHtmlTags = (html: string): string => {
 };
 
 export async function fetchAndParseBloggerPosts(feedUrl: string): Promise<Post[]> {
-  const response = await fetch(feedUrl);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch Blogger feed: ${response.status}`);
-  }
-
-  const data: BloggerFeed = await response.json();
-
-  if (!data.feed.entry) {
-    return [];
-  }
-
-  return data.feed.entry.map((entry) => {
-    const alternateLink = entry.link.find(
-      (l) => l.rel === 'alternate' && l.type === 'text/html'
-    );
-
-    let imageUrl = '';
+  try {
+    const response = await fetch(feedUrl);
     
-    // Try media$thumbnail first
-    if (entry.media$thumbnail?.url) {
-      imageUrl = entry.media$thumbnail.url;
-    } else {
-      // Try to extract from content or summary
-      const htmlContent = entry.content?.$t || entry.summary?.$t || '';
-      const extractedImage = extractImageFromHtml(htmlContent);
-      if (extractedImage) {
-        imageUrl = extractedImage;
-      }
+    if (!response.ok) {
+      console.error(`Failed to fetch Blogger feed: ${response.status}`);
+      throw new Error(`Failed to fetch Blogger feed: ${response.status}`);
     }
 
-    const rawExcerpt = entry.summary?.$t || entry.content?.$t || '';
-    const excerpt = stripHtmlTags(rawExcerpt).substring(0, 150) + '...';
+    const data: BloggerFeed = await response.json();
+    console.log('Blogger feed data:', data);
 
-    return {
-      id: entry.id.$t,
-      title: entry.title.$t,
-      excerpt,
-      published_at: entry.published.$t,
-      url: alternateLink?.href || '#',
-      image_url: imageUrl,
-    };
-  });
+    if (!data.feed.entry || data.feed.entry.length === 0) {
+      console.log('No entries found in Blogger feed');
+      return [];
+    }
+
+    return data.feed.entry.map((entry) => {
+      const alternateLink = entry.link.find(
+        (l) => l.rel === 'alternate' && l.type === 'text/html'
+      );
+
+      let imageUrl = '';
+      
+      // Try media$thumbnail first
+      if (entry.media$thumbnail?.url) {
+        imageUrl = entry.media$thumbnail.url;
+      } else {
+        // Try to extract from content or summary
+        const htmlContent = entry.content?.$t || entry.summary?.$t || '';
+        const extractedImage = extractImageFromHtml(htmlContent);
+        if (extractedImage) {
+          imageUrl = extractedImage;
+        }
+      }
+
+      const rawExcerpt = entry.content?.$t || entry.summary?.$t || '';
+      const excerpt = stripHtmlTags(rawExcerpt).substring(0, 150) + '...';
+
+      return {
+        id: entry.id.$t,
+        title: entry.title.$t,
+        excerpt,
+        published_at: entry.published.$t,
+        url: alternateLink?.href || '#',
+        image_url: imageUrl,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching Blogger posts:', error);
+    return [];
+  }
 }
