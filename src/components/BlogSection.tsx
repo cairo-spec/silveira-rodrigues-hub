@@ -1,13 +1,8 @@
 import { Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Post } from "@/lib/blogger-parser";
 
-export interface Post {
-  id: number;
-  title: string;
-  excerpt: string;
-  published_at: string;
-  url: string;
-}
+export type { Post };
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("pt-BR", {
@@ -51,11 +46,20 @@ const BlogSection = ({ posts }: BlogSectionProps) => {
               className="block"
             >
               <Card className="group h-full cursor-pointer overflow-hidden border border-border bg-background hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                {/* Image placeholder */}
-                <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                  <span className="text-6xl font-bold text-primary/10">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
+                <div className="h-48 overflow-hidden">
+                  {post.image_url ? (
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105 duration-300"
+                    />
+                  ) : (
+                    <div className="h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                      <span className="text-6xl font-bold text-primary/10">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <CardContent className="p-6">

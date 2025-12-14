@@ -1,38 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import PricingSection from "@/components/PricingSection";
 import EducationalSection from "@/components/EducationalSection";
 import SolutionsSection from "@/components/SolutionsSection";
 import AuthoritySection from "@/components/AuthoritySection";
-import BlogSection, { Post } from "@/components/BlogSection";
+import BlogSection from "@/components/BlogSection";
 import Footer from "@/components/Footer";
+import { fetchAndParseBloggerPosts } from "@/lib/blogger-parser";
 
-// Posts externos - integração com blog
-const externalPosts: Post[] = [
-  {
-    id: 1,
-    title: "Impactos da Lei 14.133 nas Contratações Públicas",
-    excerpt: "Entenda as principais mudanças trazidas pela Nova Lei de Licitações e como sua empresa pode se adaptar.",
-    published_at: "2024-12-10",
-    url: "https://example.com/post-1",
-  },
-  {
-    id: 2,
-    title: "Como Evitar a Inabilitação em Licitações",
-    excerpt: "Os erros documentais mais comuns que levam à desclassificação e como preveni-los.",
-    published_at: "2024-12-05",
-    url: "https://example.com/post-2",
-  },
-  {
-    id: 3,
-    title: "Matriz de Riscos: O Que Você Precisa Saber",
-    excerpt: "A importância da análise de riscos contratuais para garantir a lucratividade dos seus contratos públicos.",
-    published_at: "2024-11-28",
-    url: "https://example.com/post-3",
-  },
-];
+// URL do feed do Blogger - substitua pelo seu blog
+const BLOGGER_FEED_URL = "https://silveiraerodrigues.blogspot.com/feeds/posts/default?alt=json";
 
 const Index = () => {
+  const { data: posts = [] } = useQuery({
+    queryKey: ["blogger-posts"],
+    queryFn: () => fetchAndParseBloggerPosts(BLOGGER_FEED_URL),
+    staleTime: 1000 * 60 * 60, // 1 hora
+    select: (data) => data.slice(0, 3), // Limita aos 3 mais recentes
+  });
   return (
     <main className="min-h-screen">
       <Header />
@@ -41,7 +27,7 @@ const Index = () => {
       <EducationalSection />
       <SolutionsSection />
       <AuthoritySection />
-      <BlogSection posts={externalPosts} />
+      <BlogSection posts={posts} />
       <Footer />
     </main>
   );
