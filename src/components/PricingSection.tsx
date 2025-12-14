@@ -13,7 +13,7 @@ const benefits = [
   },
   {
     icon: Percent,
-    text: "100% Reembolsável no serviço de BPO",
+    text: "100% reembolsável no serviço de BPO",
   },
 ];
 
