@@ -12,7 +12,7 @@ const Footer = () => {
               Venda para o governo com a segurança de quem fiscaliza.
             </p>
             <div className="flex items-center gap-4">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+              <a href="https://www.linkedin.com/in/cairo-rodrigues-026188147/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
               <a href="mailto:contato@silveiraerodigues.adv.br" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
