@@ -1,5 +1,6 @@
 import { Linkedin, Shield, Award, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import cairoPhoto from "@/assets/cairo-rodrigues.jpg";
 
 const AuthoritySection = () => {
   return (
@@ -15,10 +16,11 @@ const AuthoritySection = () => {
               
               {/* Main avatar container */}
               <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-background shadow-2xl">
-                {/* Placeholder for photo - using initials */}
-                <div className="absolute inset-0 flex items-center justify-center bg-primary/10">
-                  <span className="text-6xl md:text-7xl font-bold text-primary/40">CR</span>
-                </div>
+                <img 
+                  src={cairoPhoto} 
+                  alt="Cairo Rodrigues - Analista de Controle Interno" 
+                  className="w-full h-full object-cover object-[center_15%]"
+                />
               </div>
 
               {/* Floating badge */}
