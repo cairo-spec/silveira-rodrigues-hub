@@ -48,7 +48,12 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
+                <a 
+                  href="https://wa.me/5531993475792?text=Ol%C3%A1!%20Tenho%20interesse%20em%20conhecer%20os%20servi%C3%A7os%20de%20Advocacia%20Empresarial." 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm"
+                >
                   Advocacia Empresarial
                 </a>
               </li>
