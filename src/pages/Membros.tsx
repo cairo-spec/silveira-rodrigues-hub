@@ -36,13 +36,9 @@ const Membros = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        // Allow access only if trial active or subscription active (Asaas payment)
-        if (profile?.trial_active || profile?.subscription_active) {
-          setHasAcceptedContract(true);
-        } else {
-          // Redirect to homepage to show contract modal
-          navigate("/");
-        }
+        // Allow access for all authenticated users (free, trial, or subscribers)
+        // Free users have restricted features but can still access the member area
+        setHasAcceptedContract(true);
       } catch (error) {
         console.error("Error checking contract status:", error);
       } finally {
