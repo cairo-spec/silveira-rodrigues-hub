@@ -124,12 +124,12 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">
+      <DialogContent className="sm:max-w-md max-h-[95vh] overflow-y-auto mx-2 p-4 sm:p-6">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg sm:text-2xl font-bold text-center">
             Assine o Jornal de Licitações
           </DialogTitle>
-          <DialogDescription className="text-center text-muted-foreground">
+          <DialogDescription className="text-center text-muted-foreground text-xs sm:text-sm">
             {showLoginPrompt && !user 
               ? "Para aceitar o contrato, você precisa estar logado"
               : "Preencha seus dados para continuar para o pagamento seguro"
@@ -161,17 +161,17 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 mt-2">
               <FormField
                 control={form.control}
                 name="nome"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-xs sm:text-sm">Nome Completo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu nome completo" {...field} />
+                      <Input placeholder="Seu nome completo" className="h-9" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -180,12 +180,12 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail Corporativo</FormLabel>
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-xs sm:text-sm">E-mail Corporativo</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="seu@empresa.com.br" {...field} />
+                      <Input type="email" placeholder="seu@empresa.com.br" className="h-9" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -194,12 +194,12 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                 control={form.control}
                 name="telefone"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone/WhatsApp</FormLabel>
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-xs sm:text-sm">Telefone/WhatsApp</FormLabel>
                     <FormControl>
-                      <Input type="tel" placeholder="(00) 00000-0000" {...field} />
+                      <Input type="tel" placeholder="(00) 00000-0000" className="h-9" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -209,7 +209,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                 name="contractConsent"
                 render={({ field }) => (
                   <FormItem 
-                    className={`flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className={`flex flex-row items-start space-x-2 space-y-0 rounded-md border p-3 ${!user ? 'opacity-60 cursor-not-allowed' : ''}`}
                     onClick={(e) => {
                       if (!user) {
                         handleContractInteraction(e);
@@ -271,7 +271,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                 control={form.control}
                 name="lgpdConsent"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="flex flex-row items-start space-x-2 space-y-0 rounded-md border p-3">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
@@ -291,7 +291,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity"
+                className="w-full gradient-gold text-primary font-semibold py-4 sm:py-6 text-sm sm:text-lg hover:opacity-90 transition-opacity mt-2"
               >
                 {isSubmitting ? (
                   <>
