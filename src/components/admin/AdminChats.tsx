@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { clearNotificationsByReference } from "@/lib/notifications";
 
 interface ChatRoom {
   id: string;
@@ -50,6 +51,9 @@ const AdminChats = () => {
   useEffect(() => {
     if (selectedRoom) {
       fetchMessages(selectedRoom.id);
+      
+      // Clear notifications for this chat room when admin views it
+      clearNotificationsByReference(selectedRoom.id);
 
       const channel = supabase
         .channel(`admin-room-${selectedRoom.id}`)
@@ -60,6 +64,8 @@ const AdminChats = () => {
           filter: `room_id=eq.${selectedRoom.id}`
         }, (payload) => {
           setMessages(prev => [...prev, payload.new as ChatMessage]);
+          // Clear notifications when new message arrives while viewing
+          clearNotificationsByReference(selectedRoom.id);
         })
         .subscribe();
 
