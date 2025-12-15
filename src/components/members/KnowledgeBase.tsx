@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -94,7 +95,7 @@ const KnowledgeBase = () => {
           <CardContent>
             <div 
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedArticle.content) }}
             />
           </CardContent>
         </Card>
