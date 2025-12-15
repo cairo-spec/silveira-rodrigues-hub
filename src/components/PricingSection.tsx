@@ -3,30 +3,22 @@ import { Check, Newspaper, Bell, FileText, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import LeadCaptureModal from "./LeadCaptureModal";
-
-const benefits = [
-  {
-    icon: Bell,
-    text: "Oportunidades curadas via Painel de Gestão",
-  },
-  {
-    icon: FileText,
-    text: "Relatório de Risco Parametrizado (Metodologia COSO ERM)",
-  },
-  {
-    icon: Percent,
-    text: "100% reembolsável no serviço de BPO",
-  },
-];
+const benefits = [{
+  icon: Bell,
+  text: "Oportunidades curadas via Painel de Gestão"
+}, {
+  icon: FileText,
+  text: "Relatório de Risco Parametrizado (Metodologia COSO ERM)"
+}, {
+  icon: Percent,
+  text: "100% reembolsável no serviço de BPO"
+}];
 
 // TODO: Substitua pela URL do seu checkout Asaas
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/seu-link-de-checkout";
-
 const PricingSection = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  return (
-    <section id="jornal" className="section-padding bg-background scroll-mt-20">
+  return <section id="jornal" className="section-padding bg-background scroll-mt-20">
       <div className="container-custom">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-block px-4 py-1.5 rounded-full bg-gold/10 text-gold-light font-medium text-sm mb-4">
@@ -50,30 +42,22 @@ const PricingSection = () => {
                 <Newspaper className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground">
-                Jornal de Licitações
+                Jornal Auditado
               </h3>
-              <p className="text-muted-foreground mt-2">
-                Oportunidades selecionadas para o seu segmento
-              </p>
+              <p className="text-muted-foreground mt-2">Oportunidades selecionadas para o seu segmento</p>
             </CardHeader>
 
             <CardContent className="pb-10">
               <ul className="space-y-4 mb-8">
-                {benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-3">
+                {benefits.map((benefit, index) => <li key={index} className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gold/10 flex items-center justify-center mt-0.5">
                       <Check className="w-4 h-4 text-gold" />
                     </div>
                     <span className="text-foreground">{benefit.text}</span>
-                  </li>
-                ))}
+                  </li>)}
               </ul>
 
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                size="lg"
-                className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity"
-              >
+              <Button onClick={() => setIsModalOpen(true)} size="lg" className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity">
                 Assinar Agora
               </Button>
 
@@ -85,13 +69,7 @@ const PricingSection = () => {
         </div>
       </div>
 
-      <LeadCaptureModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        checkoutUrl={ASAAS_CHECKOUT_URL}
-      />
-    </section>
-  );
+      <LeadCaptureModal open={isModalOpen} onOpenChange={setIsModalOpen} checkoutUrl={ASAAS_CHECKOUT_URL} />
+    </section>;
 };
-
 export default PricingSection;
