@@ -21,6 +21,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
+import ContractModal from "./ContractModal";
+import PricingTableModal from "./PricingTableModal";
 
 const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
@@ -28,6 +30,9 @@ const formSchema = z.object({
   telefone: z.string().min(10, "Telefone inválido").max(20),
   lgpdConsent: z.boolean().refine((val) => val === true, {
     message: "Você deve aceitar para continuar",
+  }),
+  contractConsent: z.boolean().refine((val) => val === true, {
+    message: "Você deve aceitar o contrato para continuar",
   }),
 });
 
@@ -43,6 +48,8 @@ const FORMSPREE_ENDPOINT = "https://formspree.io/f/xpwrwqkz"; // Substitua pelo 
 
 const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -51,6 +58,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
       email: "",
       telefone: "",
       lgpdConsent: false,
+      contractConsent: false,
     },
   });
 
@@ -144,6 +152,43 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
 
             <FormField
               control={form.control}
+              name="contractConsent"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal cursor-pointer leading-relaxed">
+                      Li e concordo com o{" "}
+                      <button
+                        type="button"
+                        onClick={() => setContractModalOpen(true)}
+                        className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
+                      >
+                        Contrato de Serviços Advocatícios de Partido
+                      </button>
+                      . Declaro estar ciente de que a mensalidade de R$ 997,00 refere-se aos serviços de Monitoramento e Triagem de Risco, e que atuações contenciosas (recursos/ações) serão cobradas conforme{" "}
+                      <button
+                        type="button"
+                        onClick={() => setPricingModalOpen(true)}
+                        className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
+                      >
+                        tabela de honorários
+                      </button>{" "}
+                      anexa.
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="lgpdConsent"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -180,6 +225,9 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
           </form>
         </Form>
       </DialogContent>
+
+      <ContractModal open={contractModalOpen} onOpenChange={setContractModalOpen} />
+      <PricingTableModal open={pricingModalOpen} onOpenChange={setPricingModalOpen} />
     </Dialog>
   );
 };
