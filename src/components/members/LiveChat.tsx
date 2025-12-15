@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { notifyAdmins } from "@/lib/notifications";
+import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
 
 interface ChatMessage {
   id: string;
@@ -47,6 +47,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   useEffect(() => {
     if (!room) return;
 
+    // Clear notifications for this chat room when viewing
+    if (roomType === "suporte") {
+      clearNotificationsByReference(room.id);
+    }
+
     const channel = supabase
       .channel(`chat-room-${room.id}`)
       .on(
@@ -70,6 +75,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
             }
           }
           setMessages((prev) => [...prev, newMsg]);
+          
+          // Clear notifications when new message arrives while viewing
+          if (roomType === "suporte") {
+            clearNotificationsByReference(room.id);
+          }
         }
       )
       .on(

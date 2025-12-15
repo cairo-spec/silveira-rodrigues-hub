@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { notifyAdmins } from "@/lib/notifications";
+import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
 
 interface TicketMessage {
   id: string;
@@ -52,6 +52,9 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
 
   useEffect(() => {
     fetchMessages();
+    
+    // Clear notifications for this ticket when viewing
+    clearNotificationsByReference(ticket.id);
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -66,6 +69,8 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as TicketMessage]);
+          // Clear notifications when new message arrives while viewing
+          clearNotificationsByReference(ticket.id);
         }
       )
       .subscribe();

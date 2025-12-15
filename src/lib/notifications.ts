@@ -25,3 +25,22 @@ export const notifyAdmins = async (
     console.error('Error notifying admins:', err);
   }
 };
+
+/**
+ * Clear all notifications for current user with a specific reference_id
+ * Used when user views the content (ticket, chat) to remove related notifications
+ */
+export const clearNotificationsByReference = async (referenceId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('reference_id', referenceId);
+
+    if (error) {
+      console.error('Could not clear notifications:', error);
+    }
+  } catch (err) {
+    console.error('Error clearing notifications:', err);
+  }
+};
