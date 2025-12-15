@@ -230,7 +230,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className={`text-sm font-normal leading-relaxed ${user ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                      <FormLabel className={`text-xs sm:text-sm font-normal leading-relaxed ${user ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
                         Li e concordo com o{" "}
                         <button
                           type="button"
@@ -279,7 +279,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm font-normal cursor-pointer">
+                      <FormLabel className="text-xs sm:text-sm font-normal cursor-pointer">
                         Aceito receber comunicações estratégicas de RGR e concordo com a Política de Privacidade (LGPD).
                       </FormLabel>
                       <FormMessage />
