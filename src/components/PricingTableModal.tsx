@@ -18,7 +18,7 @@ const pricingData = [
     items: [
       { service: "Assinatura Mensal", description: "Jornal de Oportunidades 2x por semana e Relatórios de Risco (RGR) ilimitados.", priceRegular: "—", priceSubscriber: "R$ 997,00 /mês", successFee: "N/A" },
       { service: "Consulta", description: "Solução de dúvidas e perguntas.", priceRegular: "R$ 516,47", priceSubscriber: "Incluso (até 4/mês)", successFee: "N/A" },
-      { service: "Parecer \"Go/No Go\"", description: "Auditoria rápida para decidir se disputa ou não (Evita multa).", priceRegular: "R$ 516,47", priceSubscriber: "R$ 0,00 (Incluso até 2/mês)", successFee: "N/A" },
+      { service: "Parecer \"Go/No Go\"", description: "Auditoria rápida para decidir se disputa ou não (Evita multa).", priceRegular: "R$ 516,47", priceSubscriber: "Incluso (até 2/mês)", successFee: "N/A" },
     ]
   },
   {
