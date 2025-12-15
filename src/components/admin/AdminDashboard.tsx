@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, Home } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, Home, DollarSign } from "lucide-react";
 import AdminTickets from "./AdminTickets";
 import AdminKnowledgeBase from "./AdminKnowledgeBase";
 import AdminChats from "./AdminChats";
 import AdminUsers from "./AdminUsers";
+import AdminPricingTable from "./AdminPricingTable";
 import SettingsPanel from "../members/SettingsPanel";
 
 const AdminDashboard = () => {
@@ -53,7 +54,7 @@ const AdminDashboard = () => {
 
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -65,6 +66,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Base</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Honorários</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
@@ -79,6 +84,7 @@ const AdminDashboard = () => {
           <TabsContent value="tickets"><AdminTickets /></TabsContent>
           <TabsContent value="chats"><AdminChats /></TabsContent>
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
+          <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
           <TabsContent value="users"><AdminUsers /></TabsContent>
           <TabsContent value="settings"><SettingsPanel /></TabsContent>
         </Tabs>
