@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, ArrowLeft, Lock, Trash2 } from "lucide-react";
+import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -25,18 +25,12 @@ interface ChatRoom {
 }
 
 interface LiveChatProps {
-  isSubscriber?: boolean;
+  roomType: "lobby" | "suporte";
 }
 
-type RoomType = "lobby" | "suporte";
-
-// Lobby shared room ID - will be created if not exists
-const LOBBY_ROOM_ID = "00000000-0000-0000-0000-000000000001";
-
-const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
+const LiveChat = ({ roomType }: LiveChatProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -46,15 +40,12 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (selectedRoomType) {
-      initializeChat(selectedRoomType);
-    }
-  }, [user, selectedRoomType]);
+    initializeChat();
+  }, [user, roomType]);
 
   useEffect(() => {
     if (!room) return;
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel(`chat-room-${room.id}`)
       .on(
@@ -67,8 +58,7 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
         },
         async (payload) => {
           const newMsg = payload.new as ChatMessage;
-          // Fetch user name for new message in lobby
-          if (selectedRoomType === "lobby" && !userNames[newMsg.user_id]) {
+          if (roomType === "lobby" && !userNames[newMsg.user_id]) {
             const { data: profile } = await supabase
               .from('profiles')
               .select('nome')
@@ -98,7 +88,7 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room, selectedRoomType, userNames]);
+  }, [room, roomType, userNames]);
 
   useEffect(() => {
     scrollToBottom();
@@ -108,14 +98,13 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const initializeChat = async (roomType: RoomType) => {
+  const initializeChat = async () => {
     if (!user) return;
 
     setIsLoading(true);
     setMessages([]);
 
     if (roomType === "lobby") {
-      // Lobby: Use shared room
       const { data: lobbyRoom } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -127,7 +116,6 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
         setRoom(lobbyRoom);
         await fetchMessages(lobbyRoom.id, true);
       } else {
-        // Create shared lobby room (first user creates it)
         const { data: newRoom, error } = await supabase
           .from('chat_rooms')
           .insert({ user_id: user.id, room_type: 'lobby' })
@@ -145,7 +133,6 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
         }
       }
     } else {
-      // Suporte: Private room per user
       const { data: existingRoom } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -195,7 +182,6 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
     } else {
       setMessages(data || []);
       
-      // Fetch user names for lobby
       if (fetchUserNames && data && data.length > 0) {
         const userIds = [...new Set(data.map(m => m.user_id))];
         const { data: profiles } = await supabase
@@ -255,94 +241,6 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
     }
   };
 
-  const handleBack = () => {
-    setSelectedRoomType(null);
-    setRoom(null);
-    setMessages([]);
-    setUserNames({});
-  };
-
-  // Room selection view
-  if (!selectedRoomType) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Chat ao Vivo</h2>
-          <p className="text-muted-foreground">Escolha uma sala para conversar</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Lobby Card */}
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setSelectedRoomType("lobby")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <span className="text-lg">Lobby</span>
-                  <p className="text-sm font-normal text-muted-foreground">
-                    Sala pública de bate-papo
-                  </p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Converse com outros membros e a equipe. Mensagens visíveis para todos.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Suporte Card */}
-          <Card 
-            className={`transition-shadow ${
-              isSubscriber 
-                ? "cursor-pointer hover:shadow-md" 
-                : "opacity-60 cursor-not-allowed"
-            }`}
-            onClick={() => isSubscriber && setSelectedRoomType("suporte")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  isSubscriber ? "bg-green-100" : "bg-gray-100"
-                }`}>
-                  {isSubscriber ? (
-                    <Headphones className="h-6 w-6 text-green-600" />
-                  ) : (
-                    <Lock className="h-6 w-6 text-gray-400" />
-                  )}
-                </div>
-                <div>
-                  <span className="text-lg">Suporte</span>
-                  <p className="text-sm font-normal text-muted-foreground">
-                    Atendimento privado
-                  </p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isSubscriber ? (
-                <p className="text-sm text-muted-foreground">
-                  Chat privado com nossa equipe. Apenas você e os admins veem as mensagens.
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Disponível apenas para assinantes do Jornal de Licitações.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Chat view
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -351,32 +249,27 @@ const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
     );
   }
 
-  const roomTitle = selectedRoomType === "lobby" ? "Lobby" : "Suporte";
-  const roomIcon = selectedRoomType === "lobby" ? (
-    <Users className="h-4 w-4" />
+  const isLobby = roomType === "lobby";
+  const roomTitle = isLobby ? "Lobby" : "Suporte";
+  const roomIcon = isLobby ? (
+    <Users className="h-5 w-5" />
   ) : (
-    <Headphones className="h-4 w-4" />
+    <Headphones className="h-5 w-5" />
   );
-  const isLobby = selectedRoomType === "lobby";
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-            {roomIcon}
-            {roomTitle}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {isLobby 
-              ? "Sala pública - todos podem ver as mensagens" 
-              : "Chat privado com a equipe de suporte"
-            }
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          {roomIcon}
+          {roomTitle}
+        </h2>
+        <p className="text-muted-foreground">
+          {isLobby 
+            ? "Sala pública - todos podem ver as mensagens" 
+            : "Chat privado com a equipe de suporte"
+          }
+        </p>
       </div>
 
       <Card className="flex flex-col h-[500px]">
