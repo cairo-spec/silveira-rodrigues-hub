@@ -16,6 +16,7 @@ interface Category {
   id: string;
   name: string;
   description: string | null;
+  is_premium: boolean;
 }
 
 interface Article {
@@ -39,6 +40,7 @@ const AdminKnowledgeBase = () => {
   // Form states
   const [categoryName, setCategoryName] = useState("");
   const [categoryDescription, setCategoryDescription] = useState("");
+  const [categoryPremium, setCategoryPremium] = useState(false);
   const [articleTitle, setArticleTitle] = useState("");
   const [articleContent, setArticleContent] = useState("");
   const [articleCategory, setArticleCategory] = useState("");
@@ -62,7 +64,8 @@ const AdminKnowledgeBase = () => {
     e.preventDefault();
     const { error } = await supabase.from('kb_categories').insert({
       name: categoryName,
-      description: categoryDescription || null
+      description: categoryDescription || null,
+      is_premium: categoryPremium
     });
 
     if (error) {
@@ -72,6 +75,7 @@ const AdminKnowledgeBase = () => {
       setCategoryModalOpen(false);
       setCategoryName("");
       setCategoryDescription("");
+      setCategoryPremium(false);
       fetchData();
     }
   };
@@ -154,6 +158,10 @@ const AdminKnowledgeBase = () => {
                   <Label>Descrição</Label>
                   <Textarea value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)} />
                 </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={categoryPremium} onCheckedChange={setCategoryPremium} />
+                  <Label>Exclusivo para assinantes</Label>
+                </div>
                 <Button type="submit" className="w-full">Criar Categoria</Button>
               </form>
             </DialogContent>
@@ -204,7 +212,9 @@ const AdminKnowledgeBase = () => {
             <p className="text-muted-foreground text-sm">Nenhuma categoria</p>
           ) : (
             categories.map((cat) => (
-              <Badge key={cat.id} variant="secondary">{cat.name}</Badge>
+              <Badge key={cat.id} variant={cat.is_premium ? "default" : "secondary"}>
+                {cat.name} {cat.is_premium && "⭐"}
+              </Badge>
             ))
           )}
         </div>
