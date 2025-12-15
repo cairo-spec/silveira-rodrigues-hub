@@ -29,6 +29,63 @@ interface Ticket {
   updated_at: string;
 }
 
+// Brazilian holidays calculation
+const getEasterDate = (year: number): Date => {
+  // Computus algorithm for Easter Sunday
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month, day);
+};
+
+const getBrazilianHolidays = (year: number): Date[] => {
+  const easter = getEasterDate(year);
+  
+  // Fixed holidays
+  const fixedHolidays = [
+    new Date(year, 0, 1),   // Confraternização Universal
+    new Date(year, 3, 21),  // Tiradentes
+    new Date(year, 4, 1),   // Dia do Trabalho
+    new Date(year, 8, 7),   // Independência do Brasil
+    new Date(year, 9, 12),  // Nossa Senhora Aparecida
+    new Date(year, 10, 2),  // Finados
+    new Date(year, 10, 15), // Proclamação da República
+    new Date(year, 11, 25), // Natal
+  ];
+  
+  // Movable holidays (based on Easter)
+  const movableHolidays = [
+    addDays(easter, -48),   // Segunda-feira de Carnaval
+    addDays(easter, -47),   // Terça-feira de Carnaval
+    addDays(easter, -2),    // Sexta-feira Santa
+    addDays(easter, 60),    // Corpus Christi
+  ];
+  
+  return [...fixedHolidays, ...movableHolidays];
+};
+
+const isBrazilianHoliday = (date: Date): boolean => {
+  const year = date.getFullYear();
+  const holidays = getBrazilianHolidays(year);
+  const dateStr = format(date, 'yyyy-MM-dd');
+  return holidays.some(h => format(h, 'yyyy-MM-dd') === dateStr);
+};
+
+const isBusinessDay = (date: Date): boolean => {
+  return !isWeekend(date) && !isBrazilianHoliday(date);
+};
+
 // Calculate minimum deadline (2 business days from today)
 const addBusinessDays = (date: Date, days: number): Date => {
   let result = new Date(date);
@@ -36,7 +93,7 @@ const addBusinessDays = (date: Date, days: number): Date => {
   
   while (addedDays < days) {
     result = addDays(result, 1);
-    if (!isWeekend(result)) {
+    if (isBusinessDay(result)) {
       addedDays++;
     }
   }
@@ -51,7 +108,7 @@ const getMinDeadline = (): Date => {
 const isValidDeadline = (date: Date): boolean => {
   const minDeadline = startOfDay(getMinDeadline());
   const selectedDate = startOfDay(date);
-  return !isBefore(selectedDate, minDeadline);
+  return !isBefore(selectedDate, minDeadline) && isBusinessDay(date);
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -287,13 +344,13 @@ const TicketList = () => {
                       mode="single"
                       selected={newDeadline}
                       onSelect={setNewDeadline}
-                      disabled={(date) => !isValidDeadline(date) || isWeekend(date)}
+                      disabled={(date) => !isValidDeadline(date)}
                       initialFocus
                       locale={ptBR}
                       className={cn("p-3 pointer-events-auto")}
                     />
                     <p className="text-xs text-muted-foreground p-3 pt-0">
-                      Mínimo de 2 dias úteis (finais de semana excluídos)
+                      Mínimo de 2 dias úteis (finais de semana e feriados excluídos)
                     </p>
                   </PopoverContent>
                 </Popover>
