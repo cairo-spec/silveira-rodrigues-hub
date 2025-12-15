@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, ShieldCheck, User } from "lucide-react";
+import { Loader2, Users, ShieldCheck, User, Clock, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -15,6 +15,8 @@ interface Profile {
   email: string;
   telefone: string | null;
   empresa: string | null;
+  subscription_active: boolean | null;
+  trial_active: boolean | null;
   created_at: string;
 }
 
@@ -78,6 +80,22 @@ const AdminUsers = () => {
     return roles.some((r) => r.user_id === userId && r.role === 'admin');
   };
 
+  const toggleTrial = async (profile: Profile) => {
+    const newTrialStatus = !profile.trial_active;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ trial_active: newTrialStatus })
+      .eq('user_id', profile.user_id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível atualizar o trial", variant: "destructive" });
+    } else {
+      toast({ title: newTrialStatus ? "Período de teste ativado" : "Período de teste revogado" });
+      fetchData();
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -122,16 +140,41 @@ const AdminUsers = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <Badge variant={userIsAdmin ? "default" : "secondary"}>
-                        {userIsAdmin ? "Admin" : "Usuário"}
-                      </Badge>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => toggleAdminRole(profile.user_id, userIsAdmin)}
-                      >
-                        {userIsAdmin ? "Remover Admin" : "Tornar Admin"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Badge variant={userIsAdmin ? "default" : "secondary"}>
+                          {userIsAdmin ? "Admin" : "Usuário"}
+                        </Badge>
+                        {profile.subscription_active && (
+                          <Badge variant="default" className="bg-green-600">
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            Assinante
+                          </Badge>
+                        )}
+                        {profile.trial_active && !profile.subscription_active && (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Período de Teste
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => toggleAdminRole(profile.user_id, userIsAdmin)}
+                        >
+                          {userIsAdmin ? "Remover Admin" : "Tornar Admin"}
+                        </Button>
+                        {!profile.subscription_active && (
+                          <Button 
+                            variant={profile.trial_active ? "destructive" : "secondary"}
+                            size="sm"
+                            onClick={() => toggleTrial(profile)}
+                          >
+                            {profile.trial_active ? "Revogar Trial" : "Conceder Trial"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
