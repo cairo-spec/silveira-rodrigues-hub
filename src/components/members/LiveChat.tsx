@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { notifyAdmins } from "@/lib/notifications";
 
 interface ChatMessage {
   id: string;
@@ -212,6 +213,16 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         message: newMessage.trim(),
         is_admin: false
       });
+
+    if (!error && roomType === "suporte") {
+      // Notify admins about new support chat message
+      notifyAdmins(
+        'chat_message',
+        'Nova mensagem no suporte',
+        `Um usuário enviou uma mensagem no chat de suporte`,
+        room.id
+      );
+    }
 
     setIsSending(false);
 

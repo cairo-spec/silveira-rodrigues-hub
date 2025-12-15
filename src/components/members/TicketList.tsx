@@ -15,6 +15,7 @@ import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Papercli
 import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { notifyAdmins } from "@/lib/notifications";
 import TicketChat from "./TicketChat";
 
 interface Ticket {
@@ -240,6 +241,14 @@ const TicketList = () => {
         variant: "destructive"
       });
     } else {
+      // Notify admins about new ticket
+      notifyAdmins(
+        'new_ticket',
+        'Novo ticket criado',
+        `Um usuário criou o ticket "${newTitle}"`,
+        undefined
+      );
+      
       toast({
         title: "Ticket criado",
         description: "Seu ticket foi criado com sucesso"
