@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings, Home, Users, Headphones } from "lucide-react";
+import { Ticket, BookOpen, LogOut, User, Settings, Home, Users, Headphones, DollarSign } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
 import MemberProfile from "./MemberProfile";
 import SettingsPanel from "./SettingsPanel";
 import NotificationBell from "./NotificationBell";
+import PricingTable from "./PricingTable";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
@@ -91,7 +92,7 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${isSubscriber ? 'grid-cols-6' : 'grid-cols-5'} lg:w-auto lg:inline-grid`}>
+          <TabsList className={`grid w-full ${isSubscriber ? 'grid-cols-7' : 'grid-cols-6'} lg:w-auto lg:inline-grid`}>
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -99,6 +100,10 @@ const MemberDashboard = () => {
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Ajuda</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Honorários</span>
             </TabsTrigger>
             <TabsTrigger value="lobby" className="gap-2">
               <Users className="h-4 w-4" />
@@ -126,6 +131,10 @@ const MemberDashboard = () => {
 
           <TabsContent value="knowledge" className="mt-6">
             <KnowledgeBase isSubscriber={isSubscriber} />
+          </TabsContent>
+
+          <TabsContent value="pricing" className="mt-6">
+            <PricingTable isPaidSubscriber={isPaidSubscriber} />
           </TabsContent>
 
           <TabsContent value="lobby" className="mt-6">
