@@ -32,11 +32,12 @@ const Membros = () => {
       try {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("contract_accepted")
+          .select("contract_accepted, trial_active, subscription_active")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (profile?.contract_accepted) {
+        // Allow access if contract accepted, trial active, or subscription active
+        if (profile?.contract_accepted || profile?.trial_active || profile?.subscription_active) {
           setHasAcceptedContract(true);
         } else {
           // Redirect to homepage to show contract modal
