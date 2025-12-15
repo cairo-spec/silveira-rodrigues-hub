@@ -9,8 +9,15 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+// Rate limiting: track requests per IP
+const requestCounts = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 30;
+
 interface AsaasWebhookPayload {
+  id: string; // Event ID for idempotency
   event: string;
+  dateCreated: string;
   payment?: {
     id: string;
     customer: string;
@@ -26,6 +33,45 @@ interface AsaasWebhookPayload {
   };
 }
 
+function isRateLimited(clientIp: string): boolean {
+  const now = Date.now();
+  const record = requestCounts.get(clientIp);
+  
+  if (!record || now > record.resetTime) {
+    requestCounts.set(clientIp, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  record.count++;
+  if (record.count > MAX_REQUESTS_PER_WINDOW) {
+    console.warn(`Rate limit exceeded for IP: ${clientIp}`);
+    return true;
+  }
+  
+  return false;
+}
+
+function isTimestampValid(dateCreated: string): boolean {
+  try {
+    // Parse Asaas timestamp format: "YYYY-MM-DD HH:mm:ss"
+    const eventDate = new Date(dateCreated.replace(' ', 'T') + 'Z');
+    const now = new Date();
+    const diffMs = now.getTime() - eventDate.getTime();
+    const maxAgeMs = 5 * 60 * 1000; // 5 minutes
+    
+    if (diffMs < 0) {
+      // Future timestamp - allow some clock skew (2 minutes)
+      return diffMs > -2 * 60 * 1000;
+    }
+    
+    return diffMs <= maxAgeMs;
+  } catch (error) {
+    console.error("Error parsing timestamp:", error);
+    // Be lenient with parsing errors but log them
+    return true;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Asaas webhook received");
 
@@ -35,6 +81,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Rate limiting check
+    const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
+    if (isRateLimited(clientIp)) {
+      console.error(`Rate limit exceeded for: ${clientIp}`);
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Verify webhook token
     const webhookToken = req.headers.get("asaas-access-token");
     const expectedToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
@@ -49,6 +105,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     const payload: AsaasWebhookPayload = await req.json();
     console.log("Webhook payload:", JSON.stringify(payload, null, 2));
+
+    // Validate timestamp to prevent replay attacks
+    if (payload.dateCreated && !isTimestampValid(payload.dateCreated)) {
+      console.error(`Webhook timestamp too old or invalid: ${payload.dateCreated}`);
+      return new Response(JSON.stringify({ error: "Request expired" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Only process payment confirmation events
     const relevantEvents = ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"];
@@ -73,6 +138,51 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // IDEMPOTENCY CHECK: Verify this event hasn't been processed before
+    const eventId = payload.id;
+    const paymentId = payload.payment?.id;
+    
+    if (eventId) {
+      const { data: existingEvent, error: checkError } = await supabase
+        .from("processed_webhook_events")
+        .select("id")
+        .eq("event_id", eventId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("Error checking for existing event:", checkError);
+        // Continue processing but log the error
+      } else if (existingEvent) {
+        console.log(`Event ${eventId} already processed, skipping (idempotency check)`);
+        return new Response(JSON.stringify({ message: "Event already processed" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // Record this event as being processed
+      const { error: insertError } = await supabase
+        .from("processed_webhook_events")
+        .insert({
+          event_id: eventId,
+          event_type: payload.event,
+          payment_id: paymentId,
+          customer_email: customerEmail,
+        });
+
+      if (insertError) {
+        // If insert fails due to unique constraint, event was processed by another request
+        if (insertError.code === '23505') {
+          console.log(`Event ${eventId} already processed (concurrent request)`);
+          return new Response(JSON.stringify({ message: "Event already processed" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+        console.error("Error recording processed event:", insertError);
+      }
+    }
 
     // Find user by email in profiles
     const { data: profile, error: profileError } = await supabase
