@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import LeadCaptureModal from "./LeadCaptureModal";
 const benefits = [{
+  icon: FileText,
+  text: "Tabela de Honorários de Assinantes"
+}, {
   icon: Bell,
   text: "Licitações curadas via Painel de Gestão"
 }, {
@@ -12,9 +15,6 @@ const benefits = [{
 }, {
   icon: Percent,
   text: "100% reembolsável no serviço de BPO"
-}, {
-  icon: FileText,
-  text: "Tabela de Honorários de Assinantes"
 }];
 
 // TODO: Substitua pela URL do seu checkout Asaas
