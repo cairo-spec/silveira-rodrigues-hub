@@ -208,6 +208,7 @@ export type Database = {
           pricing_accepted: boolean | null
           subscription_active: boolean | null
           telefone: string | null
+          trial_active: boolean | null
           updated_at: string
           user_id: string
         }
@@ -223,6 +224,7 @@ export type Database = {
           pricing_accepted?: boolean | null
           subscription_active?: boolean | null
           telefone?: string | null
+          trial_active?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -238,6 +240,7 @@ export type Database = {
           pricing_accepted?: boolean | null
           subscription_active?: boolean | null
           telefone?: string | null
+          trial_active?: boolean | null
           updated_at?: string
           user_id?: string
         }

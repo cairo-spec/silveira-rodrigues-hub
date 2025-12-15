@@ -22,14 +22,15 @@ const MemberDashboard = () => {
       
       const { data: profile } = await supabase
         .from("profiles")
-        .select("subscription_active")
+        .select("subscription_active, trial_active")
         .eq("user_id", user.id)
         .maybeSingle();
       
-      setIsSubscriber(profile?.subscription_active || false);
+      const hasAccess = profile?.subscription_active || profile?.trial_active || false;
+      setIsSubscriber(hasAccess);
       
-      // If subscriber, default to tickets tab
-      if (profile?.subscription_active) {
+      // If subscriber or trial, default to tickets tab
+      if (hasAccess) {
         setActiveTab("tickets");
       }
     };
