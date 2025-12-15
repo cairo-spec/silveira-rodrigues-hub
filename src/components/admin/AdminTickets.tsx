@@ -122,6 +122,9 @@ const AdminTickets = () => {
   };
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
+    // Get ticket info before update
+    const ticket = tickets.find(t => t.id === ticketId);
+    
     const { error } = await supabase
       .from('tickets')
       .update({ status: newStatus as any })
@@ -130,6 +133,24 @@ const AdminTickets = () => {
     if (error) {
       toast({ title: "Erro", description: "Não foi possível atualizar status", variant: "destructive" });
     } else {
+      // Create notification for user
+      if (ticket) {
+        const statusLabels: Record<string, string> = {
+          open: "Aberto",
+          in_progress: "Em andamento", 
+          resolved: "Resolvido",
+          closed: "Fechado"
+        };
+        
+        await supabase.from('notifications').insert({
+          user_id: ticket.user_id,
+          type: 'ticket_status',
+          title: 'Status do ticket atualizado',
+          message: `O ticket "${ticket.title}" foi alterado para ${statusLabels[newStatus] || newStatus}`,
+          reference_id: ticketId
+        });
+      }
+      
       toast({ title: "Status atualizado" });
       fetchTickets();
       if (selectedTicket?.id === ticketId) {
@@ -153,6 +174,17 @@ const AdminTickets = () => {
         message: newMessage.trim(),
         is_admin: true
       });
+
+    if (!error) {
+      // Create notification for ticket owner
+      await supabase.from('notifications').insert({
+        user_id: selectedTicket.user_id,
+        type: 'ticket_message',
+        title: 'Nova resposta no ticket',
+        message: `Você recebeu uma resposta no ticket "${selectedTicket.title}"`,
+        reference_id: selectedTicket.id
+      });
+    }
 
     setIsSending(false);
     if (error) {

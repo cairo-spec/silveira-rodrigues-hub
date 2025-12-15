@@ -10,6 +10,7 @@ import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
 import MemberProfile from "./MemberProfile";
 import SettingsPanel from "./SettingsPanel";
+import NotificationBell from "./NotificationBell";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
@@ -64,6 +65,15 @@ const MemberDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell 
+                onNotificationClick={(type, refId) => {
+                  if (type === 'ticket_message' || type === 'ticket_status') {
+                    setActiveTab('tickets');
+                  } else if (type === 'chat_message') {
+                    setActiveTab('suporte');
+                  }
+                }}
+              />
               <Button 
                 variant="ghost" 
                 size="sm"

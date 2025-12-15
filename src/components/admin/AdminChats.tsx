@@ -122,6 +122,17 @@ const AdminChats = () => {
         is_admin: true
       });
 
+    if (!error) {
+      // Create notification for room owner (support chat)
+      await supabase.from('notifications').insert({
+        user_id: selectedRoom.user_id,
+        type: 'chat_message',
+        title: 'Nova mensagem no suporte',
+        message: `Você recebeu uma nova mensagem da equipe de suporte`,
+        reference_id: selectedRoom.id
+      });
+    }
+
     setIsSending(false);
     if (error) {
       toast({ title: "Erro", description: "Não foi possível enviar mensagem", variant: "destructive" });
