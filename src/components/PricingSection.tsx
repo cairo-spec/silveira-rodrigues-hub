@@ -12,6 +12,9 @@ const benefits = [{
 }, {
   icon: Percent,
   text: "100% reembolsável no serviço de BPO"
+}, {
+  icon: FileText,
+  text: "Tabela de Honorários de Assinantes"
 }];
 
 // TODO: Substitua pela URL do seu checkout Asaas
