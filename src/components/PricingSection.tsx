@@ -4,17 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import LeadCaptureModal from "./LeadCaptureModal";
 const benefits = [{
-  icon: FileText,
-  text: "Tabela de Honorários de Assinantes"
-}, {
   icon: Bell,
-  text: "Licitações curadas via Painel de Gestão"
+  text: "Licitações curadas via Painel de Gestão",
+  highlight: false
 }, {
   icon: FileText,
-  text: "Relatório de Risco Parametrizado (Metodologia COSO ERM)"
+  text: "Relatório de Risco Parametrizado (Metodologia COSO ERM)",
+  highlight: false
+}, {
+  icon: FileText,
+  text: "Tabela de Honorários de Assinantes",
+  highlight: false
 }, {
   icon: Percent,
-  text: "100% reembolsável no serviço de BPO"
+  text: "100% reembolsável no serviço de BPO",
+  highlight: true
 }];
 
 // TODO: Substitua pela URL do seu checkout Asaas
@@ -50,12 +54,25 @@ const PricingSection = () => {
 
             <CardContent className="pb-10">
               <ul className="space-y-4 mb-8">
-                {benefits.map((benefit, index) => <li key={index} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gold/10 flex items-center justify-center mt-0.5">
-                      <Check className="w-4 h-4 text-gold" />
+                {benefits.map((benefit, index) => (
+                  <li 
+                    key={index} 
+                    className={`flex items-start gap-3 ${
+                      benefit.highlight 
+                        ? "bg-gold/10 -mx-4 px-4 py-3 rounded-lg border border-gold/20" 
+                        : ""
+                    }`}
+                  >
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 ${
+                      benefit.highlight ? "bg-gold" : "bg-gold/10"
+                    }`}>
+                      <Check className={`w-4 h-4 ${benefit.highlight ? "text-primary" : "text-gold"}`} />
                     </div>
-                    <span className="text-foreground">{benefit.text}</span>
-                  </li>)}
+                    <span className={`${benefit.highlight ? "text-foreground font-semibold" : "text-foreground"}`}>
+                      {benefit.text}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
               <Button onClick={() => setIsModalOpen(true)} size="lg" className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity">
