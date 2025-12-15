@@ -18,9 +18,16 @@ const Membros = () => {
       return;
     }
 
-    // Check if user has accepted the contract
+    // Check if user has accepted the contract (admins bypass this check)
     const checkContractStatus = async () => {
       if (!user) return;
+
+      // Admins can always access
+      if (isAdmin) {
+        setHasAcceptedContract(true);
+        setCheckingContract(false);
+        return;
+      }
 
       try {
         const { data: profile } = await supabase
@@ -45,7 +52,7 @@ const Membros = () => {
     if (user) {
       checkContractStatus();
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, isAdmin, navigate]);
 
   if (isLoading || checkingContract) {
     return (
