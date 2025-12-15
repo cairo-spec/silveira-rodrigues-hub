@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings, Home } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
@@ -24,9 +25,19 @@ const MemberDashboard = () => {
       <header className="bg-primary text-primary-foreground shadow-md">
         <div className="container-custom py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">Área de Membros</h1>
-              <p className="text-sm opacity-80">{user?.email}</p>
+            <div className="flex items-center gap-4">
+              <Link 
+                to="/" 
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <Home className="h-5 w-5" />
+                <span className="font-bold text-lg hidden sm:inline">Silveira & Rodrigues</span>
+              </Link>
+              <div className="hidden sm:block h-6 w-px bg-primary-foreground/30" />
+              <div>
+                <h1 className="text-xl font-bold">Área de Membros</h1>
+                <p className="text-sm opacity-80">{user?.email}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button 

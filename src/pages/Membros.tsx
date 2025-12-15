@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import MemberDashboard from "@/components/members/MemberDashboard";
 import AdminDashboard from "@/components/admin/AdminDashboard";
@@ -8,14 +9,45 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 const Membros = () => {
   const navigate = useNavigate();
   const { user, isLoading, isAdmin } = useAuth();
+  const [checkingContract, setCheckingContract] = useState(true);
+  const [hasAcceptedContract, setHasAcceptedContract] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/auth");
+      return;
+    }
+
+    // Check if user has accepted the contract
+    const checkContractStatus = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("contract_accepted")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (profile?.contract_accepted) {
+          setHasAcceptedContract(true);
+        } else {
+          // Redirect to homepage to show contract modal
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error checking contract status:", error);
+      } finally {
+        setCheckingContract(false);
+      }
+    };
+
+    if (user) {
+      checkContractStatus();
     }
   }, [user, isLoading, navigate]);
 
-  if (isLoading) {
+  if (isLoading || checkingContract) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -23,7 +55,7 @@ const Membros = () => {
     );
   }
 
-  if (!user) {
+  if (!user || !hasAcceptedContract) {
     return null;
   }
 
