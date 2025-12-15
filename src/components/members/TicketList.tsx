@@ -10,12 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText, CalendarIcon } from "lucide-react";
+import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText, CalendarIcon, Tag } from "lucide-react";
 import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { notifyAdmins } from "@/lib/notifications";
+import { serviceCategories, getCategoryById, groupedCategories } from "@/lib/pricing-categories";
 import TicketChat from "./TicketChat";
 
 interface Ticket {
@@ -26,8 +29,14 @@ interface Ticket {
   priority: string;
   deadline: string | null;
   attachment_url: string | null;
+  service_category: string | null;
+  service_price: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface TicketListProps {
+  isPaidSubscriber: boolean;
 }
 
 // Brazilian holidays calculation
@@ -120,7 +129,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 };
 
 
-const TicketList = () => {
+const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -134,7 +143,14 @@ const TicketList = () => {
   const [newDescription, setNewDescription] = useState("");
   const [newDeadline, setNewDeadline] = useState<Date | undefined>(getMinDeadline());
   const [newAttachment, setNewAttachment] = useState<File | null>(null);
+  const [newCategory, setNewCategory] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+
+  // Get selected category details
+  const selectedCategory = getCategoryById(newCategory);
+  const displayPrice = selectedCategory 
+    ? (isPaidSubscriber ? selectedCategory.priceSubscriber : selectedCategory.priceRegular)
+    : null;
 
   useEffect(() => {
     fetchTickets();
@@ -184,7 +200,7 @@ const TicketList = () => {
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !newCategory) return;
 
     setIsCreating(true);
     setIsUploading(true);
@@ -222,6 +238,11 @@ const TicketList = () => {
 
     setIsUploading(false);
 
+    const category = getCategoryById(newCategory);
+    const priceToStore = category 
+      ? (isPaidSubscriber ? category.priceSubscriber : category.priceRegular)
+      : null;
+
     const { error } = await supabase
       .from('tickets')
       .insert({
@@ -229,7 +250,9 @@ const TicketList = () => {
         title: newTitle,
         description: newDescription,
         deadline: newDeadline ? format(newDeadline, 'yyyy-MM-dd') : null,
-        attachment_url: attachmentUrl
+        attachment_url: attachmentUrl,
+        service_category: newCategory,
+        service_price: priceToStore
       });
 
     setIsCreating(false);
@@ -245,7 +268,7 @@ const TicketList = () => {
       notifyAdmins(
         'new_ticket',
         'Novo ticket criado',
-        `Um usuário criou o ticket "${newTitle}"`,
+        `Um usuário criou o ticket "${newTitle}" - ${category?.service || 'Sem categoria'}`,
         undefined
       );
       
@@ -258,6 +281,7 @@ const TicketList = () => {
       setNewDescription("");
       setNewDeadline(getMinDeadline());
       setNewAttachment(null);
+      setNewCategory("");
       fetchTickets();
     }
   };
@@ -285,96 +309,160 @@ const TicketList = () => {
               Novo Ticket
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Criar Novo Ticket</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateTicket} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  placeholder="Resumo do problema"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descreva detalhadamente seu problema ou solicitação"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  rows={6}
-                  maxLength={5000}
-                  required
-                />
-                <p className="text-xs text-muted-foreground text-right">
-                  {newDescription.length}/5000 caracteres
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="attachment">Anexo (opcional)</Label>
-                <div className="flex items-center gap-2">
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <form onSubmit={handleCreateTicket} className="space-y-4 mt-4">
+                {/* Service Category Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="category">Categoria do Serviço *</Label>
+                  <Select value={newCategory} onValueChange={setNewCategory} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de serviço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(groupedCategories).map(([categoryName, items]) => (
+                        <div key={categoryName}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                            {categoryName}
+                          </div>
+                          {items.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              <div className="flex flex-col">
+                                <span>{item.service}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Selected Category Details */}
+                {selectedCategory && (
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4 space-y-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{selectedCategory.service}</h4>
+                          <p className="text-sm text-muted-foreground">{selectedCategory.description}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-muted-foreground mb-1">
+                            {isPaidSubscriber ? "Preço Assinante" : "Preço Avulso"}
+                          </p>
+                          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 font-semibold">
+                            {displayPrice}
+                          </Badge>
+                        </div>
+                      </div>
+                      {selectedCategory.successFee !== "N/A" && (
+                        <div className="text-xs text-muted-foreground">
+                          <span className="font-medium">Taxa de Êxito:</span> {selectedCategory.successFee}
+                        </div>
+                      )}
+                      {!isPaidSubscriber && (
+                        <p className="text-xs text-primary">
+                          💡 Assinantes têm preços especiais. Considere assinar o Jornal de Licitações!
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="title">Título *</Label>
                   <Input
-                    id="attachment"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                    onChange={(e) => setNewAttachment(e.target.files?.[0] || null)}
-                    className="flex-1"
+                    id="title"
+                    placeholder="Resumo do problema"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    required
                   />
                 </div>
-                {newAttachment && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Paperclip className="h-3 w-3" />
-                    {newAttachment.name}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição *</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Descreva detalhadamente seu problema ou solicitação"
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    rows={6}
+                    maxLength={5000}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground text-right">
+                    {newDescription.length}/5000 caracteres
                   </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Prazo</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !newDeadline && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newDeadline ? format(newDeadline, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={newDeadline}
-                      onSelect={setNewDeadline}
-                      disabled={(date) => !isValidDeadline(date)}
-                      initialFocus
-                      locale={ptBR}
-                      className={cn("p-3 pointer-events-auto")}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="attachment">Anexo (opcional)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="attachment"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                      onChange={(e) => setNewAttachment(e.target.files?.[0] || null)}
+                      className="flex-1"
                     />
-                    <p className="text-xs text-muted-foreground p-3 pt-0">
-                      Mínimo de 2 dias úteis (finais de semana e feriados excluídos)
+                  </div>
+                  {newAttachment && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Paperclip className="h-3 w-3" />
+                      {newAttachment.name}
                     </p>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <Button type="submit" className="w-full" disabled={isCreating || isUploading}>
-                {(isCreating || isUploading) ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {isUploading ? "Enviando anexo..." : "Criando..."}
-                  </>
-                ) : (
-                  "Criar Ticket"
-                )}
-              </Button>
-            </form>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Prazo</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newDeadline && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {newDeadline ? format(newDeadline, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={newDeadline}
+                        onSelect={setNewDeadline}
+                        disabled={(date) => !isValidDeadline(date)}
+                        initialFocus
+                        locale={ptBR}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                      <p className="text-xs text-muted-foreground p-3 pt-0">
+                        Mínimo de 2 dias úteis (finais de semana e feriados excluídos)
+                      </p>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isCreating || isUploading || !newCategory}
+                >
+                  {(isCreating || isUploading) ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {isUploading ? "Enviando anexo..." : "Criando..."}
+                    </>
+                  ) : (
+                    "Criar Ticket"
+                  )}
+                </Button>
+              </form>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -399,50 +487,66 @@ const TicketList = () => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {tickets.map((ticket) => (
-            <Card 
-              key={ticket.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedTicket(ticket)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                    <CardDescription className="line-clamp-2 mt-1">
-                      {ticket.description}
-                    </CardDescription>
-                    {ticket.attachment_url && (
-                      <Badge variant="outline" className="mt-2 gap-1 w-fit">
-                        <FileText className="h-3 w-3" />
-                        Anexo
+          {tickets.map((ticket) => {
+            const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
+            return (
+              <Card 
+                key={ticket.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setSelectedTicket(ticket)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                      <CardDescription className="line-clamp-2 mt-1">
+                        {ticket.description}
+                      </CardDescription>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {ticket.attachment_url && (
+                          <Badge variant="outline" className="gap-1 w-fit">
+                            <FileText className="h-3 w-3" />
+                            Anexo
+                          </Badge>
+                        )}
+                        {category && (
+                          <Badge variant="outline" className="gap-1 w-fit bg-primary/5">
+                            <Tag className="h-3 w-3" />
+                            {category.service}
+                          </Badge>
+                        )}
+                        {ticket.service_price && (
+                          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                            {ticket.service_price}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      <Badge 
+                        variant="secondary" 
+                        className={`${statusConfig[ticket.status]?.color} text-white`}
+                      >
+                        {statusConfig[ticket.status]?.icon}
+                        <span className="ml-1">{statusConfig[ticket.status]?.label}</span>
                       </Badge>
-                    )}
+                      {ticket.deadline && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          <CalendarIcon className="h-3 w-3 mr-1" />
+                          {format(new Date(ticket.deadline), "dd/MM/yyyy")}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2 items-end">
-                    <Badge 
-                      variant="secondary" 
-                      className={`${statusConfig[ticket.status]?.color} text-white`}
-                    >
-                      {statusConfig[ticket.status]?.icon}
-                      <span className="ml-1">{statusConfig[ticket.status]?.label}</span>
-                    </Badge>
-                    {ticket.deadline && (
-                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                        <CalendarIcon className="h-3 w-3 mr-1" />
-                        {format(new Date(ticket.deadline), "dd/MM/yyyy")}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-xs text-muted-foreground">
-                  Criado em {format(new Date(ticket.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground">
+                    Criado em {format(new Date(ticket.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
