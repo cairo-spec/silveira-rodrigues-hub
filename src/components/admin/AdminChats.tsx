@@ -68,17 +68,32 @@ const AdminChats = () => {
   }, [selectedRoom]);
 
   const fetchRooms = async () => {
-    const { data, error } = await supabase
+    const { data: roomsData, error } = await supabase
       .from('chat_rooms')
-      .select('*, profiles(nome, email)')
+      .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
       toast({ title: "Erro", description: "Não foi possível carregar chats", variant: "destructive" });
-    } else {
-      setRooms(data || []);
+      setIsLoading(false);
+      return;
     }
+
+    // Fetch profiles for each room
+    const userIds = [...new Set(roomsData?.map(r => r.user_id) || [])];
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, nome, email')
+      .in('user_id', userIds);
+
+    const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+    const roomsWithProfiles = roomsData?.map(room => ({
+      ...room,
+      profiles: profilesMap.get(room.user_id) || null
+    })) || [];
+
+    setRooms(roomsWithProfiles);
     setIsLoading(false);
   };
 

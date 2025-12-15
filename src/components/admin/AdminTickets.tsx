@@ -84,16 +84,31 @@ const AdminTickets = () => {
   }, [selectedTicket]);
 
   const fetchTickets = async () => {
-    const { data, error } = await supabase
+    const { data: ticketsData, error } = await supabase
       .from('tickets')
-      .select('*, profiles(nome, email)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       toast({ title: "Erro", description: "Não foi possível carregar tickets", variant: "destructive" });
-    } else {
-      setTickets(data || []);
+      setIsLoading(false);
+      return;
     }
+
+    // Fetch profiles for each ticket
+    const userIds = [...new Set(ticketsData?.map(t => t.user_id) || [])];
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, nome, email')
+      .in('user_id', userIds);
+
+    const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+    const ticketsWithProfiles = ticketsData?.map(ticket => ({
+      ...ticket,
+      profiles: profilesMap.get(ticket.user_id) || null
+    })) || [];
+
+    setTickets(ticketsWithProfiles);
     setIsLoading(false);
   };
 
