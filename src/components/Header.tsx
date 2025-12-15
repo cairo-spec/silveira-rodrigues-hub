@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Menu, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { href: "#jornal", label: "Jornal" },
@@ -12,6 +14,8 @@ const navLinks = [
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const scrollToSection = (href: string) => {
     setIsOpen(false);
@@ -19,6 +23,10 @@ const Header = () => {
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -46,13 +54,41 @@ const Header = () => {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:block">
-            <Button
-              onClick={() => scrollToSection("#jornal")}
-              className="bg-primary text-primary-foreground hover:bg-deep-green-light"
-            >
-              Assinar Jornal
-            </Button>
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/membros")}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Área de Membros
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/auth")}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Entrar
+                </Button>
+                <Button
+                  onClick={() => scrollToSection("#jornal")}
+                  className="bg-primary text-primary-foreground hover:bg-deep-green-light"
+                >
+                  Assinar Jornal
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu */}

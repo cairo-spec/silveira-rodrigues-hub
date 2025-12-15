@@ -14,16 +14,292 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean | null
+          message: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          message: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          message?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          ticket_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          ticket_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          ticket_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_articles: {
+        Row: {
+          category_id: string
+          content: string
+          created_at: string
+          id: string
+          is_published: boolean | null
+          title: string
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          category_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          title: string
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          category_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          title?: string
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "kb_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          order_index: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          order_index?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          order_index?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          contract_accepted: boolean | null
+          created_at: string
+          email: string
+          empresa: string | null
+          id: string
+          lgpd_accepted: boolean | null
+          nome: string
+          pricing_accepted: boolean | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          contract_accepted?: boolean | null
+          created_at?: string
+          email: string
+          empresa?: string | null
+          id?: string
+          lgpd_accepted?: boolean | null
+          nome: string
+          pricing_accepted?: boolean | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          contract_accepted?: boolean | null
+          created_at?: string
+          email?: string
+          empresa?: string | null
+          id?: string
+          lgpd_accepted?: boolean | null
+          nome?: string
+          pricing_accepted?: boolean | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean | null
+          message: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          message: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          message?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          status: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status: "open" | "in_progress" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +426,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: ["open", "in_progress", "resolved", "closed"],
+    },
   },
 } as const
