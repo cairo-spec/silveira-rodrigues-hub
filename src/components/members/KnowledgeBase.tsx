@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, BookOpen, ArrowLeft, Eye, Loader2 } from "lucide-react";
+import { Search, BookOpen, Eye, Loader2, FileText, Download } from "lucide-react";
 
 interface KBCategory {
   id: string;
@@ -18,7 +17,8 @@ interface KBCategory {
 interface KBArticle {
   id: string;
   title: string;
-  content: string;
+  content: string | null;
+  file_url: string | null;
   views: number;
   category_id: string;
 }
@@ -31,7 +31,6 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
   const [categories, setCategories] = useState<KBCategory[]>([]);
   const [articles, setArticles] = useState<KBArticle[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<KBCategory | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<KBArticle | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -67,53 +66,26 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
   };
 
   const handleViewArticle = async (article: KBArticle) => {
-    setSelectedArticle(article);
-    
     // Increment view count
     await supabase
       .from('kb_articles')
       .update({ views: article.views + 1 })
       .eq('id', article.id);
+
+    // Open PDF in new tab
+    if (article.file_url) {
+      window.open(article.file_url, '_blank');
+    }
   };
 
   const filteredArticles = articles.filter((article) => {
     const matchesSearch = searchQuery === "" || 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.content.toLowerCase().includes(searchQuery.toLowerCase());
+      article.title.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = !selectedCategory || article.category_id === selectedCategory.id;
     
     return matchesSearch && matchesCategory;
   });
-
-  if (selectedArticle) {
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" onClick={() => setSelectedArticle(null)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>{selectedArticle.title}</CardTitle>
-              <Badge variant="outline" className="gap-1">
-                <Eye className="h-3 w-3" />
-                {selectedArticle.views + 1} views
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div 
-              className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedArticle.content) }}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -180,8 +152,7 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
             return (
               <Card 
                 key={article.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleViewArticle(article)}
+                className="hover:shadow-md transition-shadow"
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
@@ -194,12 +165,24 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="line-clamp-2">
-                    {article.content.replace(/<[^>]*>/g, '').substring(0, 150)}...
-                  </CardDescription>
-                  <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                    <Eye className="h-3 w-3" />
-                    {article.views} visualizações
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      <span>Documento PDF</span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {article.views}
+                      </span>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewArticle(article)}
+                      className="gap-1"
+                    >
+                      <Download className="h-4 w-4" />
+                      Abrir
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

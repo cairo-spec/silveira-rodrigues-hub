@@ -91,8 +91,9 @@ export type Database = {
       kb_articles: {
         Row: {
           category_id: string
-          content: string
+          content: string | null
           created_at: string
+          file_url: string | null
           id: string
           is_published: boolean | null
           title: string
@@ -101,8 +102,9 @@ export type Database = {
         }
         Insert: {
           category_id: string
-          content: string
+          content?: string | null
           created_at?: string
+          file_url?: string | null
           id?: string
           is_published?: boolean | null
           title: string
@@ -111,8 +113,9 @@ export type Database = {
         }
         Update: {
           category_id?: string
-          content?: string
+          content?: string | null
           created_at?: string
+          file_url?: string | null
           id?: string
           is_published?: boolean | null
           title?: string

@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, BookOpen, Eye, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, BookOpen, Eye, Pencil, Trash2, FileText, Upload } from "lucide-react";
 
 interface Category {
   id: string;
@@ -22,7 +22,8 @@ interface Category {
 interface Article {
   id: string;
   title: string;
-  content: string;
+  content: string | null;
+  file_url: string | null;
   is_published: boolean;
   views: number;
   category_id: string;
@@ -42,9 +43,11 @@ const AdminKnowledgeBase = () => {
   const [categoryDescription, setCategoryDescription] = useState("");
   const [categoryPremium, setCategoryPremium] = useState(false);
   const [articleTitle, setArticleTitle] = useState("");
-  const [articleContent, setArticleContent] = useState("");
+  const [articleFile, setArticleFile] = useState<File | null>(null);
+  const [articleFileUrl, setArticleFileUrl] = useState<string | null>(null);
   const [articleCategory, setArticleCategory] = useState("");
   const [articlePublished, setArticlePublished] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -82,10 +85,33 @@ const AdminKnowledgeBase = () => {
 
   const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setIsUploading(true);
+
+    let fileUrl = articleFileUrl;
+
+    // Upload new file if selected
+    if (articleFile) {
+      const fileExt = articleFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `articles/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('kb-files')
+        .upload(filePath, articleFile);
+
+      if (uploadError) {
+        toast({ title: "Erro", description: "Não foi possível fazer upload do arquivo", variant: "destructive" });
+        setIsUploading(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from('kb-files').getPublicUrl(filePath);
+      fileUrl = urlData.publicUrl;
+    }
+
     const articleData = {
       title: articleTitle,
-      content: articleContent,
+      file_url: fileUrl,
       category_id: articleCategory,
       is_published: articlePublished
     };
@@ -93,6 +119,8 @@ const AdminKnowledgeBase = () => {
     const { error } = editingArticle
       ? await supabase.from('kb_articles').update(articleData).eq('id', editingArticle.id)
       : await supabase.from('kb_articles').insert(articleData);
+
+    setIsUploading(false);
 
     if (error) {
       toast({ title: "Erro", description: "Não foi possível salvar artigo", variant: "destructive" });
@@ -107,7 +135,8 @@ const AdminKnowledgeBase = () => {
   const handleEditArticle = (article: Article) => {
     setEditingArticle(article);
     setArticleTitle(article.title);
-    setArticleContent(article.content);
+    setArticleFileUrl(article.file_url);
+    setArticleFile(null);
     setArticleCategory(article.category_id);
     setArticlePublished(article.is_published);
     setArticleModalOpen(true);
@@ -126,7 +155,8 @@ const AdminKnowledgeBase = () => {
   const resetArticleForm = () => {
     setEditingArticle(null);
     setArticleTitle("");
-    setArticleContent("");
+    setArticleFile(null);
+    setArticleFileUrl(null);
     setArticleCategory("");
     setArticlePublished(false);
   };
@@ -190,14 +220,29 @@ const AdminKnowledgeBase = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Conteúdo (HTML)</Label>
-                  <Textarea value={articleContent} onChange={(e) => setArticleContent(e.target.value)} rows={8} required />
+                  <Label>Arquivo PDF</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setArticleFile(e.target.files?.[0] || null)}
+                      className="flex-1"
+                    />
+                  </div>
+                  {articleFileUrl && !articleFile && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <FileText className="h-4 w-4" />
+                      Arquivo atual anexado
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={articlePublished} onCheckedChange={setArticlePublished} />
                   <Label>Publicado</Label>
                 </div>
-                <Button type="submit" className="w-full">Salvar</Button>
+                <Button type="submit" className="w-full" disabled={isUploading}>
+                  {isUploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</> : "Salvar"}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -243,6 +288,11 @@ const AdminKnowledgeBase = () => {
                         <CardDescription className="flex items-center gap-2 mt-1">
                           {category && <Badge variant="outline">{category.name}</Badge>}
                           <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{article.views}</span>
+                          {article.file_url && (
+                            <Badge variant="secondary" className="gap-1">
+                              <FileText className="h-3 w-3" />PDF
+                            </Badge>
+                          )}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
