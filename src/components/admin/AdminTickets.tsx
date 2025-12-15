@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { clearNotificationsByReference } from "@/lib/notifications";
 
 interface Ticket {
   id: string;
@@ -67,6 +68,9 @@ const AdminTickets = () => {
     if (selectedTicket) {
       fetchMessages(selectedTicket.id);
       
+      // Clear notifications for this ticket when admin views it
+      clearNotificationsByReference(selectedTicket.id);
+      
       const channel = supabase
         .channel(`admin-ticket-${selectedTicket.id}`)
         .on('postgres_changes', { 
@@ -76,6 +80,8 @@ const AdminTickets = () => {
           filter: `ticket_id=eq.${selectedTicket.id}`
         }, (payload) => {
           setMessages(prev => [...prev, payload.new as TicketMessage]);
+          // Clear notifications when new message arrives while viewing
+          clearNotificationsByReference(selectedTicket.id);
         })
         .subscribe();
 
