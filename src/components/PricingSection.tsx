@@ -41,9 +41,7 @@ const PricingSection = () => {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Newspaper className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">
-                Jornal Auditado
-              </h3>
+              <h3 className="text-2xl font-bold text-foreground">Jornal de Editais Auditados</h3>
               <p className="text-muted-foreground mt-2">Oportunidades selecionadas para o seu segmento</p>
             </CardHeader>
 
