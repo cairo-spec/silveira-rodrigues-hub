@@ -135,6 +135,7 @@ export type Database = {
           description: string | null
           icon: string | null
           id: string
+          is_premium: boolean | null
           name: string
           order_index: number | null
         }
@@ -143,6 +144,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_premium?: boolean | null
           name: string
           order_index?: number | null
         }
@@ -151,6 +153,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          is_premium?: boolean | null
           name?: string
           order_index?: number | null
         }
@@ -197,6 +200,7 @@ export type Database = {
           lgpd_accepted: boolean | null
           nome: string
           pricing_accepted: boolean | null
+          subscription_active: boolean | null
           telefone: string | null
           updated_at: string
           user_id: string
@@ -211,6 +215,7 @@ export type Database = {
           lgpd_accepted?: boolean | null
           nome: string
           pricing_accepted?: boolean | null
+          subscription_active?: boolean | null
           telefone?: string | null
           updated_at?: string
           user_id: string
@@ -225,6 +230,7 @@ export type Database = {
           lgpd_accepted?: boolean | null
           nome?: string
           pricing_accepted?: boolean | null
+          subscription_active?: boolean | null
           telefone?: string | null
           updated_at?: string
           user_id?: string

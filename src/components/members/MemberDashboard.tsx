@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings, Home } from "lucide-react";
@@ -12,7 +13,29 @@ import SettingsPanel from "./SettingsPanel";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("tickets");
+  const [activeTab, setActiveTab] = useState("chat");
+  const [isSubscriber, setIsSubscriber] = useState(false);
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscription_active")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      setIsSubscriber(profile?.subscription_active || false);
+      
+      // If subscriber, default to tickets tab
+      if (profile?.subscription_active) {
+        setActiveTab("tickets");
+      }
+    };
+
+    checkSubscription();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,11 +80,13 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="tickets" className="gap-2">
-              <Ticket className="h-4 w-4" />
-              <span className="hidden sm:inline">Tickets</span>
-            </TabsTrigger>
+          <TabsList className={`grid w-full ${isSubscriber ? 'grid-cols-5' : 'grid-cols-4'} lg:w-auto lg:inline-grid`}>
+            {isSubscriber && (
+              <TabsTrigger value="tickets" className="gap-2">
+                <Ticket className="h-4 w-4" />
+                <span className="hidden sm:inline">Tickets</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Ajuda</span>
@@ -80,12 +105,14 @@ const MemberDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="tickets" className="mt-6">
-            <TicketList />
-          </TabsContent>
+          {isSubscriber && (
+            <TabsContent value="tickets" className="mt-6">
+              <TicketList />
+            </TabsContent>
+          )}
 
           <TabsContent value="knowledge" className="mt-6">
-            <KnowledgeBase />
+            <KnowledgeBase isSubscriber={isSubscriber} />
           </TabsContent>
 
           <TabsContent value="chat" className="mt-6">
