@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Ticket, BookOpen, MessageCircle, LogOut, User } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
 import MemberProfile from "./MemberProfile";
+import SettingsPanel from "./SettingsPanel";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
@@ -45,7 +46,7 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -61,6 +62,10 @@ const MemberDashboard = () => {
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Perfil</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Config</span>
             </TabsTrigger>
           </TabsList>
 
@@ -78,6 +83,10 @@ const MemberDashboard = () => {
 
           <TabsContent value="profile" className="mt-6">
             <MemberProfile />
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <SettingsPanel />
           </TabsContent>
         </Tabs>
       </main>

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Ticket, BookOpen, MessageCircle, LogOut, Users } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings } from "lucide-react";
 import AdminTickets from "./AdminTickets";
 import AdminKnowledgeBase from "./AdminKnowledgeBase";
 import AdminChats from "./AdminChats";
 import AdminUsers from "./AdminUsers";
+import SettingsPanel from "../members/SettingsPanel";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -41,7 +42,7 @@ const AdminDashboard = () => {
 
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -58,12 +59,17 @@ const AdminDashboard = () => {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Usuários</span>
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Config</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tickets"><AdminTickets /></TabsContent>
           <TabsContent value="chats"><AdminChats /></TabsContent>
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="users"><AdminUsers /></TabsContent>
+          <TabsContent value="settings"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
     </div>
