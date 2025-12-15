@@ -118,26 +118,37 @@ const PricingTableModal = ({ open, onOpenChange }: PricingTableModalProps) => {
                             {item.description}
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-2 lg:flex-nowrap lg:gap-4 lg:shrink-0">
-                          <div className="text-center w-[120px]">
-                            <p className="text-[10px] uppercase text-muted-foreground mb-1">Avulso</p>
-                            <p className="text-xs font-medium text-muted-foreground line-through">
-                              {item.priceRegular}
-                            </p>
+                        {category.category.includes("ÊXITO") ? (
+                          <div className="flex justify-center lg:w-[420px]">
+                            <div className="text-center">
+                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Taxa de Êxito</p>
+                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 text-xs font-semibold">
+                                {item.successFee}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="text-center w-[160px]">
-                            <p className="text-[10px] uppercase text-muted-foreground mb-1">Assinante</p>
-                            <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 text-xs font-semibold">
-                              {item.priceSubscriber}
-                            </Badge>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 lg:flex-nowrap lg:gap-4 lg:shrink-0">
+                            <div className="text-center w-[120px]">
+                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Avulso</p>
+                              <p className="text-xs font-medium text-muted-foreground line-through">
+                                {item.priceRegular}
+                              </p>
+                            </div>
+                            <div className="text-center w-[160px]">
+                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Assinante</p>
+                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 text-xs font-semibold">
+                                {item.priceSubscriber}
+                              </Badge>
+                            </div>
+                            <div className="text-center w-[140px]">
+                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Êxito</p>
+                              <p className="text-xs font-medium text-foreground">
+                                {item.successFee !== "N/A" ? item.successFee : "—"}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-center w-[140px]">
-                            <p className="text-[10px] uppercase text-muted-foreground mb-1">Êxito</p>
-                            <p className="text-xs font-medium text-foreground">
-                              {item.successFee !== "N/A" ? item.successFee : "—"}
-                            </p>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   ))}
