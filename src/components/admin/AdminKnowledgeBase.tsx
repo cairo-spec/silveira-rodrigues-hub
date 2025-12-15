@@ -87,17 +87,17 @@ const AdminKnowledgeBase = () => {
     e.preventDefault();
     setIsUploading(true);
 
-    let fileUrl = articleFileUrl;
+    let filePath = articleFileUrl;
 
     // Upload new file if selected
     if (articleFile) {
       const fileExt = articleFile.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `articles/${fileName}`;
+      const newFilePath = `articles/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('kb-files')
-        .upload(filePath, articleFile);
+        .upload(newFilePath, articleFile);
 
       if (uploadError) {
         toast({ title: "Erro", description: "Não foi possível fazer upload do arquivo", variant: "destructive" });
@@ -105,13 +105,13 @@ const AdminKnowledgeBase = () => {
         return;
       }
 
-      const { data: urlData } = supabase.storage.from('kb-files').getPublicUrl(filePath);
-      fileUrl = urlData.publicUrl;
+      // Store only the file path, not the public URL
+      filePath = newFilePath;
     }
 
     const articleData = {
       title: articleTitle,
-      file_url: fileUrl,
+      file_url: filePath,
       category_id: articleCategory,
       is_published: articlePublished
     };

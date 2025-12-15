@@ -2,3 +2,6 @@ project_id = "ayjykrmpiatjerfxaykd"
 
 [functions.asaas-webhook]
 verify_jwt = false
+
+[functions.get-kb-file-url]
+verify_jwt = false
