@@ -131,7 +131,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
             {showLoginPrompt && !user 
-              ? "Para aceitar o contrato e visualizar a tabela de honorários, você precisa estar logado"
+              ? "Para aceitar o contrato, você precisa estar logado"
               : "Preencha seus dados para continuar para o pagamento seguro"
             }
           </DialogDescription>
