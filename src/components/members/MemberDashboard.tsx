@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings, Home } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, User, Settings, Home, Users, Headphones } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
@@ -13,7 +13,7 @@ import SettingsPanel from "./SettingsPanel";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("chat");
+  const [activeTab, setActiveTab] = useState("lobby");
   const [isSubscriber, setIsSubscriber] = useState(false);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${isSubscriber ? 'grid-cols-5' : 'grid-cols-4'} lg:w-auto lg:inline-grid`}>
+          <TabsList className={`grid w-full ${isSubscriber ? 'grid-cols-6' : 'grid-cols-5'} lg:w-auto lg:inline-grid`}>
             {isSubscriber && (
               <TabsTrigger value="tickets" className="gap-2">
                 <Ticket className="h-4 w-4" />
@@ -91,10 +91,16 @@ const MemberDashboard = () => {
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Ajuda</span>
             </TabsTrigger>
-            <TabsTrigger value="chat" className="gap-2">
-              <MessageCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Chat</span>
+            <TabsTrigger value="lobby" className="gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Lobby</span>
             </TabsTrigger>
+            {isSubscriber && (
+              <TabsTrigger value="suporte" className="gap-2">
+                <Headphones className="h-4 w-4" />
+                <span className="hidden sm:inline">Suporte</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -115,9 +121,15 @@ const MemberDashboard = () => {
             <KnowledgeBase isSubscriber={isSubscriber} />
           </TabsContent>
 
-          <TabsContent value="chat" className="mt-6">
-            <LiveChat isSubscriber={isSubscriber} />
+          <TabsContent value="lobby" className="mt-6">
+            <LiveChat roomType="lobby" />
           </TabsContent>
+
+          {isSubscriber && (
+            <TabsContent value="suporte" className="mt-6">
+              <LiveChat roomType="suporte" />
+            </TabsContent>
+          )}
 
           <TabsContent value="profile" className="mt-6">
             <MemberProfile />
