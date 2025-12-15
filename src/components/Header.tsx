@@ -110,12 +110,54 @@ const Header = () => {
                     {link.label}
                   </button>
                 ))}
-                <Button
-                  onClick={() => scrollToSection("#jornal")}
-                  className="mt-4 bg-primary text-primary-foreground hover:bg-deep-green-light"
-                >
-                  Assinar Jornal
-                </Button>
+                <div className="border-t pt-4 mt-2 space-y-3">
+                  {user ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate("/membros");
+                        }}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Área de Membros
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => {
+                          setIsOpen(false);
+                          handleSignOut();
+                        }}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sair
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate("/auth");
+                        }}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Entrar
+                      </Button>
+                      <Button
+                        onClick={() => scrollToSection("#jornal")}
+                        className="w-full bg-primary text-primary-foreground hover:bg-deep-green-light"
+                      >
+                        Assinar Jornal
+                      </Button>
+                    </>
+                  )}
+                </div>
               </nav>
             </SheetContent>
           </Sheet>
