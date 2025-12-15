@@ -12,6 +12,7 @@ interface KBCategory {
   name: string;
   description: string | null;
   icon: string | null;
+  is_premium: boolean | null;
 }
 
 interface KBArticle {
@@ -22,7 +23,11 @@ interface KBArticle {
   category_id: string;
 }
 
-const KnowledgeBase = () => {
+interface KnowledgeBaseProps {
+  isSubscriber?: boolean;
+}
+
+const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
   const [categories, setCategories] = useState<KBCategory[]>([]);
   const [articles, setArticles] = useState<KBArticle[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<KBCategory | null>(null);
@@ -41,10 +46,16 @@ const KnowledgeBase = () => {
       .select('*')
       .order('order_index');
     
-    setCategories(data || []);
+    // Filter premium categories for non-subscribers
+    const filteredCategories = isSubscriber 
+      ? data || []
+      : (data || []).filter(cat => !cat.is_premium);
+    
+    setCategories(filteredCategories);
   };
 
   const fetchArticles = async () => {
+    // RLS will filter articles based on subscription status
     const { data } = await supabase
       .from('kb_articles')
       .select('*')

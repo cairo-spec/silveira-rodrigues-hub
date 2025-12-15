@@ -207,12 +207,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Profile found, proceeding with update");
 
-    // Update profile to mark contract as accepted
+    // Update profile to mark contract as accepted and subscription as active
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
         contract_accepted: true,
         pricing_accepted: true,
+        subscription_active: true,
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", profile.user_id);
