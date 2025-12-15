@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2, User, ShieldCheck, MessageCircle } from "lucide-react";
+import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, ArrowLeft, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -20,21 +20,31 @@ interface ChatMessage {
 interface ChatRoom {
   id: string;
   is_active: boolean;
+  room_type: string;
 }
 
-const LiveChat = () => {
+interface LiveChatProps {
+  isSubscriber?: boolean;
+}
+
+type RoomType = "lobby" | "suporte";
+
+const LiveChat = ({ isSubscriber = false }: LiveChatProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    initializeChat();
-  }, [user]);
+    if (selectedRoomType) {
+      initializeChat(selectedRoomType);
+    }
+  }, [user, selectedRoomType]);
 
   useEffect(() => {
     if (!room) return;
@@ -69,14 +79,18 @@ const LiveChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const initializeChat = async () => {
+  const initializeChat = async (roomType: RoomType) => {
     if (!user) return;
 
-    // Find existing active room or create new one
+    setIsLoading(true);
+    setMessages([]);
+
+    // Find existing active room of this type or create new one
     const { data: existingRoom } = await supabase
       .from('chat_rooms')
       .select('*')
       .eq('user_id', user.id)
+      .eq('room_type', roomType)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -86,7 +100,7 @@ const LiveChat = () => {
     } else {
       const { data: newRoom, error } = await supabase
         .from('chat_rooms')
-        .insert({ user_id: user.id })
+        .insert({ user_id: user.id, room_type: roomType })
         .select()
         .single();
 
@@ -150,6 +164,93 @@ const LiveChat = () => {
     }
   };
 
+  const handleBack = () => {
+    setSelectedRoomType(null);
+    setRoom(null);
+    setMessages([]);
+  };
+
+  // Room selection view
+  if (!selectedRoomType) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Chat ao Vivo</h2>
+          <p className="text-muted-foreground">Escolha uma sala para conversar</p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Lobby Card */}
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setSelectedRoomType("lobby")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <span className="text-lg">Lobby</span>
+                  <p className="text-sm font-normal text-muted-foreground">
+                    Sala geral de bate-papo
+                  </p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Tire dúvidas gerais e converse com nossa equipe sobre assuntos diversos.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Suporte Card */}
+          <Card 
+            className={`transition-shadow ${
+              isSubscriber 
+                ? "cursor-pointer hover:shadow-md" 
+                : "opacity-60 cursor-not-allowed"
+            }`}
+            onClick={() => isSubscriber && setSelectedRoomType("suporte")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  isSubscriber ? "bg-green-100" : "bg-gray-100"
+                }`}>
+                  {isSubscriber ? (
+                    <Headphones className="h-6 w-6 text-green-600" />
+                  ) : (
+                    <Lock className="h-6 w-6 text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <span className="text-lg">Suporte</span>
+                  <p className="text-sm font-normal text-muted-foreground">
+                    Atendimento exclusivo
+                  </p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isSubscriber ? (
+                <p className="text-sm text-muted-foreground">
+                  Suporte prioritário para assinantes. Resolva questões específicas do seu contrato.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Disponível apenas para assinantes do Jornal de Licitações.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Chat view
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -158,11 +259,31 @@ const LiveChat = () => {
     );
   }
 
+  const roomTitle = selectedRoomType === "lobby" ? "Lobby" : "Suporte";
+  const roomIcon = selectedRoomType === "lobby" ? (
+    <Users className="h-4 w-4" />
+  ) : (
+    <Headphones className="h-4 w-4" />
+  );
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Chat ao Vivo</h2>
-        <p className="text-muted-foreground">Converse em tempo real com nossa equipe</p>
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            {roomIcon}
+            {roomTitle}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {selectedRoomType === "lobby" 
+              ? "Sala geral de bate-papo" 
+              : "Atendimento exclusivo para assinantes"
+            }
+          </p>
+        </div>
       </div>
 
       <Card className="flex flex-col h-[500px]">

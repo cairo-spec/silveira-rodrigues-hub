@@ -54,6 +54,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean | null
+          room_type: string
           ticket_id: string | null
           user_id: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          room_type?: string
           ticket_id?: string | null
           user_id: string
         }
@@ -68,6 +70,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          room_type?: string
           ticket_id?: string | null
           user_id?: string
         }

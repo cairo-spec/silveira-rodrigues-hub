@@ -116,7 +116,7 @@ const MemberDashboard = () => {
           </TabsContent>
 
           <TabsContent value="chat" className="mt-6">
-            <LiveChat />
+            <LiveChat isSubscriber={isSubscriber} />
           </TabsContent>
 
           <TabsContent value="profile" className="mt-6">
