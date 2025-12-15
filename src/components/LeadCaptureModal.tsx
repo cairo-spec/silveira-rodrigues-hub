@@ -177,7 +177,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                         onClick={() => setPricingModalOpen(true)}
                         className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
                       >
-                        tabela de honorários
+                        Tabela de Honorários
                       </button>{" "}
                       anexa.
                     </FormLabel>
