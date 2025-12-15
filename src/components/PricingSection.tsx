@@ -21,8 +21,7 @@ const benefits = [{
   highlight: true
 }];
 
-// TODO: Substitua pela URL do seu checkout Asaas
-const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/seu-link-de-checkout";
+const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 const PricingSection = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   return <section id="jornal" className="section-padding bg-background scroll-mt-20">
