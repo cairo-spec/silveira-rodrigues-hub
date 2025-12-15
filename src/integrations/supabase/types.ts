@@ -285,6 +285,7 @@ export type Database = {
         Row: {
           attachment_url: string | null
           created_at: string
+          deadline: string | null
           description: string
           id: string
           priority: Database["public"]["Enums"]["ticket_priority"]
@@ -296,6 +297,7 @@ export type Database = {
         Insert: {
           attachment_url?: string | null
           created_at?: string
+          deadline?: string | null
           description: string
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
@@ -307,6 +309,7 @@ export type Database = {
         Update: {
           attachment_url?: string | null
           created_at?: string
+          deadline?: string | null
           description?: string
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]

@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText, CalendarIcon } from "lucide-react";
+import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import TicketChat from "./TicketChat";
 
 interface Ticket {
@@ -21,10 +23,36 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  deadline: string | null;
   attachment_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Calculate minimum deadline (2 business days from today)
+const addBusinessDays = (date: Date, days: number): Date => {
+  let result = new Date(date);
+  let addedDays = 0;
+  
+  while (addedDays < days) {
+    result = addDays(result, 1);
+    if (!isWeekend(result)) {
+      addedDays++;
+    }
+  }
+  
+  return result;
+};
+
+const getMinDeadline = (): Date => {
+  return addBusinessDays(new Date(), 2);
+};
+
+const isValidDeadline = (date: Date): boolean => {
+  const minDeadline = startOfDay(getMinDeadline());
+  const selectedDate = startOfDay(date);
+  return !isBefore(selectedDate, minDeadline);
+};
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   open: { label: "Aberto", color: "bg-blue-500", icon: <Clock className="h-3 w-3" /> },
@@ -33,12 +61,6 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   closed: { label: "Fechado", color: "bg-gray-500", icon: <CheckCircle className="h-3 w-3" /> }
 };
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: "Baixa", color: "bg-slate-400" },
-  medium: { label: "Média", color: "bg-blue-400" },
-  high: { label: "Alta", color: "bg-orange-400" },
-  urgent: { label: "Urgente", color: "bg-red-500" }
-};
 
 const TicketList = () => {
   const { user } = useAuth();
@@ -52,7 +74,7 @@ const TicketList = () => {
   // New ticket form
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [newPriority, setNewPriority] = useState("medium");
+  const [newDeadline, setNewDeadline] = useState<Date | undefined>(getMinDeadline());
   const [newAttachment, setNewAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -148,7 +170,7 @@ const TicketList = () => {
         user_id: user.id,
         title: newTitle,
         description: newDescription,
-        priority: newPriority as any,
+        deadline: newDeadline ? format(newDeadline, 'yyyy-MM-dd') : null,
         attachment_url: attachmentUrl
       });
 
@@ -168,7 +190,7 @@ const TicketList = () => {
       setCreateModalOpen(false);
       setNewTitle("");
       setNewDescription("");
-      setNewPriority("medium");
+      setNewDeadline(getMinDeadline());
       setNewAttachment(null);
       fetchTickets();
     }
@@ -246,18 +268,35 @@ const TicketList = () => {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="priority">Prioridade</Label>
-                <Select value={newPriority} onValueChange={setNewPriority}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Baixa</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                    <SelectItem value="urgent">Urgente</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Prazo</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !newDeadline && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newDeadline ? format(newDeadline, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newDeadline}
+                      onSelect={setNewDeadline}
+                      disabled={(date) => !isValidDeadline(date) || isWeekend(date)}
+                      initialFocus
+                      locale={ptBR}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                    <p className="text-xs text-muted-foreground p-3 pt-0">
+                      Mínimo de 2 dias úteis (finais de semana excluídos)
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </div>
               <Button type="submit" className="w-full" disabled={isCreating || isUploading}>
                 {(isCreating || isUploading) ? (
@@ -322,12 +361,12 @@ const TicketList = () => {
                       {statusConfig[ticket.status]?.icon}
                       <span className="ml-1">{statusConfig[ticket.status]?.label}</span>
                     </Badge>
-                    <Badge 
-                      variant="outline"
-                      className={`${priorityConfig[ticket.priority]?.color} text-white border-0`}
-                    >
-                      {priorityConfig[ticket.priority]?.label}
-                    </Badge>
+                    {ticket.deadline && (
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        {format(new Date(ticket.deadline), "dd/MM/yyyy")}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>
