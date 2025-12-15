@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Loader2, User, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -24,6 +24,7 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  attachment_url: string | null;
   created_at: string;
 }
 
@@ -151,7 +152,19 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm">{ticket.description}</p>
+          <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+          {ticket.attachment_url && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-3 gap-2"
+              onClick={() => window.open(ticket.attachment_url!, '_blank')}
+            >
+              <FileText className="h-4 w-4" />
+              Ver Anexo
+              <Download className="h-3 w-3" />
+            </Button>
+          )}
           <p className="text-xs text-muted-foreground mt-2">
             Criado em {format(new Date(ticket.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
           </p>
