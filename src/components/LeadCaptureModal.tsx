@@ -67,14 +67,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
     },
   });
 
-  // Watch contract consent to trigger login prompt
-  const contractConsent = form.watch("contractConsent");
-
-  useEffect(() => {
-    if (contractConsent && !user) {
-      setShowLoginPrompt(true);
-    }
-  }, [contractConsent, user]);
+  // Contract consent no longer needs login prompt - checkbox is disabled for non-logged users
 
   const onSubmit = async (data: FormData) => {
     // If user is not logged in, redirect to auth
@@ -211,29 +204,52 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        disabled={!user}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm font-normal cursor-pointer leading-relaxed">
-                        Li e concordo com o{" "}
-                        <button
-                          type="button"
-                          onClick={() => setContractModalOpen(true)}
-                          className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
-                        >
-                          Contrato de Serviços Advocatícios de Partido
-                        </button>
-                        . Declaro estar ciente de que a mensalidade de R$ 997,00 refere-se aos serviços de Monitoramento e Triagem de Risco, e que atuações contenciosas (recursos/ações) serão cobradas conforme{" "}
-                        <button
-                          type="button"
-                          onClick={() => setPricingModalOpen(true)}
-                          className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
-                        >
-                          Tabela de Honorários
-                        </button>{" "}
-                        anexa.
-                      </FormLabel>
-                      <FormMessage />
+                      {!user ? (
+                        <div className="space-y-2">
+                          <FormLabel className="text-sm font-normal text-muted-foreground leading-relaxed">
+                            Li e concordo com o Contrato de Serviços Advocatícios de Partido e a Tabela de Honorários anexa.
+                          </FormLabel>
+                          <p className="text-xs text-amber-600 font-medium">
+                            Faça login para visualizar os documentos e aceitar os termos.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleLoginRedirect}
+                            className="mt-2"
+                          >
+                            Fazer Login
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <FormLabel className="text-sm font-normal cursor-pointer leading-relaxed">
+                            Li e concordo com o{" "}
+                            <button
+                              type="button"
+                              onClick={() => setContractModalOpen(true)}
+                              className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
+                            >
+                              Contrato de Serviços Advocatícios de Partido
+                            </button>
+                            . Declaro estar ciente de que a mensalidade de R$ 997,00 refere-se aos serviços de Monitoramento e Triagem de Risco, e que atuações contenciosas (recursos/ações) serão cobradas conforme{" "}
+                            <button
+                              type="button"
+                              onClick={() => setPricingModalOpen(true)}
+                              className="text-gold underline underline-offset-2 hover:text-gold/80 font-medium"
+                            >
+                              Tabela de Honorários
+                            </button>{" "}
+                            anexa.
+                          </FormLabel>
+                          <FormMessage />
+                        </>
+                      )}
                     </div>
                   </FormItem>
                 )}
