@@ -36,8 +36,8 @@ const Membros = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        // Allow access if contract accepted, trial active, or subscription active
-        if (profile?.contract_accepted || profile?.trial_active || profile?.subscription_active) {
+        // Allow access only if trial active or subscription active (Asaas payment)
+        if (profile?.trial_active || profile?.subscription_active) {
           setHasAcceptedContract(true);
         } else {
           // Redirect to homepage to show contract modal
