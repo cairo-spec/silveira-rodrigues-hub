@@ -104,7 +104,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const payload: AsaasWebhookPayload = await req.json();
-    console.log("Webhook payload:", JSON.stringify(payload, null, 2));
+    // Log only non-sensitive event metadata (sanitized)
+    console.log("Webhook received:", {
+      event: payload.event,
+      timestamp: payload.dateCreated,
+      hasPayment: !!payload.payment,
+      hasSubscription: !!payload.subscription,
+    });
 
     // Validate timestamp to prevent replay attacks
     if (payload.dateCreated && !isTimestampValid(payload.dateCreated)) {
@@ -192,14 +198,14 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (profileError || !profile) {
-      console.error("Profile not found for email:", customerEmail, profileError);
+      console.error("Profile not found for provided email");
       return new Response(JSON.stringify({ error: "User not found" }), {
         status: 404,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    console.log("Found profile:", profile);
+    console.log("Profile found, proceeding with update");
 
     // Update profile to mark contract as accepted
     const { error: updateError } = await supabase
@@ -313,7 +319,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Email sent successfully to:", customerEmail);
+    console.log("Email sent successfully");
 
     return new Response(
       JSON.stringify({ 
