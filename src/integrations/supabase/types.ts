@@ -322,6 +322,8 @@ export type Database = {
           description: string
           id: string
           priority: Database["public"]["Enums"]["ticket_priority"]
+          service_category: string | null
+          service_price: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
           updated_at: string
@@ -334,6 +336,8 @@ export type Database = {
           description: string
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          service_category?: string | null
+          service_price?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
           updated_at?: string
@@ -346,6 +350,8 @@ export type Database = {
           description?: string
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          service_category?: string | null
+          service_price?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           updated_at?: string
