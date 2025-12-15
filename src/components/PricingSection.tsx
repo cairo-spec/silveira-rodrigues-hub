@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import LeadCaptureModal from "./LeadCaptureModal";
 const benefits = [{
   icon: Bell,
-  text: "Oportunidades curadas via Painel de Gestão"
+  text: "Licitações curadas via Painel de Gestão"
 }, {
   icon: FileText,
   text: "Relatório de Risco Parametrizado (Metodologia COSO ERM)"
