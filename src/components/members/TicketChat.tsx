@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { notifyAdmins } from "@/lib/notifications";
 
 interface TicketMessage {
   id: string;
@@ -115,6 +116,16 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         message: newMessage.trim(),
         is_admin: false
       });
+
+    if (!error) {
+      // Notify admins about new message
+      notifyAdmins(
+        'ticket_message',
+        'Nova mensagem em ticket',
+        `O usuário enviou uma mensagem no ticket "${ticket.title}"`,
+        ticket.id
+      );
+    }
 
     setIsSending(false);
 

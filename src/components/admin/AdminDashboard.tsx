@@ -10,6 +10,7 @@ import AdminChats from "./AdminChats";
 import AdminUsers from "./AdminUsers";
 import AdminPricingTable from "./AdminPricingTable";
 import SettingsPanel from "../members/SettingsPanel";
+import NotificationBell from "../members/NotificationBell";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -39,15 +40,26 @@ const AdminDashboard = () => {
                 <p className="text-sm opacity-80">{user?.email}</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleSignOut}
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
+            <div className="flex items-center gap-2">
+              <NotificationBell 
+                onNotificationClick={(type) => {
+                  if (type === 'ticket_message' || type === 'new_ticket') {
+                    setActiveTab('tickets');
+                  } else if (type === 'chat_message') {
+                    setActiveTab('chats');
+                  }
+                }}
+              />
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleSignOut}
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </div>
         </div>
       </header>
