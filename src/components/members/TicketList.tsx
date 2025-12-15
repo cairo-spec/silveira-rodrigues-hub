@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TicketChat from "./TicketChat";
@@ -21,6 +21,7 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  attachment_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +53,8 @@ const TicketList = () => {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newPriority, setNewPriority] = useState("medium");
+  const [newAttachment, setNewAttachment] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchTickets();
@@ -104,6 +107,40 @@ const TicketList = () => {
     if (!user) return;
 
     setIsCreating(true);
+    setIsUploading(true);
+
+    let attachmentUrl: string | null = null;
+
+    // Upload attachment if provided
+    if (newAttachment) {
+      const fileExt = newAttachment.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('ticket-files')
+        .upload(filePath, newAttachment);
+
+      if (uploadError) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível fazer upload do anexo",
+          variant: "destructive"
+        });
+        setIsCreating(false);
+        setIsUploading(false);
+        return;
+      }
+
+      // Get signed URL for private bucket
+      const { data: urlData } = await supabase.storage
+        .from('ticket-files')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+      attachmentUrl = urlData?.signedUrl || null;
+    }
+
+    setIsUploading(false);
 
     const { error } = await supabase
       .from('tickets')
@@ -111,7 +148,8 @@ const TicketList = () => {
         user_id: user.id,
         title: newTitle,
         description: newDescription,
-        priority: newPriority as any
+        priority: newPriority as any,
+        attachment_url: attachmentUrl
       });
 
     setIsCreating(false);
@@ -131,6 +169,7 @@ const TicketList = () => {
       setNewTitle("");
       setNewDescription("");
       setNewPriority("medium");
+      setNewAttachment(null);
       fetchTickets();
     }
   };
@@ -180,9 +219,31 @@ const TicketList = () => {
                   placeholder="Descreva detalhadamente seu problema ou solicitação"
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  rows={4}
+                  rows={6}
+                  maxLength={5000}
                   required
                 />
+                <p className="text-xs text-muted-foreground text-right">
+                  {newDescription.length}/5000 caracteres
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="attachment">Anexo (opcional)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="attachment"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                    onChange={(e) => setNewAttachment(e.target.files?.[0] || null)}
+                    className="flex-1"
+                  />
+                </div>
+                {newAttachment && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Paperclip className="h-3 w-3" />
+                    {newAttachment.name}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="priority">Prioridade</Label>
@@ -198,9 +259,15 @@ const TicketList = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full" disabled={isCreating}>
-                {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Criar Ticket
+              <Button type="submit" className="w-full" disabled={isCreating || isUploading}>
+                {(isCreating || isUploading) ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    {isUploading ? "Enviando anexo..." : "Criando..."}
+                  </>
+                ) : (
+                  "Criar Ticket"
+                )}
               </Button>
             </form>
           </DialogContent>
@@ -240,6 +307,12 @@ const TicketList = () => {
                     <CardDescription className="line-clamp-2 mt-1">
                       {ticket.description}
                     </CardDescription>
+                    {ticket.attachment_url && (
+                      <Badge variant="outline" className="mt-2 gap-1 w-fit">
+                        <FileText className="h-3 w-3" />
+                        Anexo
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     <Badge 
