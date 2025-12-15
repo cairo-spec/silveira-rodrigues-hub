@@ -131,7 +131,7 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
             {showLoginPrompt && !user 
-              ? "Para continuar, faça login ou crie sua conta"
+              ? "Para aceitar o contrato e visualizar a tabela de honorários, você precisa estar logado"
               : "Preencha seus dados para continuar para o pagamento seguro"
             }
           </DialogDescription>
@@ -141,11 +141,11 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
           <div className="space-y-4 mt-4">
             <div className="bg-muted p-4 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-4">
-                Você aceitou o contrato e a tabela de honorários. 
-                Agora, faça login para continuar com a assinatura.
+                Para aceitar o contrato e acessar a tabela de honorários, 
+                é necessário criar uma conta ou fazer login primeiro.
               </p>
               <Button onClick={handleLoginRedirect} className="w-full">
-                Fazer Login / Criar Conta
+                Criar Conta / Fazer Login
               </Button>
             </div>
             <Button 
