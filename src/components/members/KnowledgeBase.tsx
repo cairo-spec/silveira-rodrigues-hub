@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, BookOpen, Eye, Loader2, FileText, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface KBCategory {
   id: string;
@@ -28,11 +29,13 @@ interface KnowledgeBaseProps {
 }
 
 const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
+  const { toast } = useToast();
   const [categories, setCategories] = useState<KBCategory[]>([]);
   const [articles, setArticles] = useState<KBArticle[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<KBCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingArticleId, setLoadingArticleId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -66,15 +69,49 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
   };
 
   const handleViewArticle = async (article: KBArticle) => {
-    // Increment view count
-    await supabase
-      .from('kb_articles')
-      .update({ views: article.views + 1 })
-      .eq('id', article.id);
+    if (!article.file_url) {
+      toast({ title: "Erro", description: "Este artigo não possui arquivo anexado", variant: "destructive" });
+      return;
+    }
 
-    // Open PDF in new tab
-    if (article.file_url) {
-      window.open(article.file_url, '_blank');
+    setLoadingArticleId(article.id);
+
+    try {
+      // Get the current session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({ title: "Erro", description: "Você precisa estar logado para acessar este arquivo", variant: "destructive" });
+        setLoadingArticleId(null);
+        return;
+      }
+
+      // Call edge function to get signed URL with subscription validation
+      const { data, error } = await supabase.functions.invoke('get-kb-file-url', {
+        body: { articleId: article.id }
+      });
+
+      if (error) {
+        console.error('Error getting signed URL:', error);
+        toast({ title: "Erro", description: "Não foi possível acessar o arquivo", variant: "destructive" });
+        setLoadingArticleId(null);
+        return;
+      }
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+        // Update local view count optimistically
+        setArticles(prev => prev.map(a => 
+          a.id === article.id ? { ...a, views: a.views + 1 } : a
+        ));
+      } else {
+        toast({ title: "Erro", description: data?.error || "Não foi possível gerar o link do arquivo", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error('Error viewing article:', err);
+      toast({ title: "Erro", description: "Erro ao acessar o arquivo", variant: "destructive" });
+    } finally {
+      setLoadingArticleId(null);
     }
   };
 
@@ -179,9 +216,14 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
                       variant="outline"
                       onClick={() => handleViewArticle(article)}
                       className="gap-1"
+                      disabled={loadingArticleId === article.id}
                     >
-                      <Download className="h-4 w-4" />
-                      Abrir
+                      {loadingArticleId === article.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      {loadingArticleId === article.id ? 'Carregando...' : 'Abrir'}
                     </Button>
                   </div>
                 </CardContent>
