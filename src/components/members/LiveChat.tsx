@@ -98,6 +98,21 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
       .on(
         'postgres_changes',
         {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${room.id}`
+        },
+        (payload) => {
+          const updatedMsg = payload.new as ChatMessage;
+          setMessages((prev) => prev.map(msg => 
+            msg.id === updatedMsg.id ? updatedMsg : msg
+          ));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'DELETE',
           schema: 'public',
           table: 'chat_messages',
@@ -339,9 +354,10 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
+    // Instead of deleting, update the message to show it was deleted
     const { error } = await supabase
       .from('chat_messages')
-      .delete()
+      .update({ message: '[DELETED]🗑️ Mensagem apagada pelo usuário' })
       .eq('id', messageId);
 
     if (error) {
@@ -351,6 +367,12 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         variant: "destructive"
       });
     } else {
+      // Update local state immediately
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, message: '[DELETED]🗑️ Mensagem apagada pelo usuário' }
+          : msg
+      ));
       toast({
         title: "Mensagem excluída",
         description: "A mensagem foi removida"
@@ -425,6 +447,8 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                 ? "Equipe" 
                 : (isLobby ? (profile?.nome || "Membro") : (isOwnMessage ? "Você" : ""));
               const category = isLobby ? getUserCategory(message.user_id, message.is_admin) : null;
+              const isDeleted = message.message.startsWith('[DELETED]');
+              const displayMessage = isDeleted ? message.message.replace('[DELETED]', '') : message.message;
               
               return (
                 <div
@@ -461,23 +485,27 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                       </div>
                     )}
                     <div className={`rounded-lg p-3 inline-block max-w-full ${
-                      message.is_admin 
-                        ? "bg-muted text-foreground" 
-                        : isOwnMessage
-                          ? isLobby
-                            ? (Date.now() - new Date(message.created_at).getTime() < 5 * 60 * 1000)
-                              ? "bg-accent text-accent-foreground"
-                              : "bg-secondary text-secondary-foreground"
-                            : "bg-primary text-primary-foreground"
-                          : "bg-secondary text-secondary-foreground"
+                      isDeleted
+                        ? "bg-muted/50 border border-dashed border-muted-foreground/30"
+                        : message.is_admin 
+                          ? "bg-muted text-foreground" 
+                          : isOwnMessage
+                            ? isLobby
+                              ? (Date.now() - new Date(message.created_at).getTime() < 5 * 60 * 1000)
+                                ? "bg-accent text-accent-foreground"
+                                : "bg-secondary text-secondary-foreground"
+                              : "bg-primary text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.message}</p>
+                      <p className={`text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${
+                        isDeleted ? "italic text-muted-foreground" : ""
+                      }`}>{displayMessage}</p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(message.created_at), "HH:mm", { locale: ptBR })}
                       </p>
-                      {isLobby && isOwnMessage && !message.is_admin && (
+                      {isLobby && isOwnMessage && !message.is_admin && !isDeleted && (
                         <Button
                           variant="ghost"
                           size="icon"
