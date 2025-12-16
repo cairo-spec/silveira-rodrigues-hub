@@ -273,7 +273,7 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         </CollapsibleContent>
       </Collapsible>
 
-      <Card className="flex flex-col h-[400px]">
+      <Card className="flex flex-col h-[400px] md:h-[calc(100vh-480px)] min-h-[400px]">
         <CardHeader className="pb-2 border-b">
           <CardTitle className="text-sm font-semibold">Conversa</CardTitle>
         </CardHeader>
