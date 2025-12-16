@@ -356,8 +356,8 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
                 placeholder="Digite sua mensagem..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                className="min-h-[40px] max-h-[120px] resize-none"
-                rows={1}
+                className="min-h-[120px] max-h-[200px] resize-none"
+                rows={5}
               />
               <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
                 {isSending ? (
