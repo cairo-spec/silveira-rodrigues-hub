@@ -444,7 +444,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                       <User className="h-4 w-4" />
                     )}
                   </div>
-                  <div className={`max-w-[70%] ${message.is_admin ? "" : isOwnMessage ? "text-right" : ""}`}>
+                  <div className={`max-w-[85%] ${message.is_admin ? "" : isOwnMessage ? "text-right" : ""}`}>
                     {isLobby && (
                       <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? "justify-end" : ""}`}>
                         <p className="text-xs font-medium">{senderName}</p>
@@ -460,14 +460,14 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                         )}
                       </div>
                     )}
-                    <div className={`rounded-lg p-3 ${
+                    <div className={`rounded-lg p-3 inline-block ${
                       message.is_admin 
                         ? "bg-muted text-foreground" 
                         : isOwnMessage
                           ? "bg-primary text-primary-foreground"
                           : "bg-secondary text-secondary-foreground"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">

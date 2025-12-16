@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw } from "lucide-react";
+import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
@@ -21,6 +21,7 @@ interface Ticket {
   deadline: string | null;
   service_category: string | null;
   service_price: string | null;
+  attachment_url: string | null;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -50,6 +51,9 @@ const AdminTickets = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchTickets();
@@ -170,15 +174,17 @@ const AdminTickets = () => {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
 
-    // Check if ticket was closed within last 30 days
-    const daysSinceClosed = differenceInDays(new Date(), new Date(ticket.updated_at));
-    if (ticket.status === 'closed' && daysSinceClosed > 30) {
-      toast({ 
-        title: "Erro", 
-        description: "Este ticket foi cancelado há mais de 30 dias e não pode ser reaberto", 
-        variant: "destructive" 
-      });
-      return;
+    // Check if ticket was closed within last 30 days of inactivity (only for reopening canceled tickets)
+    if (ticket.status === 'closed') {
+      const daysSinceClosed = differenceInDays(new Date(), new Date(ticket.updated_at));
+      if (daysSinceClosed > 30) {
+        toast({ 
+          title: "Erro", 
+          description: "Este ticket foi cancelado há mais de 30 dias e não pode ser reaberto", 
+          variant: "destructive" 
+        });
+        return;
+      }
     }
 
     if (ticket.status === 'resolved') {
@@ -195,17 +201,47 @@ const AdminTickets = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTicket || !newMessage.trim()) return;
+    if (!selectedTicket || (!newMessage.trim() && !attachment)) return;
 
     setIsSending(true);
     const { data: { user } } = await supabase.auth.getUser();
+    let messageText = newMessage.trim();
+
+    // Handle file upload
+    if (attachment) {
+      setIsUploading(true);
+      const fileExt = attachment.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `ticket/${selectedTicket.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('ticket-files')
+        .upload(filePath, attachment);
+
+      if (uploadError) {
+        toast({ title: "Erro", description: "Não foi possível fazer upload do arquivo", variant: "destructive" });
+        setIsUploading(false);
+        setIsSending(false);
+        return;
+      }
+
+      const { data: urlData } = await supabase.storage
+        .from('ticket-files')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+      messageText = messageText 
+        ? `${messageText}\n\n📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`
+        : `📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`;
+      
+      setIsUploading(false);
+    }
     
     const { error } = await supabase
       .from('ticket_messages')
       .insert({
         ticket_id: selectedTicket.id,
         user_id: user?.id,
-        message: newMessage.trim(),
+        message: messageText,
         is_admin: true
       });
 
@@ -224,6 +260,14 @@ const AdminTickets = () => {
       toast({ title: "Erro", description: "Não foi possível enviar mensagem", variant: "destructive" });
     } else {
       setNewMessage("");
+      setAttachment(null);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment(file);
     }
   };
 
@@ -233,6 +277,7 @@ const AdminTickets = () => {
     const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category) : null;
     const canReopen = selectedTicket.status === 'closed' && 
                       differenceInDays(new Date(), new Date(selectedTicket.updated_at)) <= 30;
+    const hasAttachment = selectedTicket.attachment_url;
     
     return (
       <div className="space-y-4">
@@ -241,7 +286,20 @@ const AdminTickets = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h2 className="text-xl font-bold">{selectedTicket.title}</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold">{selectedTicket.title}</h2>
+              {hasAttachment && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={() => window.open(selectedTicket.attachment_url!, '_blank')}
+                >
+                  <FileText className="h-4 w-4" />
+                  <Download className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {selectedTicket.profiles?.nome} • {selectedTicket.profiles?.email}
             </p>
@@ -327,7 +385,32 @@ const AdminTickets = () => {
           </CardContent>
           {selectedTicket.status !== 'resolved' && selectedTicket.status !== 'closed' && (
             <div className="p-4 border-t">
+              {attachment && (
+                <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAttachment(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <form onSubmit={handleSendMessage} className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSending}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
                 <Textarea
                   placeholder="Responder ao usuário..."
                   value={newMessage}
@@ -335,7 +418,7 @@ const AdminTickets = () => {
                   className="min-h-[40px] max-h-[120px] resize-none"
                   rows={1}
                 />
-                <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
+                <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
                   {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </form>

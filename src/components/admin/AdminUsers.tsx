@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, ShieldCheck, User, Clock, CreditCard, UserCheck, UserX } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, Users, ShieldCheck, User, Clock, CreditCard, UserCheck, UserX, Timer } from "lucide-react";
+import { format, differenceInDays, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface Profile {
@@ -17,6 +17,7 @@ interface Profile {
   empresa: string | null;
   subscription_active: boolean | null;
   trial_active: boolean | null;
+  trial_expires_at: string | null;
   access_authorized: boolean | null;
   created_at: string;
 }
@@ -82,17 +83,30 @@ const AdminUsers = () => {
   const toggleTrial = async (profile: Profile) => {
     const newTrialStatus = !profile.trial_active;
     
+    // Set expiration date to 30 days from now when activating trial
+    const trialExpiresAt = newTrialStatus ? addDays(new Date(), 30).toISOString() : null;
+    
     const { error } = await supabase
       .from('profiles')
-      .update({ trial_active: newTrialStatus })
+      .update({ 
+        trial_active: newTrialStatus,
+        trial_expires_at: trialExpiresAt
+      })
       .eq('user_id', profile.user_id);
 
     if (error) {
       toast({ title: "Erro", description: "Não foi possível atualizar o trial", variant: "destructive" });
     } else {
-      toast({ title: newTrialStatus ? "Período de teste ativado" : "Período de teste revogado" });
+      toast({ title: newTrialStatus ? "Período de teste ativado (30 dias)" : "Período de teste revogado" });
       fetchData();
     }
+  };
+
+  // Calculate days remaining for trial
+  const getTrialDaysRemaining = (expiresAt: string | null): number | null => {
+    if (!expiresAt) return null;
+    const days = differenceInDays(new Date(expiresAt), new Date());
+    return days >= 0 ? days : 0;
   };
 
   const toggleAccess = async (profile: Profile) => {
@@ -181,7 +195,12 @@ const AdminUsers = () => {
                         {profile.trial_active && !profile.subscription_active && (
                           <Badge variant="outline" className="border-amber-500 text-amber-600">
                             <Clock className="h-3 w-3 mr-1" />
-                            Período de Teste
+                            Trial
+                            {profile.trial_expires_at && (
+                              <span className="ml-1 font-bold">
+                                ({getTrialDaysRemaining(profile.trial_expires_at)}d)
+                              </span>
+                            )}
                           </Badge>
                         )}
                         {isFree && profile.access_authorized && (

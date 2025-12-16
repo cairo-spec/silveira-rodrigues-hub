@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Users, Headphones } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Users, Headphones, Paperclip, X, FileText } from "lucide-react";
+import { format, differenceInHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
 
@@ -41,7 +41,10 @@ const AdminChats = () => {
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState("support");
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchRooms();
@@ -130,28 +133,45 @@ const AdminChats = () => {
 
     const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
 
-    // Get unread counts and last message time for each room
+    // Get current user for admin check
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    // Get unread counts, last message time, and filter active rooms
     const roomsWithDetails = await Promise.all((roomsData || []).map(async (room) => {
+      // Get all messages for this room
       const { data: messagesData } = await supabase
         .from('chat_messages')
-        .select('created_at')
+        .select('created_at, is_admin')
         .eq('room_id', room.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .order('created_at', { ascending: false });
+
+      const lastMessage = messagesData?.[0];
+      const lastMessageAt = lastMessage?.created_at || room.created_at;
+      
+      // Count unread messages (messages from user that admin hasn't seen)
+      const unreadCount = messagesData?.filter(m => !m.is_admin).length || 0;
 
       return {
         ...room,
         profiles: profilesMap.get(room.user_id) || null,
-        last_message_at: messagesData?.[0]?.created_at || room.created_at
+        last_message_at: lastMessageAt,
+        unread_count: unreadCount
       };
     }));
 
-    // Sort by last message time
-    roomsWithDetails.sort((a, b) => 
+    // Filter: show only rooms with messages in last 24h OR with unread messages
+    const now = new Date();
+    const activeRooms = roomsWithDetails.filter(room => {
+      const hoursSinceLastMessage = differenceInHours(now, new Date(room.last_message_at || room.created_at));
+      return hoursSinceLastMessage <= 24 || (room.unread_count && room.unread_count > 0);
+    });
+
+    // Sort by last message time (most recent first)
+    activeRooms.sort((a, b) => 
       new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
     );
 
-    setRooms(roomsWithDetails);
+    setRooms(activeRooms);
     setLobbyRoom(lobbyData);
     setIsLoading(false);
   };
@@ -185,17 +205,47 @@ const AdminChats = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRoom || !newMessage.trim()) return;
+    if (!selectedRoom || (!newMessage.trim() && !attachment)) return;
 
     setIsSending(true);
     const { data: { user } } = await supabase.auth.getUser();
+    let messageText = newMessage.trim();
+
+    // Handle file upload for support chat
+    if (attachment && selectedRoom.room_type === 'suporte') {
+      setIsUploading(true);
+      const fileExt = attachment.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `chat/${selectedRoom.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('ticket-files')
+        .upload(filePath, attachment);
+
+      if (uploadError) {
+        toast({ title: "Erro", description: "Não foi possível fazer upload do arquivo", variant: "destructive" });
+        setIsUploading(false);
+        setIsSending(false);
+        return;
+      }
+
+      const { data: urlData } = await supabase.storage
+        .from('ticket-files')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+      messageText = messageText 
+        ? `${messageText}\n\n📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`
+        : `📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`;
+      
+      setIsUploading(false);
+    }
     
     const { error } = await supabase
       .from('chat_messages')
       .insert({
         room_id: selectedRoom.id,
         user_id: user?.id,
-        message: newMessage.trim(),
+        message: messageText,
         is_admin: true
       });
 
@@ -214,6 +264,14 @@ const AdminChats = () => {
       toast({ title: "Erro", description: "Não foi possível enviar mensagem", variant: "destructive" });
     } else {
       setNewMessage("");
+      setAttachment(null);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment(file);
     }
   };
 
@@ -273,16 +331,16 @@ const AdminChats = () => {
                   }`}>
                     {msg.is_admin ? <ShieldCheck className="h-4 w-4" /> : <User className="h-4 w-4" />}
                   </div>
-                  <div className={`max-w-[70%] ${msg.is_admin ? "text-right" : ""}`}>
+                  <div className={`max-w-[85%] ${msg.is_admin ? "text-right" : ""}`}>
                     {isLobby && (
                       <p className={`text-xs font-medium mb-1 ${msg.is_admin ? "text-right" : ""}`}>
                         {senderName}
                       </p>
                     )}
-                    <div className={`rounded-lg p-3 ${
+                    <div className={`rounded-lg p-3 inline-block ${
                       msg.is_admin ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}>
-                      <p className="text-sm">{msg.message}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${msg.is_admin ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
@@ -307,7 +365,36 @@ const AdminChats = () => {
             <div ref={messagesEndRef} />
           </CardContent>
           <div className="p-4 border-t">
+            {attachment && (
+              <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAttachment(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             <form onSubmit={handleSendMessage} className="flex gap-2">
+              {!isLobby && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isSending}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
               <Textarea
                 placeholder="Responder..."
                 value={newMessage}
@@ -315,7 +402,7 @@ const AdminChats = () => {
                 className="min-h-[40px] max-h-[120px] resize-none"
                 rows={1}
               />
-              <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
+              <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
                 {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </form>
@@ -364,7 +451,14 @@ const AdminChats = () => {
                         <CardTitle className="text-lg">{room.profiles?.nome}</CardTitle>
                         <CardDescription>{room.profiles?.email}</CardDescription>
                       </div>
-                      <Badge variant="secondary" className="bg-green-500 text-white">Ativo</Badge>
+                      <div className="flex items-center gap-2">
+                        {room.unread_count && room.unread_count > 0 && (
+                          <Badge variant="destructive" className="rounded-full">
+                            {room.unread_count}
+                          </Badge>
+                        )}
+                        <Badge variant="secondary" className="bg-green-500 text-white">Ativo</Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
