@@ -65,6 +65,10 @@ const AdminChats = () => {
     if (selectedRoom) {
       fetchMessages(selectedRoom.id);
       clearNotificationsByReference(selectedRoom.id);
+      
+      // Mark room as read by admin
+      const lastReadKey = `admin_chat_read_${selectedRoom.id}`;
+      localStorage.setItem(lastReadKey, new Date().toISOString());
 
       const channel = supabase
         .channel(`admin-room-${selectedRoom.id}`)
@@ -148,8 +152,16 @@ const AdminChats = () => {
       const lastMessage = messagesData?.[0];
       const lastMessageAt = lastMessage?.created_at || room.created_at;
       
-      // Count unread messages (messages from user that admin hasn't seen)
-      const unreadCount = messagesData?.filter(m => !m.is_admin).length || 0;
+      // Get last read timestamp from localStorage
+      const lastReadKey = `admin_chat_read_${room.id}`;
+      const lastReadAt = localStorage.getItem(lastReadKey);
+      
+      // Count unread messages (non-admin messages after last read)
+      const unreadCount = messagesData?.filter(m => {
+        if (m.is_admin) return false; // Admin's own messages are not unread
+        if (!lastReadAt) return true; // Never read = all user messages are unread
+        return new Date(m.created_at) > new Date(lastReadAt);
+      }).length || 0;
 
       return {
         ...room,
