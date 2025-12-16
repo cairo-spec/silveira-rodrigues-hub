@@ -368,6 +368,7 @@ export type Database = {
           deadline: string | null
           description: string
           id: string
+          is_archived: boolean
           priority: Database["public"]["Enums"]["ticket_priority"]
           service_category: string | null
           service_price: string | null
@@ -383,6 +384,7 @@ export type Database = {
           deadline?: string | null
           description: string
           id?: string
+          is_archived?: boolean
           priority?: Database["public"]["Enums"]["ticket_priority"]
           service_category?: string | null
           service_price?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           deadline?: string | null
           description?: string
           id?: string
+          is_archived?: boolean
           priority?: Database["public"]["Enums"]["ticket_priority"]
           service_category?: string | null
           service_price?: string | null
