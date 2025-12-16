@@ -282,6 +282,47 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_value: string | null
+          old_value: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_messages: {
         Row: {
           created_at: string
@@ -331,6 +372,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          version: number | null
         }
         Insert: {
           attachment_url?: string | null
@@ -345,6 +387,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          version?: number | null
         }
         Update: {
           attachment_url?: string | null
@@ -359,6 +402,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          version?: number | null
         }
         Relationships: [
           {

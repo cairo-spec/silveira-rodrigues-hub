@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Info } from "lucide-react";
 
 const pricingData = [
   {
@@ -82,12 +84,21 @@ const PricingTable = ({ isPaidSubscriber = false }: PricingTableProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tabela de Honorários</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-gold" />
+          Tabela de Honorários
+        </CardTitle>
         <CardDescription>
           {isPaidSubscriber 
             ? "Você tem acesso aos preços especiais de assinante" 
             : "Assine o Jornal de Licitações e tenha acesso a preços especiais"}
         </CardDescription>
+        {!isPaidSubscriber && (
+          <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 p-2 rounded-md mt-2">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>Preços riscados mostram o valor avulso. Assine para economizar!</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[calc(100vh-280px)]">
@@ -99,12 +110,14 @@ const PricingTable = ({ isPaidSubscriber = false }: PricingTableProps) => {
                     {category.category}
                   </h3>
                 </div>
-                <div className="divide-y">
+                
+                {/* Desktop: Table layout */}
+                <div className="hidden md:block divide-y">
                   {category.items.map((item, itemIdx) => (
                     <div key={itemIdx} className="p-4 hover:bg-muted/50 transition-colors">
                       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-foreground text-sm">
+                          <h4 className="font-semibold text-foreground text-sm">
                             {item.service}
                           </h4>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -114,22 +127,22 @@ const PricingTable = ({ isPaidSubscriber = false }: PricingTableProps) => {
                         {category.category.includes("ÊXITO") ? (
                           <div className="flex justify-center lg:w-[420px]">
                             <div className="text-center">
-                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Taxa de Êxito</p>
+                              <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Taxa de Êxito</p>
                               <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 text-xs font-semibold">
                                 {item.successFee}
                               </Badge>
                             </div>
                           </div>
                         ) : (
-                        <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-nowrap lg:gap-4 lg:shrink-0 w-full lg:w-auto">
+                          <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-nowrap lg:gap-4 lg:shrink-0 w-full lg:w-auto">
                             <div className="text-center lg:w-[120px]">
-                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Avulso</p>
-                              <p className={`text-[10px] sm:text-xs font-medium ${isPaidSubscriber ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                              <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Avulso</p>
+                              <p className={`text-[10px] sm:text-xs font-semibold ${isPaidSubscriber ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                                 {item.priceRegular}
                               </p>
                             </div>
                             <div className="text-center lg:w-[160px]">
-                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Assinante</p>
+                              <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Assinante</p>
                               <Badge 
                                 variant="secondary" 
                                 className={`text-[10px] sm:text-xs font-semibold ${isPaidSubscriber ? 'bg-gold/10 text-gold border-gold/20' : 'bg-muted text-muted-foreground'}`}
@@ -138,14 +151,62 @@ const PricingTable = ({ isPaidSubscriber = false }: PricingTableProps) => {
                               </Badge>
                             </div>
                             <div className="text-center lg:w-[140px]">
-                              <p className="text-[10px] uppercase text-muted-foreground mb-1">Êxito</p>
-                              <p className="text-[10px] sm:text-xs font-medium text-foreground">
+                              <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Êxito</p>
+                              <p className="text-[10px] sm:text-xs font-semibold text-foreground">
                                 {item.successFee !== "N/A" ? item.successFee : "—"}
                               </p>
                             </div>
                           </div>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mobile: Card layout */}
+                <div className="md:hidden divide-y">
+                  {category.items.map((item, itemIdx) => (
+                    <div key={itemIdx} className="p-4 space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm">
+                          {item.service}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {item.description}
+                        </p>
+                      </div>
+                      
+                      {category.category.includes("ÊXITO") ? (
+                        <div className="bg-gold/5 rounded-lg p-3 text-center">
+                          <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Taxa de Êxito</p>
+                          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 text-sm font-semibold">
+                            {item.successFee}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-muted/50 rounded-lg p-2 text-center">
+                            <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Avulso</p>
+                            <p className={`text-xs font-semibold ${isPaidSubscriber ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                              {item.priceRegular}
+                            </p>
+                          </div>
+                          <div className={`rounded-lg p-2 text-center ${isPaidSubscriber ? 'bg-gold/10' : 'bg-muted/50'}`}>
+                            <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Assinante</p>
+                            <p className={`text-xs font-semibold ${isPaidSubscriber ? 'text-gold' : 'text-foreground'}`}>
+                              {item.priceSubscriber}
+                            </p>
+                          </div>
+                          {item.successFee !== "N/A" && (
+                            <div className="col-span-2 bg-primary/5 rounded-lg p-2 text-center">
+                              <p className="text-[10px] uppercase text-muted-foreground font-medium mb-1">Honorários de Êxito</p>
+                              <p className="text-xs font-semibold text-primary">
+                                {item.successFee}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
