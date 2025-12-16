@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X } from "lucide-react";
+import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
@@ -199,6 +199,35 @@ const AdminTickets = () => {
     await handleStatusChange(ticketId, 'open');
   };
 
+  const handleDeleteTicket = async (ticketId: string) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    // Delete related messages first
+    await supabase.from('ticket_messages').delete().eq('ticket_id', ticketId);
+    
+    // Delete related events
+    await supabase.from('ticket_events').delete().eq('ticket_id', ticketId);
+    
+    // Delete related notifications
+    await supabase.from('notifications').delete().eq('reference_id', ticketId);
+
+    // Delete the ticket
+    const { error } = await supabase.from('tickets').delete().eq('id', ticketId);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível deletar o ticket", variant: "destructive" });
+    } else {
+      toast({ title: "Ticket deletado com sucesso" });
+      setSelectedTicket(null);
+      fetchTickets();
+    }
+  };
+
+  const canDeleteTicket = (ticket: Ticket) => {
+    return ticket.status === 'closed' && differenceInDays(new Date(), new Date(ticket.updated_at)) >= 5;
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTicket || (!newMessage.trim() && !attachment)) return;
@@ -277,6 +306,7 @@ const AdminTickets = () => {
     const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category) : null;
     const canReopen = selectedTicket.status === 'closed' && 
                       differenceInDays(new Date(), new Date(selectedTicket.updated_at)) <= 30;
+    const canDelete = canDeleteTicket(selectedTicket);
     const hasAttachment = selectedTicket.attachment_url;
     
     return (
@@ -309,6 +339,12 @@ const AdminTickets = () => {
               <Button variant="outline" size="sm" onClick={() => handleReopenTicket(selectedTicket.id)}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reabrir
+              </Button>
+            )}
+            {canDelete && (
+              <Button variant="destructive" size="sm" onClick={() => handleDeleteTicket(selectedTicket.id)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Deletar
               </Button>
             )}
             <Select value={selectedTicket.status} onValueChange={(v) => handleStatusChange(selectedTicket.id, v)}>
