@@ -432,7 +432,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         </p>
       </div>
 
-      <Card className="flex flex-col h-[500px] relative">
+      <Card className="flex flex-col h-[500px] md:h-[calc(100vh-280px)] min-h-[500px] relative">
         <CardHeader className="pb-2 border-b">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
