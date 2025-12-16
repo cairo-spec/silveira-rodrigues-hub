@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
  * This bypasses RLS by using a SECURITY DEFINER function
  */
 export const notifyAdmins = async (
-  type: 'ticket_message' | 'ticket_status' | 'chat_message' | 'new_ticket',
+  type: 'ticket_message' | 'ticket_status' | 'chat_message' | 'new_ticket' | 'message_deleted',
   title: string,
   message: string,
   referenceId?: string

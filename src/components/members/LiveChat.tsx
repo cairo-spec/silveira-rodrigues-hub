@@ -354,6 +354,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
+    // Get the original message content before updating
+    const originalMessage = messages.find(msg => msg.id === messageId);
+    const originalContent = originalMessage?.message || '';
+    const userName = userProfiles[originalMessage?.user_id || '']?.nome || 'Usuário';
+
     // Instead of deleting, update the message to show it was deleted
     const { error } = await supabase
       .from('chat_messages')
@@ -373,6 +378,15 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
           ? { ...msg, message: '[DELETED]🗑️ Mensagem apagada pelo usuário' }
           : msg
       ));
+
+      // Notify admins with the original message content
+      notifyAdmins(
+        'message_deleted',
+        'Mensagem apagada no Lobby',
+        `${userName} apagou: "${originalContent.substring(0, 200)}${originalContent.length > 200 ? '...' : ''}"`,
+        room?.id || undefined
+      );
+
       toast({
         title: "Mensagem excluída",
         description: "A mensagem foi removida"
