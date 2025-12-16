@@ -323,7 +323,7 @@ const AdminChats = () => {
           </div>
         </div>
 
-        <Card className="flex flex-col h-[500px]">
+        <Card className="flex flex-col h-[500px] md:h-[calc(100vh-280px)] min-h-[500px]">
           <CardHeader className="pb-2 border-b">
             <CardTitle className="text-sm flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
