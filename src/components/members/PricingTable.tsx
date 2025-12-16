@@ -96,7 +96,7 @@ const PricingTable = ({ isPaidSubscriber = false }: PricingTableProps) => {
         {!isPaidSubscriber && (
           <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 p-2 rounded-md mt-2">
             <Info className="h-4 w-4 shrink-0" />
-            <span>Preços riscados mostram o valor avulso. Assine para economizar!</span>
+            <span>Usuários padrão pagam o valor avulso. Assine para economizar!</span>
           </div>
         )}
       </CardHeader>
