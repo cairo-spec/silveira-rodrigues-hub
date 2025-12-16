@@ -464,7 +464,9 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                       message.is_admin 
                         ? "bg-muted text-foreground" 
                         : isOwnMessage
-                          ? "bg-primary text-primary-foreground"
+                          ? isLobby
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-primary text-primary-foreground"
                           : "bg-secondary text-secondary-foreground"
                     }`}>
                       <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.message}</p>
