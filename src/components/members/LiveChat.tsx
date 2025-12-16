@@ -460,14 +460,14 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                         )}
                       </div>
                     )}
-                    <div className={`rounded-lg p-3 inline-block ${
+                    <div className={`rounded-lg p-3 inline-block max-w-full ${
                       message.is_admin 
                         ? "bg-muted text-foreground" 
                         : isOwnMessage
                           ? "bg-primary text-primary-foreground"
                           : "bg-secondary text-secondary-foreground"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.message}</p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">

@@ -349,10 +349,10 @@ const AdminChats = () => {
                         {senderName}
                       </p>
                     )}
-                    <div className={`rounded-lg p-3 inline-block ${
+                    <div className={`rounded-lg p-3 inline-block max-w-full ${
                       msg.is_admin ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.message}</p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${msg.is_admin ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
