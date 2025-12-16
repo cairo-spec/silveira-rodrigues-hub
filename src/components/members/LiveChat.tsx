@@ -432,16 +432,16 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         </p>
       </div>
 
-      <Card className="flex flex-col h-[500px]">
+      <Card className="flex flex-col h-[500px] relative">
         <CardHeader className="pb-2 border-b">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             {isLobby ? "Chat público" : "Chat privado"}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 relative">
           {isLobby && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-3">
+            <div className="sticky top-0 z-10 bg-amber-50 dark:bg-amber-950/90 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-3 shadow-md backdrop-blur-sm">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
               <div className="text-sm text-amber-800 dark:text-amber-200">
                 <p className="font-medium">Aviso importante</p>
