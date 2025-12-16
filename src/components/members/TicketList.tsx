@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText, CalendarIcon, Tag } from "lucide-react";
 import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -144,13 +145,28 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
   const [newDeadline, setNewDeadline] = useState<Date | undefined>(getMinDeadline());
   const [newAttachment, setNewAttachment] = useState<File | null>(null);
   const [newCategory, setNewCategory] = useState<string>("");
+  const [includeUpgrade, setIncludeUpgrade] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   // Get selected category details
   const selectedCategory = getCategoryById(newCategory);
+  const upgradeCategory = getCategoryById("inclui-socio");
+  const isTechnicalService = selectedCategory?.category === "Técnico";
+  
   const displayPrice = selectedCategory 
     ? (isPaidSubscriber ? selectedCategory.priceSubscriber : selectedCategory.priceRegular)
     : null;
+  const upgradePrice = upgradeCategory
+    ? (isPaidSubscriber ? upgradeCategory.priceSubscriber : upgradeCategory.priceRegular)
+    : null;
+  
+  // Filter out Upgrade category from the dropdown
+  const filteredCategories = Object.entries(groupedCategories).reduce((acc, [categoryName, items]) => {
+    if (categoryName !== "Upgrade") {
+      acc[categoryName] = items;
+    }
+    return acc;
+  }, {} as Record<string, typeof serviceCategories>);
 
   useEffect(() => {
     fetchTickets();
@@ -176,6 +192,11 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  // Reset upgrade when category changes
+  useEffect(() => {
+    setIncludeUpgrade(false);
+  }, [newCategory]);
 
   const fetchTickets = async () => {
     if (!user) return;
@@ -239,9 +260,21 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
     setIsUploading(false);
 
     const category = getCategoryById(newCategory);
-    const priceToStore = category 
+    const upgrade = getCategoryById("inclui-socio");
+    const isTech = category?.category === "Técnico";
+    
+    let priceToStore = category 
       ? (isPaidSubscriber ? category.priceSubscriber : category.priceRegular)
       : null;
+    
+    let categoryToStore = newCategory;
+    
+    // If upgrade is included for technical services, append upgrade info
+    if (isTech && includeUpgrade && upgrade) {
+      const upgradePriceValue = isPaidSubscriber ? upgrade.priceSubscriber : upgrade.priceRegular;
+      priceToStore = `${priceToStore} + ${upgradePriceValue} (Upgrade)`;
+      categoryToStore = `${newCategory}+upgrade`;
+    }
 
     const { error } = await supabase
       .from('tickets')
@@ -251,7 +284,7 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
         description: newDescription,
         deadline: newDeadline ? format(newDeadline, 'yyyy-MM-dd') : null,
         attachment_url: attachmentUrl,
-        service_category: newCategory,
+        service_category: categoryToStore,
         service_price: priceToStore
       });
 
@@ -282,6 +315,7 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
       setNewDeadline(getMinDeadline());
       setNewAttachment(null);
       setNewCategory("");
+      setIncludeUpgrade(false);
       fetchTickets();
     }
   };
@@ -322,8 +356,8 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo de serviço" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(groupedCategories).map(([categoryName, items]) => (
+                <SelectContent>
+                      {Object.entries(filteredCategories).map(([categoryName, items]) => (
                         <div key={categoryName}>
                           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
                             {categoryName}
@@ -344,7 +378,7 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
                 {/* Selected Category Details */}
                 {selectedCategory && (
                   <Card className="bg-muted/50">
-                    <CardContent className="pt-4 space-y-2">
+                    <CardContent className="pt-4 space-y-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h4 className="font-medium">{selectedCategory.service}</h4>
@@ -359,11 +393,40 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
                           </Badge>
                         </div>
                       </div>
+                      
+                      {/* Honorários de Êxito */}
                       {selectedCategory.successFee !== "N/A" && (
-                        <div className="text-xs text-muted-foreground">
-                          <span className="font-medium">Taxa de Êxito:</span> {selectedCategory.successFee}
+                        <div className="p-2 bg-amber-500/10 rounded border border-amber-500/20">
+                          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                            📊 Honorários de Êxito: {selectedCategory.successFee}
+                          </p>
                         </div>
                       )}
+                      
+                      {/* Upgrade Switch for Technical Services */}
+                      {isTechnicalService && upgradeCategory && (
+                        <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{upgradeCategory.service}</p>
+                              <p className="text-xs text-muted-foreground">{upgradeCategory.description}</p>
+                            </div>
+                            <Switch 
+                              checked={includeUpgrade} 
+                              onCheckedChange={setIncludeUpgrade}
+                            />
+                          </div>
+                          {includeUpgrade && (
+                            <div className="flex items-center justify-between pt-2 border-t border-primary/10">
+                              <span className="text-xs text-muted-foreground">Valor do Upgrade:</span>
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-semibold">
+                                + {upgradePrice}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       {!isPaidSubscriber && (
                         <p className="text-xs text-primary">
                           💡 Assinantes têm preços especiais. Considere assinar o Jornal de Licitações!
