@@ -549,8 +549,8 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
               value={newMessage}
               onChange={handleMessageChange}
               onBlur={() => stopTyping()}
-              className="min-h-[40px] max-h-[120px] resize-none"
-              rows={1}
+              className="min-h-[120px] max-h-[200px] resize-none"
+              rows={5}
             />
             <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
               {isSending ? (
