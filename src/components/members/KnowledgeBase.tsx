@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, BookOpen, Eye, Loader2, FileText, Download } from "lucide-react";
+import { Search, BookOpen, Eye, Loader2, FileText, Download, FolderOpen, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface KBCategory {
@@ -104,6 +104,7 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
         setArticles(prev => prev.map(a => 
           a.id === article.id ? { ...a, views: a.views + 1 } : a
         ));
+        toast({ title: "Sucesso", description: "Arquivo aberto com sucesso" });
       } else {
         toast({ title: "Erro", description: data?.error || "Não foi possível gerar o link do arquivo", variant: "destructive" });
       }
@@ -121,32 +122,44 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
     
     const matchesCategory = !selectedCategory || article.category_id === selectedCategory.id;
     
+    // Also filter categories in search
+    if (searchQuery) {
+      const category = categories.find(c => c.id === article.category_id);
+      const matchesCategoryName = category?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return (matchesSearch || matchesCategoryName) && matchesCategory;
+    }
+    
     return matchesSearch && matchesCategory;
   });
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Base de Conhecimento</h2>
+        <h2 className="text-2xl font-semibold text-foreground">Base de Conhecimento</h2>
         <p className="text-muted-foreground">Encontre respostas para suas dúvidas</p>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar artigos..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {/* Prominent Search Bar */}
+      <Card className="border-primary/20">
+        <CardContent className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar artigos por título ou categoria..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 text-base"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Categories */}
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <Badge
             variant={selectedCategory === null ? "default" : "outline"}
-            className="cursor-pointer"
+            className="cursor-pointer px-3 py-1"
             onClick={() => setSelectedCategory(null)}
           >
             Todos
@@ -155,10 +168,11 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
             <Badge
               key={category.id}
               variant={selectedCategory?.id === category.id ? "default" : "outline"}
-              className="cursor-pointer"
+              className="cursor-pointer px-3 py-1"
               onClick={() => setSelectedCategory(category)}
             >
               {category.name}
+              {category.is_premium && <span className="ml-1">⭐</span>}
             </Badge>
           ))}
         </div>
@@ -170,16 +184,32 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredArticles.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhum artigo encontrado</h3>
-            <p className="text-muted-foreground text-center">
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="rounded-full bg-muted p-4 mb-4">
+              {searchQuery ? (
+                <Search className="h-12 w-12 text-muted-foreground" />
+              ) : (
+                <FolderOpen className="h-12 w-12 text-muted-foreground" />
+              )}
+            </div>
+            <h3 className="text-lg font-semibold mb-2">
               {searchQuery 
-                ? "Tente buscar por outros termos"
-                : "A base de conhecimento ainda está sendo construída"
+                ? "Nenhum resultado encontrado"
+                : "Nenhum artigo disponível"
+              }
+            </h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {searchQuery 
+                ? `Não encontramos artigos correspondentes a "${searchQuery}". Tente buscar por outros termos.`
+                : "A base de conhecimento está sendo construída. Em breve teremos conteúdo disponível para você."
               }
             </p>
+            {searchQuery && (
+              <Button variant="outline" onClick={() => setSearchQuery("")}>
+                Limpar busca
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -189,11 +219,11 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
             return (
               <Card 
                 key={article.id}
-                className="hover:shadow-md transition-shadow"
+                className="hover:shadow-md transition-shadow hover:border-primary/30"
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base">{article.title}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{article.title}</CardTitle>
                     {category && (
                       <Badge variant="secondary" className="shrink-0">
                         {category.name}
@@ -213,7 +243,6 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
                     </div>
                     <Button 
                       size="sm" 
-                      variant="outline"
                       onClick={() => handleViewArticle(article)}
                       className="gap-1"
                       disabled={loadingArticleId === article.id}

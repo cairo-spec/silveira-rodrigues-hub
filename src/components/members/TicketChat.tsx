@@ -6,10 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
+import TicketTimeline from "./TicketTimeline";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface TicketMessage {
   id: string;
@@ -41,6 +47,13 @@ const statusLabels: Record<string, string> = {
   closed: "Fechado"
 };
 
+const statusColors: Record<string, string> = {
+  open: "bg-blue-500",
+  in_progress: "bg-amber-500",
+  resolved: "bg-green-500",
+  closed: "bg-muted"
+};
+
 const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -48,6 +61,7 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,6 +144,11 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         `O usuário enviou uma mensagem no ticket "${ticket.title}"`,
         ticket.id
       );
+      
+      toast({
+        title: "Mensagem enviada",
+        description: "Sua mensagem foi enviada com sucesso"
+      });
     }
 
     setIsSending(false);
@@ -154,8 +173,8 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h2 className="text-xl font-bold">{ticket.title}</h2>
-          <Badge variant="secondary" className="mt-1">
+          <h2 className="text-xl font-semibold text-foreground">{ticket.title}</h2>
+          <Badge variant="secondary" className={`mt-1 text-white ${statusColors[ticket.status]}`}>
             {statusLabels[ticket.status]}
           </Badge>
         </div>
@@ -187,9 +206,31 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         </CardContent>
       </Card>
 
+      {/* Timeline Collapsible */}
+      <Collapsible open={timelineOpen} onOpenChange={setTimelineOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between">
+            <span className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Timeline de Auditoria
+            </span>
+            <Badge variant="secondary" className="ml-2">
+              {timelineOpen ? "Ocultar" : "Mostrar"}
+            </Badge>
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <Card>
+            <CardContent className="pt-4">
+              <TicketTimeline ticketId={ticket.id} ticketCreatedAt={ticket.created_at} />
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
       <Card className="flex flex-col h-[400px]">
         <CardHeader className="pb-2 border-b">
-          <CardTitle className="text-sm">Conversa</CardTitle>
+          <CardTitle className="text-sm font-semibold">Conversa</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
           {isLoading ? (
@@ -221,7 +262,7 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
                       ? "bg-muted text-foreground" 
                       : "bg-primary text-primary-foreground"
                   }`}>
-                    <p className="text-sm">{message.message}</p>
+                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(message.created_at), "HH:mm", { locale: ptBR })}
