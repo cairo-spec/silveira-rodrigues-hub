@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History, Paperclip, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
@@ -62,7 +62,10 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -123,16 +126,50 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newMessage.trim()) return;
+    if (!user || (!newMessage.trim() && !attachment)) return;
 
     setIsSending(true);
+    let messageText = newMessage.trim();
+
+    // Handle file upload
+    if (attachment) {
+      setIsUploading(true);
+      const fileExt = attachment.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `ticket/${ticket.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('ticket-files')
+        .upload(filePath, attachment);
+
+      if (uploadError) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível fazer upload do arquivo",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        setIsSending(false);
+        return;
+      }
+
+      const { data: urlData } = await supabase.storage
+        .from('ticket-files')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+      messageText = messageText 
+        ? `${messageText}\n\n📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`
+        : `📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`;
+      
+      setIsUploading(false);
+    }
 
     const { error } = await supabase
       .from('ticket_messages')
       .insert({
         ticket_id: ticket.id,
         user_id: user.id,
-        message: newMessage.trim(),
+        message: messageText,
         is_admin: false
       });
 
@@ -161,6 +198,14 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
       });
     } else {
       setNewMessage("");
+      setAttachment(null);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment(file);
     }
   };
 
@@ -256,13 +301,13 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
                     <User className="h-4 w-4" />
                   )}
                 </div>
-                <div className={`max-w-[70%] ${message.is_admin ? "" : "text-right"}`}>
-                  <div className={`rounded-lg p-3 ${
+                <div className={`max-w-[85%] ${message.is_admin ? "" : "text-right"}`}>
+                  <div className={`rounded-lg p-3 inline-block ${
                     message.is_admin 
                       ? "bg-muted text-foreground" 
                       : "bg-primary text-primary-foreground"
                   }`}>
-                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(message.created_at), "HH:mm", { locale: ptBR })}
@@ -276,7 +321,37 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         
         {!isTicketClosed && (
           <div className="p-4 border-t">
+            {attachment && (
+              <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setAttachment(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             <form onSubmit={handleSendMessage} className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSending}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <Textarea
                 placeholder="Digite sua mensagem..."
                 value={newMessage}
@@ -284,7 +359,7 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
                 className="min-h-[40px] max-h-[120px] resize-none"
                 rows={1}
               />
-              <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
+              <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
                 {isSending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (

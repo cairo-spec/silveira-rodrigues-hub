@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Bell, Shield, Loader2, Clock } from "lucide-react";
+import { Lock, Bell, Shield, Loader2, Clock, Timer } from "lucide-react";
+import { differenceInDays, differenceInHours } from "date-fns";
 
 const SESSION_TIMEOUT_OPTIONS = [
   { value: "30", label: "30 minutos" },
@@ -28,8 +29,9 @@ const SettingsPanel = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState("30");
+  const [trialInfo, setTrialInfo] = useState<{ active: boolean; expiresAt: string | null } | null>(null);
 
-  // Load settings from localStorage
+  // Load settings from localStorage and fetch trial info
   useEffect(() => {
     const savedStayLoggedIn = localStorage.getItem('stayLoggedIn');
     const savedTimeout = localStorage.getItem('sessionTimeout');
@@ -40,7 +42,26 @@ const SettingsPanel = () => {
     if (savedTimeout) {
       setSessionTimeout(savedTimeout);
     }
-  }, []);
+
+    // Fetch trial info
+    const fetchTrialInfo = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('trial_active, trial_expires_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setTrialInfo({
+          active: data.trial_active || false,
+          expiresAt: data.trial_expires_at
+        });
+      }
+    };
+
+    fetchTrialInfo();
+  }, [user]);
 
   // Session timeout logic
   useEffect(() => {
@@ -133,8 +154,38 @@ const SettingsPanel = () => {
     localStorage.setItem('sessionTimeout', value);
   };
 
+  // Calculate trial countdown
+  const getTrialCountdown = () => {
+    if (!trialInfo?.active || !trialInfo.expiresAt) return null;
+    const days = differenceInDays(new Date(trialInfo.expiresAt), new Date());
+    const hours = differenceInHours(new Date(trialInfo.expiresAt), new Date()) % 24;
+    if (days < 0) return "Expirado";
+    return `${days} dias e ${hours} horas`;
+  };
+
   return (
     <div className="space-y-6">
+      {/* Trial Countdown */}
+      {trialInfo?.active && trialInfo.expiresAt && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <Timer className="h-5 w-5" />
+              Período de Teste
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Tempo restante do seu período de teste:
+              </p>
+              <span className="text-lg font-bold text-amber-700 dark:text-amber-400">
+                {getTrialCountdown()}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Alterar Senha */}
       <Card>
         <CardHeader>

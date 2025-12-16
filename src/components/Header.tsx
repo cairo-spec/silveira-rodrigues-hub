@@ -9,7 +9,6 @@ const navLinks = [
   { href: "#jornal", label: "Jornal" },
   { href: "#solucoes", label: "Soluções" },
   { href: "#quem-somos", label: "Quem Somos" },
-  { href: "#blog", label: "Blog" },
 ];
 
 const Header = () => {
