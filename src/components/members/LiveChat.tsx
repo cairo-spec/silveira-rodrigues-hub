@@ -465,7 +465,9 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                         ? "bg-muted text-foreground" 
                         : isOwnMessage
                           ? isLobby
-                            ? "bg-accent text-accent-foreground"
+                            ? (Date.now() - new Date(message.created_at).getTime() < 5 * 60 * 1000)
+                              ? "bg-accent text-accent-foreground"
+                              : "bg-secondary text-secondary-foreground"
                             : "bg-primary text-primary-foreground"
                           : "bg-secondary text-secondary-foreground"
                     }`}>
