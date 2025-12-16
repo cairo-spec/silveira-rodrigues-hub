@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2 } from "lucide-react";
+import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2, Archive, FolderOpen } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
@@ -25,6 +26,7 @@ interface Ticket {
   created_at: string;
   updated_at: string;
   user_id: string;
+  is_archived: boolean;
   profiles?: { nome: string; email: string } | null;
 }
 
@@ -53,6 +55,7 @@ const AdminTickets = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [viewMode, setViewMode] = useState<"current" | "archive">("current");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -228,6 +231,48 @@ const AdminTickets = () => {
     return ticket.status === 'closed' && differenceInDays(new Date(), new Date(ticket.updated_at)) >= 5;
   };
 
+  const canArchiveTicket = (ticket: Ticket) => {
+    return ticket.status === 'resolved' && !ticket.is_archived && differenceInDays(new Date(), new Date(ticket.updated_at)) >= 5;
+  };
+
+  const handleArchiveTicket = async (ticketId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
+    const { error } = await supabase
+      .from('tickets')
+      .update({ is_archived: true })
+      .eq('id', ticketId);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível arquivar o ticket", variant: "destructive" });
+    } else {
+      toast({ title: "Ticket arquivado com sucesso" });
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket(prev => prev ? { ...prev, is_archived: true } : null);
+      }
+      fetchTickets();
+    }
+  };
+
+  const handleUnarchiveTicket = async (ticketId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
+    const { error } = await supabase
+      .from('tickets')
+      .update({ is_archived: false })
+      .eq('id', ticketId);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível desarquivar o ticket", variant: "destructive" });
+    } else {
+      toast({ title: "Ticket restaurado com sucesso" });
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket(prev => prev ? { ...prev, is_archived: false } : null);
+      }
+      fetchTickets();
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTicket || (!newMessage.trim() && !attachment)) return;
@@ -300,7 +345,10 @@ const AdminTickets = () => {
     }
   };
 
-  const filteredTickets = tickets.filter(t => statusFilter === "all" || t.status === statusFilter);
+  const currentTickets = tickets.filter(t => !t.is_archived);
+  const archivedTickets = tickets.filter(t => t.is_archived);
+  const displayTickets = viewMode === "current" ? currentTickets : archivedTickets;
+  const filteredTickets = displayTickets.filter(t => statusFilter === "all" || t.status === statusFilter);
 
   if (selectedTicket) {
     const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category) : null;
@@ -345,6 +393,18 @@ const AdminTickets = () => {
               <Button variant="destructive" size="sm" onClick={() => handleDeleteTicket(selectedTicket.id)}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Deletar
+              </Button>
+            )}
+            {canArchiveTicket(selectedTicket) && (
+              <Button variant="outline" size="sm" onClick={() => handleArchiveTicket(selectedTicket.id)}>
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivar
+              </Button>
+            )}
+            {selectedTicket.is_archived && (
+              <Button variant="outline" size="sm" onClick={() => handleUnarchiveTicket(selectedTicket.id)}>
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Restaurar
               </Button>
             )}
             <Select value={selectedTicket.status} onValueChange={(v) => handleStatusChange(selectedTicket.id, v)}>
@@ -486,63 +546,103 @@ const AdminTickets = () => {
         </Select>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
-      ) : filteredTickets.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium">Nenhum ticket encontrado</h3>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {filteredTickets.map((ticket) => {
-            const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
-            return (
-              <Card key={ticket.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedTicket(ticket)}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                      <CardDescription>{ticket.profiles?.nome} • {ticket.profiles?.email}</CardDescription>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {category && (
-                          <Badge variant="outline" className="gap-1 bg-primary/5">
-                            <Tag className="h-3 w-3" />
-                            {category.service}
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "current" | "archive")}>
+        <TabsList>
+          <TabsTrigger value="current" className="gap-2">
+            <FolderOpen className="h-4 w-4" />
+            Atual ({currentTickets.length})
+          </TabsTrigger>
+          <TabsTrigger value="archive" className="gap-2">
+            <Archive className="h-4 w-4" />
+            Arquivo ({archivedTickets.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={viewMode} className="mt-4">
+          {isLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : filteredTickets.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center py-12">
+                <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-medium">
+                  {viewMode === "current" ? "Nenhum ticket atual encontrado" : "Nenhum ticket arquivado"}
+                </h3>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredTickets.map((ticket) => {
+                const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
+                const showArchiveButton = canArchiveTicket(ticket);
+                return (
+                  <Card key={ticket.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedTicket(ticket)}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                          <CardDescription>{ticket.profiles?.nome} • {ticket.profiles?.email}</CardDescription>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {category && (
+                              <Badge variant="outline" className="gap-1 bg-primary/5">
+                                <Tag className="h-3 w-3" />
+                                {category.service}
+                              </Badge>
+                            )}
+                            {ticket.service_price && (
+                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                                {ticket.service_price}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 items-end">
+                          <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
+                            {statusConfig[ticket.status]?.label}
                           </Badge>
-                        )}
-                        {ticket.service_price && (
-                          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
-                            {ticket.service_price}
-                          </Badge>
-                        )}
+                          {ticket.deadline && (
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                              <CalendarIcon className="h-3 w-3 mr-1" />
+                              {format(new Date(ticket.deadline), "dd/MM/yyyy")}
+                            </Badge>
+                          )}
+                          {showArchiveButton && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="gap-1"
+                              onClick={(e) => handleArchiveTicket(ticket.id, e)}
+                            >
+                              <Archive className="h-3 w-3" />
+                              Arquivar
+                            </Button>
+                          )}
+                          {ticket.is_archived && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="gap-1"
+                              onClick={(e) => handleUnarchiveTicket(ticket.id, e)}
+                            >
+                              <FolderOpen className="h-3 w-3" />
+                              Restaurar
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col gap-2 items-end">
-                      <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
-                        {statusConfig[ticket.status]?.label}
-                      </Badge>
-                      {ticket.deadline && (
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                          <CalendarIcon className="h-3 w-3 mr-1" />
-                          {format(new Date(ticket.deadline), "dd/MM/yyyy")}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
