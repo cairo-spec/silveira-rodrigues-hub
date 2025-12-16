@@ -230,6 +230,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_authorized: boolean | null
           avatar_url: string | null
           contract_accepted: boolean | null
           created_at: string
@@ -246,6 +247,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_authorized?: boolean | null
           avatar_url?: string | null
           contract_accepted?: boolean | null
           created_at?: string
@@ -262,6 +264,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_authorized?: boolean | null
           avatar_url?: string | null
           contract_accepted?: boolean | null
           created_at?: string

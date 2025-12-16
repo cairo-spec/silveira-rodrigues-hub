@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, MessageSquare, Ticket, Check, Trash2 } from "lucide-react";
+import { Bell, MessageSquare, Ticket, Check, Trash2, Volume2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -28,10 +28,34 @@ interface NotificationBellProps {
   onNotificationClick?: (type: string, referenceId: string | null) => void;
 }
 
+// Notification sound (simple beep)
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.log('Audio not supported');
+  }
+};
+
 const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const prevNotificationCount = useRef(0);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -40,7 +64,6 @@ const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
 
     fetchNotifications();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('notifications-updates')
       .on(
@@ -51,7 +74,11 @@ const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            // Play sound for new notifications (item 16)
+            playNotificationSound();
+          }
           fetchNotifications();
         }
       )
@@ -61,6 +88,14 @@ const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  // Play sound when unread count increases
+  useEffect(() => {
+    if (unreadCount > prevNotificationCount.current && prevNotificationCount.current > 0) {
+      playNotificationSound();
+    }
+    prevNotificationCount.current = unreadCount;
+  }, [unreadCount]);
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -77,37 +112,61 @@ const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
     }
   };
 
-  const markAsRead = async (id: string) => {
-    await supabase
+  const markAsRead = async (id: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id);
+
+    if (!error) {
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+      );
+    }
   };
 
   const markAllAsRead = async () => {
     if (!user) return;
     
-    await supabase
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', user.id)
       .eq('is_read', false);
+
+    if (!error) {
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    }
   };
 
-  const deleteNotification = async (id: string) => {
-    await supabase
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const { error } = await supabase
       .from('notifications')
       .delete()
       .eq('id', id);
+
+    if (!error) {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }
   };
 
   const clearAllNotifications = async () => {
     if (!user) return;
     
-    await supabase
+    const { error } = await supabase
       .from('notifications')
       .delete()
       .eq('user_id', user.id);
+
+    if (!error) {
+      setNotifications([]);
+    }
   };
 
   const handleNotificationClick = (notification: Notification) => {
@@ -122,6 +181,7 @@ const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
     switch (type) {
       case 'ticket_message':
       case 'ticket_status':
+      case 'new_ticket':
         return <Ticket className="h-4 w-4" />;
       case 'chat_message':
         return <MessageSquare className="h-4 w-4" />;
@@ -210,17 +270,26 @@ const NotificationBell = ({ onNotificationClick }: NotificationBellProps) => {
                         })}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNotification(notification.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <div className="flex flex-col gap-1">
+                      {!notification.is_read && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0"
+                          onClick={(e) => markAsRead(notification.id, e)}
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => deleteNotification(notification.id, e)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}

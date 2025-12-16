@@ -1,25 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, Home, DollarSign } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User } from "lucide-react";
 import AdminTickets from "./AdminTickets";
 import AdminKnowledgeBase from "./AdminKnowledgeBase";
 import AdminChats from "./AdminChats";
 import AdminUsers from "./AdminUsers";
 import AdminPricingTable from "./AdminPricingTable";
 import SettingsPanel from "../members/SettingsPanel";
+import MemberProfile from "../members/MemberProfile";
 import NotificationBell from "../members/NotificationBell";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("tickets");
+  const lastActivity = useRef(Date.now());
 
   const handleSignOut = async () => {
     await signOut();
     window.location.href = "/";
   };
+
+  // Activity tracking for session timeout
+  useEffect(() => {
+    const handleActivity = () => {
+      lastActivity.current = Date.now();
+    };
+    
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keypress', handleActivity);
+    window.addEventListener('click', handleActivity);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keypress', handleActivity);
+      window.removeEventListener('click', handleActivity);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -31,8 +51,7 @@ const AdminDashboard = () => {
                 to="/" 
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                <Home className="h-5 w-5" />
-                <span className="font-bold text-lg hidden sm:inline">Silveira & Rodrigues</span>
+                <span className="font-bold text-lg">Silveira & Rodrigues</span>
               </Link>
               <div className="hidden sm:block h-6 w-px bg-primary-foreground/30" />
               <div>
@@ -50,15 +69,42 @@ const AdminDashboard = () => {
                   }
                 }}
               />
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleSignOut}
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="end">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab('profile')}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Perfil
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab('settings')}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurações
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="w-full justify-start text-destructive hover:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair
+                  </Button>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
@@ -66,7 +112,7 @@ const AdminDashboard = () => {
 
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -87,10 +133,6 @@ const AdminDashboard = () => {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Usuários</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Config</span>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tickets"><AdminTickets /></TabsContent>
@@ -98,6 +140,7 @@ const AdminDashboard = () => {
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
           <TabsContent value="users"><AdminUsers /></TabsContent>
+          <TabsContent value="profile"><MemberProfile /></TabsContent>
           <TabsContent value="settings"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>

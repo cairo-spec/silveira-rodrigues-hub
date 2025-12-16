@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, ShieldCheck, User, Clock, CreditCard } from "lucide-react";
+import { Loader2, Users, ShieldCheck, User, Clock, CreditCard, UserCheck, UserX } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -17,6 +17,7 @@ interface Profile {
   empresa: string | null;
   subscription_active: boolean | null;
   trial_active: boolean | null;
+  access_authorized: boolean | null;
   created_at: string;
 }
 
@@ -48,7 +49,6 @@ const AdminUsers = () => {
 
   const toggleAdminRole = async (userId: string, isCurrentlyAdmin: boolean) => {
     if (isCurrentlyAdmin) {
-      // Remove admin role
       const { error } = await supabase
         .from('user_roles')
         .delete()
@@ -62,7 +62,6 @@ const AdminUsers = () => {
         fetchData();
       }
     } else {
-      // Add admin role
       const { error } = await supabase
         .from('user_roles')
         .insert({ user_id: userId, role: 'admin' });
@@ -96,6 +95,32 @@ const AdminUsers = () => {
     }
   };
 
+  const toggleAccess = async (profile: Profile) => {
+    const newAccessStatus = !profile.access_authorized;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ access_authorized: newAccessStatus })
+      .eq('user_id', profile.user_id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível atualizar o acesso", variant: "destructive" });
+    } else {
+      toast({ title: newAccessStatus ? "Acesso autorizado" : "Acesso revogado" });
+      fetchData();
+    }
+  };
+
+  // Check if email is from the office domain
+  const isOfficeDomain = (email: string) => {
+    return email.toLowerCase().endsWith('@silveiraerodrigues.adv.br');
+  };
+
+  // Check if user is a free user (not subscriber, not trial, not admin)
+  const isFreeUser = (profile: Profile) => {
+    return !profile.subscription_active && !profile.trial_active && !isAdmin(profile.user_id);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -118,6 +143,9 @@ const AdminUsers = () => {
         <div className="grid gap-4">
           {profiles.map((profile) => {
             const userIsAdmin = isAdmin(profile.user_id);
+            const isOffice = isOfficeDomain(profile.email);
+            const isFree = isFreeUser(profile);
+            
             return (
               <Card key={profile.id}>
                 <CardHeader>
@@ -140,7 +168,7 @@ const AdminUsers = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap justify-end">
                         <Badge variant={userIsAdmin ? "default" : "secondary"}>
                           {userIsAdmin ? "Admin" : "Usuário"}
                         </Badge>
@@ -156,23 +184,63 @@ const AdminUsers = () => {
                             Período de Teste
                           </Badge>
                         )}
+                        {isFree && profile.access_authorized && (
+                          <Badge variant="outline" className="border-blue-500 text-blue-600">
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Acesso Autorizado
+                          </Badge>
+                        )}
+                        {isFree && !profile.access_authorized && (
+                          <Badge variant="outline" className="border-red-500 text-red-600">
+                            <UserX className="h-3 w-3 mr-1" />
+                            Aguardando Autorização
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => toggleAdminRole(profile.user_id, userIsAdmin)}
-                        >
-                          {userIsAdmin ? "Remover Admin" : "Tornar Admin"}
-                        </Button>
-                        {!profile.subscription_active && (
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        {/* Show Admin button only for office domain users */}
+                        {isOffice && (
                           <Button 
-                            variant={profile.trial_active ? "destructive" : "secondary"}
+                            variant="outline" 
                             size="sm"
-                            onClick={() => toggleTrial(profile)}
+                            onClick={() => toggleAdminRole(profile.user_id, userIsAdmin)}
                           >
-                            {profile.trial_active ? "Revogar Trial" : "Conceder Trial"}
+                            {userIsAdmin ? "Remover Admin" : "Tornar Admin"}
                           </Button>
+                        )}
+                        
+                        {/* Show Trial and Access buttons only for non-office domain users */}
+                        {!isOffice && (
+                          <>
+                            {!profile.subscription_active && (
+                              <Button 
+                                variant={profile.trial_active ? "destructive" : "secondary"}
+                                size="sm"
+                                onClick={() => toggleTrial(profile)}
+                              >
+                                {profile.trial_active ? "Revogar Trial" : "Conceder Trial"}
+                              </Button>
+                            )}
+                            {isFree && (
+                              <Button 
+                                variant={profile.access_authorized ? "destructive" : "default"}
+                                size="sm"
+                                onClick={() => toggleAccess(profile)}
+                              >
+                                {profile.access_authorized ? (
+                                  <>
+                                    <UserX className="h-4 w-4 mr-1" />
+                                    Kick
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="h-4 w-4 mr-1" />
+                                    Autorizar Acesso
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
