@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
+import { getCategoryById } from "@/lib/pricing-categories";
 
 interface Ticket {
   id: string;
@@ -17,7 +18,11 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  deadline: string | null;
+  service_category: string | null;
+  service_price: string | null;
   created_at: string;
+  updated_at: string;
   user_id: string;
   profiles?: { nome: string; email: string } | null;
 }
@@ -32,15 +37,8 @@ interface TicketMessage {
 const statusConfig: Record<string, { label: string; color: string }> = {
   open: { label: "Aberto", color: "bg-blue-500" },
   in_progress: { label: "Em andamento", color: "bg-yellow-500" },
-  resolved: { label: "Resolvido", color: "bg-green-500" },
-  closed: { label: "Fechado", color: "bg-gray-500" }
-};
-
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: "Baixa", color: "bg-slate-400" },
-  medium: { label: "Média", color: "bg-blue-400" },
-  high: { label: "Alta", color: "bg-orange-400" },
-  urgent: { label: "Urgente", color: "bg-red-500" }
+  resolved: { label: "Concluído", color: "bg-green-500" },
+  closed: { label: "Cancelado", color: "bg-gray-500" }
 };
 
 const AdminTickets = () => {
@@ -68,7 +66,6 @@ const AdminTickets = () => {
     if (selectedTicket) {
       fetchMessages(selectedTicket.id);
       
-      // Clear notifications for this ticket when admin views it
       clearNotificationsByReference(selectedTicket.id);
       
       const channel = supabase
@@ -80,7 +77,6 @@ const AdminTickets = () => {
           filter: `ticket_id=eq.${selectedTicket.id}`
         }, (payload) => {
           setMessages(prev => [...prev, payload.new as TicketMessage]);
-          // Clear notifications when new message arrives while viewing
           clearNotificationsByReference(selectedTicket.id);
         })
         .subscribe();
@@ -101,7 +97,6 @@ const AdminTickets = () => {
       return;
     }
 
-    // Fetch profiles for each ticket
     const userIds = [...new Set(ticketsData?.map(t => t.user_id) || [])];
     const { data: profilesData } = await supabase
       .from('profiles')
@@ -128,7 +123,6 @@ const AdminTickets = () => {
   };
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
-    // Get ticket info before update
     const ticket = tickets.find(t => t.id === ticketId);
     
     const { error } = await supabase
@@ -139,21 +133,28 @@ const AdminTickets = () => {
     if (error) {
       toast({ title: "Erro", description: "Não foi possível atualizar status", variant: "destructive" });
     } else {
-      // Create notification for user
       if (ticket) {
         const statusLabels: Record<string, string> = {
           open: "Aberto",
           in_progress: "Em andamento", 
-          resolved: "Resolvido",
-          closed: "Fechado"
+          resolved: "Concluído",
+          closed: "Cancelado"
         };
         
-        await supabase.from('notifications').insert({
-          user_id: ticket.user_id,
-          type: 'ticket_status',
-          title: 'Status do ticket atualizado',
-          message: `O ticket "${ticket.title}" foi alterado para ${statusLabels[newStatus] || newStatus}`,
-          reference_id: ticketId
+        await supabase.rpc('notify_admins', {
+          _type: 'ticket_status',
+          _title: 'Status do ticket atualizado',
+          _message: `O ticket "${ticket.title}" foi alterado para ${statusLabels[newStatus] || newStatus}`,
+          _reference_id: ticketId
+        }).then(() => {
+          // Also notify the user
+          supabase.from('notifications').insert({
+            user_id: ticket.user_id,
+            type: 'ticket_status',
+            title: 'Status do ticket atualizado',
+            message: `O ticket "${ticket.title}" foi alterado para ${statusLabels[newStatus] || newStatus}`,
+            reference_id: ticketId
+          });
         });
       }
       
@@ -163,6 +164,33 @@ const AdminTickets = () => {
         setSelectedTicket(prev => prev ? { ...prev, status: newStatus } : null);
       }
     }
+  };
+
+  const handleReopenTicket = async (ticketId: string) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    // Check if ticket was closed within last 30 days
+    const daysSinceClosed = differenceInDays(new Date(), new Date(ticket.updated_at));
+    if (ticket.status === 'closed' && daysSinceClosed > 30) {
+      toast({ 
+        title: "Erro", 
+        description: "Este ticket foi cancelado há mais de 30 dias e não pode ser reaberto", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (ticket.status === 'resolved') {
+      toast({ 
+        title: "Erro", 
+        description: "Tickets concluídos não podem ser reabertos", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    await handleStatusChange(ticketId, 'open');
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -182,7 +210,6 @@ const AdminTickets = () => {
       });
 
     if (!error) {
-      // Create notification for ticket owner
       await supabase.from('notifications').insert({
         user_id: selectedTicket.user_id,
         type: 'ticket_message',
@@ -203,6 +230,10 @@ const AdminTickets = () => {
   const filteredTickets = tickets.filter(t => statusFilter === "all" || t.status === statusFilter);
 
   if (selectedTicket) {
+    const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category) : null;
+    const canReopen = selectedTicket.status === 'closed' && 
+                      differenceInDays(new Date(), new Date(selectedTicket.updated_at)) <= 30;
+    
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-4">
@@ -215,25 +246,57 @@ const AdminTickets = () => {
               {selectedTicket.profiles?.nome} • {selectedTicket.profiles?.email}
             </p>
           </div>
-          <Select value={selectedTicket.status} onValueChange={(v) => handleStatusChange(selectedTicket.id, v)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">Aberto</SelectItem>
-              <SelectItem value="in_progress">Em andamento</SelectItem>
-              <SelectItem value="resolved">Resolvido</SelectItem>
-              <SelectItem value="closed">Fechado</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            {canReopen && (
+              <Button variant="outline" size="sm" onClick={() => handleReopenTicket(selectedTicket.id)}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reabrir
+              </Button>
+            )}
+            <Select value={selectedTicket.status} onValueChange={(v) => handleStatusChange(selectedTicket.id, v)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Aberto</SelectItem>
+                <SelectItem value="in_progress">Em andamento</SelectItem>
+                <SelectItem value="resolved">Concluído</SelectItem>
+                <SelectItem value="closed">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Descrição</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <p className="text-sm">{selectedTicket.description}</p>
+            <div className="flex flex-wrap gap-2">
+              {category && (
+                <Badge variant="outline" className="gap-1 bg-primary/5">
+                  <Tag className="h-3 w-3" />
+                  {category.service}
+                </Badge>
+              )}
+              {selectedTicket.service_price && (
+                <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                  {selectedTicket.service_price}
+                </Badge>
+              )}
+              {category?.successFee && category.successFee !== "N/A" && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                  Êxito: {category.successFee}
+                </Badge>
+              )}
+              {selectedTicket.deadline && (
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  Prazo: {format(new Date(selectedTicket.deadline), "dd/MM/yyyy")}
+                </Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -262,20 +325,22 @@ const AdminTickets = () => {
               </div>
             ))}
           </CardContent>
-          <div className="p-4 border-t">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <Textarea
-                placeholder="Responder ao usuário..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="min-h-[40px] max-h-[120px] resize-none"
-                rows={1}
-              />
-              <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
-                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </form>
-          </div>
+          {selectedTicket.status !== 'resolved' && selectedTicket.status !== 'closed' && (
+            <div className="p-4 border-t">
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Textarea
+                  placeholder="Responder ao usuário..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  className="min-h-[40px] max-h-[120px] resize-none"
+                  rows={1}
+                />
+                <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
+                  {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </form>
+            </div>
+          )}
         </Card>
       </div>
     );
@@ -296,8 +361,8 @@ const AdminTickets = () => {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="open">Abertos</SelectItem>
             <SelectItem value="in_progress">Em andamento</SelectItem>
-            <SelectItem value="resolved">Resolvidos</SelectItem>
-            <SelectItem value="closed">Fechados</SelectItem>
+            <SelectItem value="resolved">Concluídos</SelectItem>
+            <SelectItem value="closed">Cancelados</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -313,31 +378,50 @@ const AdminTickets = () => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filteredTickets.map((ticket) => (
-            <Card key={ticket.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedTicket(ticket)}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                    <CardDescription>{ticket.profiles?.nome} • {ticket.profiles?.email}</CardDescription>
+          {filteredTickets.map((ticket) => {
+            const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
+            return (
+              <Card key={ticket.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedTicket(ticket)}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                      <CardDescription>{ticket.profiles?.nome} • {ticket.profiles?.email}</CardDescription>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {category && (
+                          <Badge variant="outline" className="gap-1 bg-primary/5">
+                            <Tag className="h-3 w-3" />
+                            {category.service}
+                          </Badge>
+                        )}
+                        {ticket.service_price && (
+                          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                            {ticket.service_price}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
+                        {statusConfig[ticket.status]?.label}
+                      </Badge>
+                      {ticket.deadline && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          <CalendarIcon className="h-3 w-3 mr-1" />
+                          {format(new Date(ticket.deadline), "dd/MM/yyyy")}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2 items-end">
-                    <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
-                      {statusConfig[ticket.status]?.label}
-                    </Badge>
-                    <Badge className={`${priorityConfig[ticket.priority]?.color} text-white border-0`}>
-                      {priorityConfig[ticket.priority]?.label}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

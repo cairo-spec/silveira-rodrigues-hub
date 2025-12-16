@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,17 +7,76 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Bell, Shield, Loader2 } from "lucide-react";
+import { Lock, Bell, Shield, Loader2, Clock } from "lucide-react";
+
+const SESSION_TIMEOUT_OPTIONS = [
+  { value: "30", label: "30 minutos" },
+  { value: "60", label: "1 hora" },
+  { value: "180", label: "3 horas" },
+  { value: "360", label: "6 horas" },
+  { value: "720", label: "12 horas" },
+];
 
 const SettingsPanel = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  const [sessionTimeout, setSessionTimeout] = useState("30");
+
+  // Load settings from localStorage
+  useEffect(() => {
+    const savedStayLoggedIn = localStorage.getItem('stayLoggedIn');
+    const savedTimeout = localStorage.getItem('sessionTimeout');
+    
+    if (savedStayLoggedIn !== null) {
+      setStayLoggedIn(savedStayLoggedIn === 'true');
+    }
+    if (savedTimeout) {
+      setSessionTimeout(savedTimeout);
+    }
+  }, []);
+
+  // Session timeout logic
+  useEffect(() => {
+    if (stayLoggedIn) return; // Don't timeout if stay logged in is enabled
+
+    let lastActivity = Date.now();
+    const timeoutMs = parseInt(sessionTimeout) * 60 * 1000;
+
+    const handleActivity = () => {
+      lastActivity = Date.now();
+    };
+
+    const checkTimeout = setInterval(() => {
+      if (Date.now() - lastActivity > timeoutMs) {
+        toast({
+          title: "Sessão expirada",
+          description: "Você foi desconectado por inatividade",
+        });
+        signOut();
+        window.location.href = "/auth";
+      }
+    }, 60000); // Check every minute
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keypress', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+
+    return () => {
+      clearInterval(checkTimeout);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keypress', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
+  }, [stayLoggedIn, sessionTimeout, signOut, toast]);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,12 +116,21 @@ const SettingsPanel = () => {
         title: "Senha alterada",
         description: "Sua senha foi atualizada com sucesso"
       });
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     }
 
     setIsChangingPassword(false);
+  };
+
+  const handleStayLoggedInChange = (checked: boolean) => {
+    setStayLoggedIn(checked);
+    localStorage.setItem('stayLoggedIn', checked.toString());
+  };
+
+  const handleSessionTimeoutChange = (value: string) => {
+    setSessionTimeout(value);
+    localStorage.setItem('sessionTimeout', value);
   };
 
   return (
@@ -109,6 +177,54 @@ const SettingsPanel = () => {
               Alterar Senha
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Sessão */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Configurações de Sessão
+          </CardTitle>
+          <CardDescription>
+            Configure o comportamento da sua sessão
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Permanecer Logado</Label>
+              <p className="text-sm text-muted-foreground">
+                Desativa o logout automático por inatividade
+              </p>
+            </div>
+            <Switch
+              checked={stayLoggedIn}
+              onCheckedChange={handleStayLoggedInChange}
+            />
+          </div>
+          
+          {!stayLoggedIn && (
+            <div className="space-y-2">
+              <Label>Tempo de Inatividade</Label>
+              <Select value={sessionTimeout} onValueChange={handleSessionTimeoutChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tempo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SESSION_TIMEOUT_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Você será desconectado após este período sem atividade
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

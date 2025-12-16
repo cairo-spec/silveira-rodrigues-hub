@@ -18,7 +18,7 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("E-mail inválido"),
-  telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos").optional(),
+  telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
@@ -344,7 +344,7 @@ const Auth = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-telefone">Telefone (opcional)</Label>
+                      <Label htmlFor="signup-telefone">Telefone *</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -354,6 +354,7 @@ const Auth = () => {
                           value={signupTelefone}
                           onChange={(e) => setSignupTelefone(e.target.value)}
                           className="pl-10"
+                          required
                         />
                       </div>
                     </div>
@@ -386,6 +387,25 @@ const Auth = () => {
                           required
                         />
                       </div>
+                    </div>
+                    <div className="flex items-start space-x-2 rounded-md border p-3">
+                      <input
+                        type="checkbox"
+                        id="lgpd-consent"
+                        required
+                        className="mt-1"
+                      />
+                      <label htmlFor="lgpd-consent" className="text-xs text-muted-foreground cursor-pointer">
+                        Aceito a{" "}
+                        <a 
+                          href="/politica-dados" 
+                          target="_blank" 
+                          className="text-primary underline hover:text-primary/80"
+                        >
+                          Política de Dados Pessoais
+                        </a>{" "}
+                        e autorizo o tratamento dos meus dados conforme a LGPD.
+                      </label>
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

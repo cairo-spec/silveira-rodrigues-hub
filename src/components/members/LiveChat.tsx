@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2 } from "lucide-react";
+import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2, Paperclip, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
@@ -17,6 +18,7 @@ interface ChatMessage {
   created_at: string;
   user_id: string;
   user_name?: string;
+  user_category?: string;
 }
 
 interface ChatRoom {
@@ -37,8 +39,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [userProfiles, setUserProfiles] = useState<Record<string, { nome: string; subscription_active: boolean; trial_active: boolean }>>({});
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     initializeChat();
@@ -47,7 +52,6 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   useEffect(() => {
     if (!room) return;
 
-    // Clear notifications for this chat room when viewing
     if (roomType === "suporte") {
       clearNotificationsByReference(room.id);
     }
@@ -64,19 +68,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         },
         async (payload) => {
           const newMsg = payload.new as ChatMessage;
-          if (roomType === "lobby" && !userNames[newMsg.user_id]) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('nome')
-              .eq('user_id', newMsg.user_id)
-              .maybeSingle();
-            if (profile) {
-              setUserNames(prev => ({ ...prev, [newMsg.user_id]: profile.nome }));
-            }
+          if (roomType === "lobby" && !userProfiles[newMsg.user_id]) {
+            await fetchUserProfile(newMsg.user_id);
           }
           setMessages((prev) => [...prev, newMsg]);
           
-          // Clear notifications when new message arrives while viewing
           if (roomType === "suporte") {
             clearNotificationsByReference(room.id);
           }
@@ -99,7 +95,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room, roomType, userNames]);
+  }, [room, roomType, userProfiles]);
 
   useEffect(() => {
     scrollToBottom();
@@ -107,6 +103,30 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const fetchUserProfile = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nome, subscription_active, trial_active')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (profile) {
+      setUserProfiles(prev => ({ 
+        ...prev, 
+        [userId]: profile 
+      }));
+    }
+  };
+
+  const getUserCategory = (userId: string, isAdmin: boolean): string => {
+    if (isAdmin) return "Suporte";
+    const profile = userProfiles[userId];
+    if (!profile) return "Membro";
+    if (profile.subscription_active) return "Assinante";
+    if (profile.trial_active) return "Novato";
+    return "Membro";
   };
 
   const initializeChat = async () => {
@@ -177,7 +197,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
     setIsLoading(false);
   };
 
-  const fetchMessages = async (roomId: string, fetchUserNames: boolean) => {
+  const fetchMessages = async (roomId: string, fetchUserProfiles: boolean) => {
     const { data, error } = await supabase
       .from('chat_messages')
       .select('*')
@@ -193,17 +213,23 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
     } else {
       setMessages(data || []);
       
-      if (fetchUserNames && data && data.length > 0) {
+      if (fetchUserProfiles && data && data.length > 0) {
         const userIds = [...new Set(data.map(m => m.user_id))];
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id, nome')
+          .select('user_id, nome, subscription_active, trial_active')
           .in('user_id', userIds);
         
         if (profiles) {
-          const namesMap: Record<string, string> = {};
-          profiles.forEach(p => { namesMap[p.user_id] = p.nome; });
-          setUserNames(namesMap);
+          const profilesMap: Record<string, { nome: string; subscription_active: boolean; trial_active: boolean }> = {};
+          profiles.forEach(p => { 
+            profilesMap[p.user_id] = { 
+              nome: p.nome, 
+              subscription_active: p.subscription_active || false,
+              trial_active: p.trial_active || false
+            }; 
+          });
+          setUserProfiles(profilesMap);
         }
       }
     }
@@ -211,21 +237,54 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !room || !newMessage.trim()) return;
+    if (!user || !room || (!newMessage.trim() && !attachment)) return;
 
     setIsSending(true);
+    let messageText = newMessage.trim();
+
+    // Handle file upload for support chat
+    if (attachment && roomType === "suporte") {
+      setIsUploading(true);
+      const fileExt = attachment.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `chat/${room.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('ticket-files')
+        .upload(filePath, attachment);
+
+      if (uploadError) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível fazer upload do arquivo",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        setIsSending(false);
+        return;
+      }
+
+      const { data: urlData } = await supabase.storage
+        .from('ticket-files')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+      messageText = messageText 
+        ? `${messageText}\n\n📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`
+        : `📎 Anexo: ${attachment.name}\n${urlData?.signedUrl || ''}`;
+      
+      setIsUploading(false);
+    }
 
     const { error } = await supabase
       .from('chat_messages')
       .insert({
         room_id: room.id,
         user_id: user.id,
-        message: newMessage.trim(),
+        message: messageText,
         is_admin: false
       });
 
     if (!error && roomType === "suporte") {
-      // Notify admins about new support chat message
       notifyAdmins(
         'chat_message',
         'Nova mensagem no suporte',
@@ -244,6 +303,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
       });
     } else {
       setNewMessage("");
+      setAttachment(null);
     }
   };
 
@@ -259,6 +319,13 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         description: "Não foi possível apagar a mensagem",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachment(file);
     }
   };
 
@@ -315,9 +382,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
           ) : (
             messages.map((message) => {
               const isOwnMessage = message.user_id === user?.id;
+              const profile = userProfiles[message.user_id];
               const senderName = message.is_admin 
                 ? "Equipe" 
-                : (isLobby ? (userNames[message.user_id] || "Membro") : (isOwnMessage ? "Você" : ""));
+                : (isLobby ? (profile?.nome || "Membro") : (isOwnMessage ? "Você" : ""));
+              const category = isLobby ? getUserCategory(message.user_id, message.is_admin) : null;
               
               return (
                 <div
@@ -339,9 +408,19 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                   </div>
                   <div className={`max-w-[70%] ${message.is_admin ? "" : isOwnMessage ? "text-right" : ""}`}>
                     {isLobby && (
-                      <p className={`text-xs font-medium mb-1 ${isOwnMessage ? "text-right" : ""}`}>
-                        {senderName}
-                      </p>
+                      <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? "justify-end" : ""}`}>
+                        <p className="text-xs font-medium">{senderName}</p>
+                        {category && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                            category === "Suporte" ? "bg-primary/20 text-primary" :
+                            category === "Assinante" ? "bg-green-100 text-green-700" :
+                            category === "Novato" ? "bg-amber-100 text-amber-700" :
+                            "bg-muted text-muted-foreground"
+                          }`}>
+                            {category}
+                          </span>
+                        )}
+                      </div>
                     )}
                     <div className={`rounded-lg p-3 ${
                       message.is_admin 
@@ -350,7 +429,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                           ? "bg-primary text-primary-foreground"
                           : "bg-secondary text-secondary-foreground"
                     }`}>
-                      <p className="text-sm">{message.message}</p>
+                      <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
@@ -376,7 +455,42 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         </CardContent>
         
         <div className="p-4 border-t">
+          {attachment && (
+            <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm flex-1 truncate">{attachment.name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setAttachment(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <form onSubmit={handleSendMessage} className="flex gap-2">
+            {/* File attachment only for support chat (item 14) */}
+            {!isLobby && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSending}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Textarea
               placeholder="Digite sua mensagem..."
               value={newMessage}
@@ -384,8 +498,8 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
               className="min-h-[40px] max-h-[120px] resize-none"
               rows={1}
             />
-            <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
-              {isSending ? (
+            <Button type="submit" size="icon" disabled={isSending || isUploading || (!newMessage.trim() && !attachment)}>
+              {(isSending || isUploading) ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
