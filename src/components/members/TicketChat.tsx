@@ -302,12 +302,12 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
                   )}
                 </div>
                 <div className={`max-w-[85%] ${message.is_admin ? "" : "text-right"}`}>
-                  <div className={`rounded-lg p-3 inline-block ${
+                  <div className={`rounded-lg p-3 inline-block max-w-full ${
                     message.is_admin 
                       ? "bg-muted text-foreground" 
                       : "bg-primary text-primary-foreground"
                   }`}>
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.message}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(message.created_at), "HH:mm", { locale: ptBR })}
