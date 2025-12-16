@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2, Paperclip, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 interface ChatMessage {
   id: string;
@@ -42,12 +42,29 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   const [userProfiles, setUserProfiles] = useState<Record<string, { nome: string; subscription_active: boolean; trial_active: boolean }>>({});
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Typing indicator
+  const { typingUsers, startTyping, stopTyping } = useTypingIndicator(room?.id || null);
+
   useEffect(() => {
     initializeChat();
+    fetchCurrentUserProfile();
   }, [user, roomType]);
+
+  const fetchCurrentUserProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (data) {
+      setCurrentUserName(data.nome);
+    }
+  };
 
   useEffect(() => {
     if (!room) return;
@@ -235,10 +252,18 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
     }
   };
 
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value);
+    if (e.target.value && currentUserName) {
+      startTyping(currentUserName);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !room || (!newMessage.trim() && !attachment)) return;
 
+    stopTyping();
     setIsSending(true);
     let messageText = newMessage.trim();
 
@@ -284,13 +309,19 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         is_admin: false
       });
 
-    if (!error && roomType === "suporte") {
-      notifyAdmins(
-        'chat_message',
-        'Nova mensagem no suporte',
-        `Um usuário enviou uma mensagem no chat de suporte`,
-        room.id
-      );
+    if (!error) {
+      if (roomType === "suporte") {
+        notifyAdmins(
+          'chat_message',
+          'Nova mensagem no suporte',
+          `Um usuário enviou uma mensagem no chat de suporte`,
+          room.id
+        );
+      }
+      toast({
+        title: "Mensagem enviada",
+        description: "Sua mensagem foi enviada com sucesso"
+      });
     }
 
     setIsSending(false);
@@ -318,6 +349,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         title: "Erro",
         description: "Não foi possível apagar a mensagem",
         variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Mensagem excluída",
+        description: "A mensagem foi removida"
       });
     }
   };
@@ -348,7 +384,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+        <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
           {roomIcon}
           {roomTitle}
         </h2>
@@ -362,7 +398,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
 
       <Card className="flex flex-col h-[500px]">
         <CardHeader className="pb-2 border-b">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             {isLobby ? "Chat público" : "Chat privado"}
           </CardTitle>
@@ -370,9 +406,11 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
         <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-2">Inicie uma conversa</h3>
-              <p className="text-sm text-muted-foreground">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <MessageCircle className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold mb-2">Inicie uma conversa</h3>
+              <p className="text-sm text-muted-foreground max-w-xs">
                 {isLobby 
                   ? "Envie uma mensagem para a comunidade" 
                   : "Envie uma mensagem e nossa equipe responderá em breve"
@@ -411,10 +449,10 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                       <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? "justify-end" : ""}`}>
                         <p className="text-xs font-medium">{senderName}</p>
                         {category && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                             category === "Suporte" ? "bg-primary/20 text-primary" :
-                            category === "Assinante" ? "bg-green-100 text-green-700" :
-                            category === "Novato" ? "bg-amber-100 text-amber-700" :
+                            category === "Assinante" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                            category === "Novato" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
                             "bg-muted text-muted-foreground"
                           }`}>
                             {category}
@@ -451,6 +489,21 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
               );
             })
           )}
+          
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <span>
+                {typingUsers.map(u => u.name).join(', ')} {typingUsers.length === 1 ? 'está' : 'estão'} digitando...
+              </span>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </CardContent>
         
@@ -470,7 +523,7 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
             </div>
           )}
           <form onSubmit={handleSendMessage} className="flex gap-2">
-            {/* File attachment only for support chat (item 14) */}
+            {/* File attachment only for support chat */}
             {!isLobby && (
               <>
                 <input
@@ -494,12 +547,13 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
             <Textarea
               placeholder="Digite sua mensagem..."
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleMessageChange}
+              onBlur={() => stopTyping()}
               className="min-h-[40px] max-h-[120px] resize-none"
               rows={1}
             />
-            <Button type="submit" size="icon" disabled={isSending || isUploading || (!newMessage.trim() && !attachment)}>
-              {(isSending || isUploading) ? (
+            <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
+              {isSending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />

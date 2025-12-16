@@ -276,7 +276,26 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
       categoryToStore = `${newCategory}+upgrade`;
     }
 
-    const { error } = await supabase
+    // Optimistic UI: Add temp ticket to list immediately
+    const tempId = `temp-${Date.now()}`;
+    const tempTicket: Ticket = {
+      id: tempId,
+      title: newTitle,
+      description: newDescription,
+      status: 'open',
+      priority: 'medium',
+      deadline: newDeadline ? format(newDeadline, 'yyyy-MM-dd') : null,
+      attachment_url: attachmentUrl,
+      service_category: categoryToStore,
+      service_price: priceToStore,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    setTickets(prev => [tempTicket, ...prev]);
+    setCreateModalOpen(false);
+    
+    const { data, error } = await supabase
       .from('tickets')
       .insert({
         user_id: user.id,
@@ -286,37 +305,51 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
         attachment_url: attachmentUrl,
         service_category: categoryToStore,
         service_price: priceToStore
-      });
+      })
+      .select()
+      .single();
 
     setIsCreating(false);
 
     if (error) {
+      // Rollback on error
+      setTickets(prev => prev.filter(t => t.id !== tempId));
       toast({
         title: "Erro",
         description: "Não foi possível criar o ticket",
         variant: "destructive"
       });
     } else {
+      // Replace temp with real ticket
+      setTickets(prev => prev.map(t => t.id === tempId ? data : t));
+      
+      // Create audit event
+      await supabase.from('ticket_events').insert({
+        ticket_id: data.id,
+        user_id: user.id,
+        event_type: 'created',
+        new_value: 'open',
+      });
+      
       // Notify admins about new ticket
       notifyAdmins(
         'new_ticket',
         'Novo ticket criado',
         `Um usuário criou o ticket "${newTitle}" - ${category?.service || 'Sem categoria'}`,
-        undefined
+        data.id
       );
       
       toast({
         title: "Ticket criado",
         description: "Seu ticket foi criado com sucesso"
       });
-      setCreateModalOpen(false);
+      
       setNewTitle("");
       setNewDescription("");
       setNewDeadline(getMinDeadline());
       setNewAttachment(null);
       setNewCategory("");
       setIncludeUpgrade(false);
-      fetchTickets();
     }
   };
 
@@ -333,7 +366,7 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Meus Tickets</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Meus Tickets</h2>
           <p className="text-muted-foreground">Acompanhe suas solicitações de suporte</p>
         </div>
         <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
@@ -345,7 +378,7 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>Criar Novo Ticket</DialogTitle>
+              <DialogTitle className="text-xl font-semibold">Criar Novo Ticket</DialogTitle>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-4">
               <form onSubmit={handleCreateTicket} className="space-y-4 mt-4">
@@ -377,28 +410,39 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
 
                 {/* Selected Category Details */}
                 {selectedCategory && (
-                  <Card className="bg-muted/50">
+                  <Card className="bg-muted/50 border-primary/20">
                     <CardContent className="pt-4 space-y-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h4 className="font-medium">{selectedCategory.service}</h4>
+                          <h4 className="font-semibold text-foreground">{selectedCategory.service}</h4>
                           <p className="text-sm text-muted-foreground">{selectedCategory.description}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {isPaidSubscriber ? "Preço Assinante" : "Preço Avulso"}
-                          </p>
-                          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 font-semibold">
-                            {displayPrice}
-                          </Badge>
+                          {isPaidSubscriber ? (
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground line-through">
+                                {selectedCategory.priceRegular}
+                              </p>
+                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 font-semibold">
+                                {displayPrice}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground mb-1">Preço Avulso</p>
+                              <Badge variant="secondary" className="font-semibold">
+                                {displayPrice}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
                       {/* Honorários de Êxito */}
                       {selectedCategory.successFee !== "N/A" && (
-                        <div className="p-2 bg-amber-500/10 rounded border border-amber-500/20">
-                          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                            📊 Honorários de Êxito: {selectedCategory.successFee}
+                        <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                          <p className="text-sm font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                            📊 Honorários de Êxito: <span className="text-foreground">{selectedCategory.successFee}</span>
                           </p>
                         </div>
                       )}
@@ -408,7 +452,7 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
                         <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <p className="text-sm font-medium">{upgradeCategory.service}</p>
+                              <p className="text-sm font-semibold">{upgradeCategory.service}</p>
                               <p className="text-xs text-muted-foreground">{upgradeCategory.description}</p>
                             </div>
                             <Switch 
@@ -428,9 +472,11 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
                       )}
                       
                       {!isPaidSubscriber && (
-                        <p className="text-xs text-primary">
-                          💡 Assinantes têm preços especiais. Considere assinar o Jornal de Licitações!
-                        </p>
+                        <div className="p-2 bg-primary/5 rounded-lg">
+                          <p className="text-xs text-primary font-medium">
+                            💡 Assinantes têm preços especiais. Considere assinar o Jornal de Licitações!
+                          </p>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
