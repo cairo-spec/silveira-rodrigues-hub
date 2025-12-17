@@ -663,22 +663,37 @@ const JornalAuditado = ({
                   </>
                 ) : (
                   /* For other statuses: show only Relatório */
-                  selectedOpportunity.audit_report_path && (
-                    <Button
-                      variant="outline"
-                      onClick={() => handleRequestReport(selectedOpportunity)}
-                      disabled={isDownloading === selectedOpportunity.id}
-                    >
-                      {isDownloading === selectedOpportunity.id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4 mr-2" />
-                          Baixar Relatório de Auditoria
-                        </>
-                      )}
-                    </Button>
-                  )
+                  <>
+                    {selectedOpportunity.audit_report_path && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRequestReport(selectedOpportunity)}
+                        disabled={isDownloading === selectedOpportunity.id}
+                      >
+                        {isDownloading === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            Baixar Relatório de Auditoria
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {/* Abrir Ticket for Go/No_Go (non-Participando) */}
+                    {(selectedOpportunity.go_no_go === "Go" || selectedOpportunity.go_no_go === "No_Go") && onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        variant="outline"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Abrir Ticket
+                      </Button>
+                    )}
+                  </>
                 )}
 
                 {/* Solicitar Parecer e Participar - when report was requested and attached */}
@@ -752,16 +767,44 @@ const JornalAuditado = ({
 
                 {/* Status info for Solicitada */}
                 {selectedOpportunity.go_no_go === "Solicitada" && (
-                  <p className="text-sm text-muted-foreground text-center py-2">
-                    Aguardando análise da equipe técnica...
-                  </p>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      Aguardando análise da equipe técnica...
+                    </p>
+                    {onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        variant="outline"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Abrir Ticket
+                      </Button>
+                    )}
+                  </div>
                 )}
 
                 {/* Status info for Rejeitada */}
                 {selectedOpportunity.go_no_go === "Rejeitada" && (
-                  <p className="text-sm text-muted-foreground text-center py-2">
-                    Oportunidade rejeitada pelo cliente.
-                  </p>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      Oportunidade rejeitada pelo cliente.
+                    </p>
+                    {onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        variant="outline"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Abrir Ticket
+                      </Button>
+                    )}
+                  </div>
                 )}
 
                 {/* Action buttons for Participando */}
