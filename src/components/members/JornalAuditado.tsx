@@ -583,21 +583,32 @@ const JornalAuditado = ({
                       <ClipboardList className="h-4 w-4 mr-2" />
                       Solicitar Parecer Go/No Go
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleParticipar(selectedOpportunity)}
-                      disabled={isUpdating === selectedOpportunity.id}
-                      className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                    >
-                      {isUpdating === selectedOpportunity.id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Participar
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleParticipar(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                      >
+                        {isUpdating === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Participar
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Rejeitar
+                      </Button>
+                    </div>
                   </div>
                 )}
 
