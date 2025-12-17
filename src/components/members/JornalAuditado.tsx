@@ -680,18 +680,48 @@ const JornalAuditado = ({
                         )}
                       </Button>
                     )}
-                    {/* Abrir Ticket for Go/No_Go (non-Participando) */}
-                    {(selectedOpportunity.go_no_go === "Go" || selectedOpportunity.go_no_go === "No_Go") && onRequestParecer && (
-                      <Button
-                        onClick={() => {
-                          onRequestParecer(selectedOpportunity.title);
-                          setSelectedOpportunity(null);
-                        }}
-                        variant="outline"
-                      >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Ticket
-                      </Button>
+                    {/* Actions for Go/No_Go (non-Participando) */}
+                    {(selectedOpportunity.go_no_go === "Go" || selectedOpportunity.go_no_go === "No_Go") && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => handleParticipar(selectedOpportunity)}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            {isUpdating === selectedOpportunity.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Participar
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="flex-1"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Rejeitar
+                          </Button>
+                        </div>
+                        {onRequestParecer && (
+                          <Button
+                            onClick={() => {
+                              onRequestParecer(selectedOpportunity.title);
+                              setSelectedOpportunity(null);
+                            }}
+                            variant="outline"
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Abrir Ticket
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </>
                 )}
