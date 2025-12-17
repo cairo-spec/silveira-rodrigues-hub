@@ -246,11 +246,11 @@ const AdminJornal = () => {
   const getGoNoGoBadge = (status: string) => {
     switch (status) {
       case "Go":
-        return <Badge className="bg-green-600 text-white text-lg px-4 py-1">GO</Badge>;
+        return <Badge variant="outline" className="border-green-600 text-green-700 text-xs">GO</Badge>;
       case "No_Go":
-        return <Badge className="bg-red-600 text-white text-lg px-4 py-1">NO GO</Badge>;
+        return <Badge variant="outline" className="border-red-600 text-red-700 text-xs">NO GO</Badge>;
       default:
-        return <Badge className="bg-amber-500 text-white text-lg px-4 py-1">ANÁLISE</Badge>;
+        return <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs">ANÁLISE</Badge>;
     }
   };
 
