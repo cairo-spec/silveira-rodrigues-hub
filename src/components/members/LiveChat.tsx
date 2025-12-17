@@ -209,7 +209,7 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
 
       if (existingRoom) {
         setRoom(existingRoom);
-        await fetchMessages(existingRoom.id, false);
+        await fetchMessages(existingRoom.id, true);
       } else {
         const { data: newRoom, error } = await supabase
           .from('chat_rooms')
@@ -473,7 +473,7 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
               const profile = userProfiles[message.user_id];
               const senderName = message.is_admin 
                 ? "Equipe" 
-                : (isLobby ? (profile?.nome || "Membro") : (isOwnMessage ? "Você" : ""));
+                : (isOwnMessage ? "Você" : (profile?.nome || "Membro"));
               const category = isLobby ? getUserCategory(message.user_id, message.is_admin) : null;
               const isDeleted = message.message.startsWith('[DELETED]');
               const displayMessage = isDeleted ? message.message.replace('[DELETED]', '') : message.message;
@@ -497,21 +497,19 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
                     )}
                   </div>
                   <div className={`max-w-[85%] ${message.is_admin ? "" : isOwnMessage ? "text-right" : ""}`}>
-                    {isLobby && (
-                      <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? "justify-end" : ""}`}>
-                        <p className="text-xs font-medium">{senderName}</p>
-                        {category && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                            category === "Suporte" ? "bg-primary/20 text-primary" :
-                            category === "Assinante" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                            category === "Novato" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
-                            "bg-muted text-muted-foreground"
-                          }`}>
-                            {category}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? "justify-end" : ""}`}>
+                      <p className="text-xs font-medium">{senderName}</p>
+                      {category && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          category === "Suporte" ? "bg-primary/20 text-primary" :
+                          category === "Assinante" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                          category === "Novato" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {category}
+                        </span>
+                      )}
+                    </div>
                     <div className={`rounded-lg p-3 inline-block max-w-full ${
                       isDeleted
                         ? "bg-muted/50 border border-dashed border-muted-foreground/30"
