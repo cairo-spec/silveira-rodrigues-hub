@@ -425,6 +425,7 @@ const JornalAuditado = ({
                         <TableHead className="text-center">Data Limite</TableHead>
                         <TableHead className="text-center">Parecer</TableHead>
                         <TableHead className="text-center">Relatório</TableHead>
+                        <TableHead className="text-center">Petição</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -469,6 +470,28 @@ const JornalAuditado = ({
                               )}
                             </Button>
                           </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              size="sm"
+                              variant={isSubscriber ? "outline" : "secondary"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRequestPetition(opp);
+                              }}
+                              disabled={!opp.petition_path || isDownloadingPetition === opp.id}
+                            >
+                              {isDownloadingPetition === opp.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : isSubscriber ? (
+                                <>
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Baixar
+                                </>
+                              ) : (
+                                "Solicitar"
+                              )}
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -496,32 +519,50 @@ const JornalAuditado = ({
                         {getGoNoGoBadge(opp.go_no_go)}
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-0 space-y-2">
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           <Calendar className="h-3 w-3 mr-1" />
                           {format(new Date(opp.closing_date), "dd/MM/yyyy")}
                         </Badge>
-                        <Button
-                          size="sm"
-                          variant={isSubscriber ? "default" : "secondary"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRequestReport(opp);
-                          }}
-                          disabled={!opp.audit_report_path || isDownloading === opp.id}
-                        >
-                          {isDownloading === opp.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isSubscriber ? (
-                            <>
-                              <Download className="h-4 w-4 mr-1" />
-                              Baixar
-                            </>
-                          ) : (
-                            "Solicitar"
-                          )}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={isSubscriber ? "default" : "secondary"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRequestReport(opp);
+                            }}
+                            disabled={!opp.audit_report_path || isDownloading === opp.id}
+                          >
+                            {isDownloading === opp.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <FileText className="h-4 w-4 mr-1" />
+                                Rel
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={isSubscriber ? "outline" : "secondary"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRequestPetition(opp);
+                            }}
+                            disabled={!opp.petition_path || isDownloadingPetition === opp.id}
+                          >
+                            {isDownloadingPetition === opp.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-1" />
+                                Pet
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
