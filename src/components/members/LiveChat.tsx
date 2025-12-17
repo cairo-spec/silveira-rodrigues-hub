@@ -471,9 +471,9 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
             messages.map((message) => {
               const isOwnMessage = message.user_id === user?.id;
               const profile = userProfiles[message.user_id];
-              const senderName = message.is_admin 
-                ? "Equipe" 
-                : (isOwnMessage ? "Você" : (profile?.nome || "Membro"));
+              const senderName = isOwnMessage 
+                ? "Você" 
+                : (profile?.nome || (message.is_admin ? "Equipe" : "Membro"));
               const category = isLobby ? getUserCategory(message.user_id, message.is_admin) : null;
               const isDeleted = message.message.startsWith('[DELETED]');
               const displayMessage = isDeleted ? message.message.replace('[DELETED]', '') : message.message;
