@@ -28,6 +28,7 @@ interface Opportunity {
   agency_name: string;
   go_no_go: GoNoGoStatus;
   audit_report_path: string | null;
+  petition_path: string | null;
   is_published: boolean;
   created_at: string;
   report_requested_at: string | null;
@@ -54,6 +55,7 @@ const JornalAuditado = ({
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [isDownloadingPetition, setIsDownloadingPetition] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
 
@@ -248,6 +250,32 @@ const JornalAuditado = ({
     }
 
     setIsDownloading(null);
+  };
+
+  const downloadPetition = async (opportunity: Opportunity) => {
+    if (!opportunity.petition_path) {
+      return;
+    }
+
+    setIsDownloadingPetition(opportunity.id);
+
+    const { data, error } = await supabase.storage
+      .from("audit-reports")
+      .createSignedUrl(opportunity.petition_path, 60);
+
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, "_blank");
+    }
+
+    setIsDownloadingPetition(null);
+  };
+
+  const handleRequestPetition = (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+    } else {
+      downloadPetition(opportunity);
+    }
   };
 
   // Check if opportunity was requested and now has a report attached (eligible for "Solicitar Parecer")
@@ -555,22 +583,61 @@ const JornalAuditado = ({
                   </Button>
                 )}
 
-                {/* Download report if available */}
-                {selectedOpportunity.audit_report_path && (
-                  <Button
-                    variant="outline"
-                    onClick={() => handleRequestReport(selectedOpportunity)}
-                    disabled={isDownloading === selectedOpportunity.id}
-                  >
-                    {isDownloading === selectedOpportunity.id ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-2" />
-                        {selectedOpportunity.go_no_go === "Participando" ? "Baixar Petição" : "Baixar Relatório de Auditoria"}
-                      </>
+                {/* Download documents */}
+                {selectedOpportunity.go_no_go === "Participando" ? (
+                  <>
+                    {/* For Participando: show both Petição and Relatório separately */}
+                    {selectedOpportunity.petition_path && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRequestPetition(selectedOpportunity)}
+                        disabled={isDownloadingPetition === selectedOpportunity.id}
+                      >
+                        {isDownloadingPetition === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            Baixar Petição
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                    {selectedOpportunity.audit_report_path && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRequestReport(selectedOpportunity)}
+                        disabled={isDownloading === selectedOpportunity.id}
+                      >
+                        {isDownloading === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            Baixar Relatório de Auditoria
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  /* For other statuses: show only Relatório */
+                  selectedOpportunity.audit_report_path && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRequestReport(selectedOpportunity)}
+                      disabled={isDownloading === selectedOpportunity.id}
+                    >
+                      {isDownloading === selectedOpportunity.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          Baixar Relatório de Auditoria
+                        </>
+                      )}
+                    </Button>
+                  )
                 )}
 
                 {/* Solicitar Parecer e Participar - when report was requested and attached */}
