@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -84,6 +84,7 @@ const AdminJornal = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
   const [isDownloadingFile, setIsDownloadingFile] = useState(false);
+  const [isReopening, setIsReopening] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -402,6 +403,31 @@ const AdminJornal = () => {
     }
   };
 
+  const handleReopenOpportunity = async (opportunity: Opportunity) => {
+    setIsReopening(opportunity.id);
+    
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ go_no_go: "Review_Required" })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro ao reabrir", description: error.message, variant: "destructive" });
+    } else {
+      notifyOrganizationUsers(
+        opportunity.client_organization_id,
+        'ticket_status',
+        'Oportunidade reaberta',
+        `A oportunidade "${opportunity.title}" foi reaberta para análise.`,
+        opportunity.id
+      );
+      toast({ title: "Oportunidade reaberta para análise" });
+      fetchData();
+    }
+    
+    setIsReopening(null);
+  };
+
   const getGoNoGoBadge = (status: GoNoGoStatus) => {
     switch (status) {
       case "Go":
@@ -674,6 +700,22 @@ const AdminJornal = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {opp.go_no_go === "Rejeitada" && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            onClick={() => handleReopenOpportunity(opp)}
+                            disabled={isReopening === opp.id}
+                            title="Reabrir para análise"
+                          >
+                            {isReopening === opp.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => openEditModal(opp)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
