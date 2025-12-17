@@ -34,8 +34,8 @@ interface Opportunity {
 }
 
 interface Organization {
-  client_organization_id: string;
-  empresa: string | null;
+  id: string;
+  name: string;
 }
 
 const AdminJornal = () => {
@@ -75,27 +75,16 @@ const AdminJornal = () => {
         .select("*")
         .order("created_at", { ascending: false }),
       supabase
-        .from("profiles")
-        .select("client_organization_id, empresa")
-        .not("client_organization_id", "is", null)
+        .from("organizations")
+        .select("id, name")
     ]);
 
     if (opportunitiesRes.data) {
       setOpportunities(opportunitiesRes.data as Opportunity[]);
     }
 
-    // Get unique organizations
     if (orgsRes.data) {
-      const uniqueOrgs = orgsRes.data.reduce((acc: Organization[], curr) => {
-        if (curr.client_organization_id && !acc.find(o => o.client_organization_id === curr.client_organization_id)) {
-          acc.push({
-            client_organization_id: curr.client_organization_id,
-            empresa: curr.empresa
-          });
-        }
-        return acc;
-      }, []);
-      setOrganizations(uniqueOrgs);
+      setOrganizations(orgsRes.data);
     }
 
     setIsLoading(false);
@@ -266,8 +255,8 @@ const AdminJornal = () => {
   };
 
   const getOrgName = (orgId: string) => {
-    const org = organizations.find(o => o.client_organization_id === orgId);
-    return org?.empresa || orgId.slice(0, 8) + "...";
+    const org = organizations.find(o => o.id === orgId);
+    return org?.name || orgId.slice(0, 8) + "...";
   };
 
   if (isLoading) {
@@ -378,8 +367,8 @@ const AdminJornal = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {organizations.map((org) => (
-                      <SelectItem key={org.client_organization_id} value={org.client_organization_id}>
-                        {org.empresa || `Org: ${org.client_organization_id.slice(0, 8)}...`}
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
