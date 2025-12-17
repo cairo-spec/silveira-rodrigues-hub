@@ -44,37 +44,28 @@ const AdminUsers = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [organizationInput, setOrganizationInput] = useState("");
+  const [newOrgName, setNewOrgName] = useState("");
   const [existingOrgs, setExistingOrgs] = useState<Organization[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
-    const [profilesRes, rolesRes] = await Promise.all([
+    const [profilesRes, rolesRes, orgsRes] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('user_roles').select('*')
+      supabase.from('user_roles').select('*'),
+      supabase.from('organizations').select('id, name')
     ]);
 
     setProfiles(profilesRes.data || []);
     setRoles(rolesRes.data || []);
 
-    // Get unique organizations from profiles - prioritize empresa names
-    if (profilesRes.data) {
-      const orgsMap = new Map<string, string>();
-      // First pass: collect all org IDs with empresa names
-      profilesRes.data.forEach((p) => {
-        if (p.client_organization_id) {
-          // Only set if we don't have a name yet, or if this one has a better name
-          const existing = orgsMap.get(p.client_organization_id);
-          if (!existing || (existing.startsWith("Org ") && p.empresa)) {
-            orgsMap.set(p.client_organization_id, p.empresa || `Org ${p.client_organization_id.slice(0, 8)}`);
-          }
-        }
-      });
-      const orgs: Organization[] = Array.from(orgsMap.entries()).map(([id, name]) => ({ id, name }));
-      setExistingOrgs(orgs);
+    // Use organizations table for names
+    if (orgsRes.data) {
+      setExistingOrgs(orgsRes.data);
     }
 
     setIsLoading(false);
@@ -158,6 +149,38 @@ const AdminUsers = () => {
   const openEditModal = (profile: Profile) => {
     setEditingProfile(profile);
     setOrganizationInput(profile.client_organization_id || "");
+    setNewOrgName("");
+    setIsCreatingOrg(false);
+  };
+
+  const handleCreateOrganization = async () => {
+    if (!newOrgName.trim()) {
+      toast({ title: "Erro", description: "Digite o nome da organização", variant: "destructive" });
+      return;
+    }
+
+    setIsUpdating(true);
+
+    // Create new organization
+    const { data: newOrg, error: orgError } = await supabase
+      .from('organizations')
+      .insert({ name: newOrgName.trim() })
+      .select('id, name')
+      .single();
+
+    if (orgError || !newOrg) {
+      toast({ title: "Erro", description: "Não foi possível criar a organização", variant: "destructive" });
+      setIsUpdating(false);
+      return;
+    }
+
+    // Set the new org as selected
+    setOrganizationInput(newOrg.id);
+    setExistingOrgs([...existingOrgs, newOrg]);
+    setNewOrgName("");
+    setIsCreatingOrg(false);
+    toast({ title: "Organização criada", description: newOrg.name });
+    setIsUpdating(false);
   };
 
   const handleUpdateOrganization = async () => {
@@ -182,10 +205,6 @@ const AdminUsers = () => {
     }
 
     setIsUpdating(false);
-  };
-
-  const generateNewOrgId = () => {
-    setOrganizationInput(crypto.randomUUID());
   };
 
   const isOfficeDomain = (email: string) => {
@@ -401,32 +420,46 @@ const AdminUsers = () => {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">ou</span>
+                <span className="bg-background px-2 text-muted-foreground">ou criar nova</span>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>ID da Organização (UUID)</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={organizationInput}
-                  onChange={(e) => setOrganizationInput(e.target.value)}
-                  placeholder="UUID da organização"
-                  className="font-mono text-sm"
-                />
+            {isCreatingOrg ? (
+              <div className="space-y-2">
+                <Label>Nome da Nova Organização</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newOrgName}
+                    onChange={(e) => setNewOrgName(e.target.value)}
+                    placeholder="Ex: Empresa ABC Ltda"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleCreateOrganization}
+                    disabled={isUpdating || !newOrgName.trim()}
+                  >
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
+                  </Button>
+                </div>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={generateNewOrgId}
-                  className="shrink-0"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCreatingOrg(false)}
                 >
-                  Gerar Novo
+                  Cancelar
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use "Gerar Novo" para criar uma nova organização ou cole um UUID existente
-              </p>
-            </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsCreatingOrg(true)}
+              >
+                + Criar Nova Organização
+              </Button>
+            )}
           </div>
 
           <DialogFooter>
