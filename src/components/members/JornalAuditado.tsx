@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
 import { useToast } from "@/hooks/use-toast";
+import { notifyAdmins } from "@/lib/notifications";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
@@ -93,6 +94,14 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
     if (error) {
       toast({ title: "Erro", description: "Não foi possível solicitar o relatório", variant: "destructive" });
     } else {
+      // Notify admins about the request
+      notifyAdmins(
+        'ticket_status',
+        'Relatório solicitado',
+        `Cliente solicitou relatório para: "${opportunity.title}"`,
+        opportunity.id
+      );
+      
       toast({ title: "Relatório solicitado", description: "Aguarde a análise da nossa equipe" });
       fetchOpportunities();
       setSelectedOpportunity(null);
@@ -115,6 +124,14 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
     if (error) {
       toast({ title: "Erro", description: "Não foi possível rejeitar a oportunidade", variant: "destructive" });
     } else {
+      // Notify admins about the rejection
+      notifyAdmins(
+        'ticket_status',
+        'Oportunidade rejeitada',
+        `Cliente rejeitou a oportunidade: "${opportunity.title}"`,
+        opportunity.id
+      );
+      
       toast({ title: "Oportunidade rejeitada" });
       fetchOpportunities();
       setSelectedOpportunity(null);
