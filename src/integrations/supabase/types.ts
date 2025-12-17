@@ -560,6 +560,8 @@ export type Database = {
         | "Solicitada"
         | "Rejeitada"
         | "Participando"
+        | "Vencida"
+        | "Perdida"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
     }
@@ -697,6 +699,8 @@ export const Constants = {
         "Solicitada",
         "Rejeitada",
         "Participando",
+        "Vencida",
+        "Perdida",
       ],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],

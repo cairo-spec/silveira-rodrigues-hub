@@ -16,7 +16,7 @@ import { notifyAdmins } from "@/lib/notifications";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida";
 
 interface Opportunity {
   id: string;
@@ -285,6 +285,18 @@ const JornalAuditado = ({
         return (
           <Badge variant="outline" className="border-emerald-500 text-emerald-600 text-xs">
             PARTICIPANDO
+          </Badge>
+        );
+      case "Vencida":
+        return (
+          <Badge variant="outline" className="border-purple-600 text-purple-700 text-xs bg-purple-50">
+            VENCIDA
+          </Badge>
+        );
+      case "Perdida":
+        return (
+          <Badge variant="outline" className="border-orange-600 text-orange-700 text-xs bg-orange-50">
+            PERDIDA
           </Badge>
         );
       default:
