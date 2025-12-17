@@ -24,8 +24,8 @@ export const MentionRenderer = ({ text, onMentionClick, className }: MentionRend
               }}
               className={cn(
                 "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded",
-                "bg-primary/20 text-primary hover:bg-primary/30 transition-colors",
-                "font-medium text-sm cursor-pointer"
+                "bg-gold/20 text-gold hover:bg-gold/30 transition-colors",
+                "font-semibold text-sm cursor-pointer underline underline-offset-2"
               )}
             >
               @{part.content}
