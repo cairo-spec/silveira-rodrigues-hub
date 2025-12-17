@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      audited_opportunities: {
+        Row: {
+          agency_name: string
+          audit_report_path: string | null
+          client_organization_id: string
+          closing_date: string
+          created_at: string
+          go_no_go: Database["public"]["Enums"]["go_no_go_status"]
+          id: string
+          is_published: boolean
+          opportunity_abstract: string | null
+          opportunity_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agency_name: string
+          audit_report_path?: string | null
+          client_organization_id: string
+          closing_date: string
+          created_at?: string
+          go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
+          id?: string
+          is_published?: boolean
+          opportunity_abstract?: string | null
+          opportunity_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agency_name?: string
+          audit_report_path?: string | null
+          client_organization_id?: string
+          closing_date?: string
+          created_at?: string
+          go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
+          id?: string
+          is_published?: boolean
+          opportunity_abstract?: string | null
+          opportunity_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
@@ -232,6 +277,7 @@ export type Database = {
         Row: {
           access_authorized: boolean | null
           avatar_url: string | null
+          client_organization_id: string | null
           contract_accepted: boolean | null
           created_at: string
           email: string
@@ -250,6 +296,7 @@ export type Database = {
         Insert: {
           access_authorized?: boolean | null
           avatar_url?: string | null
+          client_organization_id?: string | null
           contract_accepted?: boolean | null
           created_at?: string
           email: string
@@ -268,6 +315,7 @@ export type Database = {
         Update: {
           access_authorized?: boolean | null
           avatar_url?: string | null
+          client_organization_id?: string | null
           contract_accepted?: boolean | null
           created_at?: string
           email?: string
@@ -465,6 +513,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      go_no_go_status: "Go" | "No_Go" | "Review_Required"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
     }
@@ -595,6 +644,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      go_no_go_status: ["Go", "No_Go", "Review_Required"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],
     },

@@ -15,6 +15,7 @@ interface Profile {
   email: string;
   telefone: string | null;
   empresa: string | null;
+  client_organization_id: string | null;
   subscription_active: boolean | null;
   trial_active: boolean | null;
   trial_expires_at: string | null;
@@ -178,6 +179,11 @@ const AdminUsers = () => {
                         )}
                         {profile.empresa && (
                           <p className="text-sm text-muted-foreground">{profile.empresa}</p>
+                        )}
+                        {profile.client_organization_id && (
+                          <p className="text-xs text-muted-foreground font-mono">
+                            Org: {profile.client_organization_id.slice(0, 8)}...
+                          </p>
                         )}
                       </div>
                     </div>
