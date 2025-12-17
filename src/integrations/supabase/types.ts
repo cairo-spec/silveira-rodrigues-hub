@@ -26,6 +26,7 @@ export type Database = {
           is_published: boolean
           opportunity_abstract: string | null
           opportunity_url: string | null
+          petition_path: string | null
           report_requested_at: string | null
           title: string
           updated_at: string
@@ -41,6 +42,7 @@ export type Database = {
           is_published?: boolean
           opportunity_abstract?: string | null
           opportunity_url?: string | null
+          petition_path?: string | null
           report_requested_at?: string | null
           title: string
           updated_at?: string
@@ -56,6 +58,7 @@ export type Database = {
           is_published?: boolean
           opportunity_abstract?: string | null
           opportunity_url?: string | null
+          petition_path?: string | null
           report_requested_at?: string | null
           title?: string
           updated_at?: string
