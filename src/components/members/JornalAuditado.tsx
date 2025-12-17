@@ -567,7 +567,7 @@ const JornalAuditado = ({
                     ) : (
                       <>
                         <Download className="h-4 w-4 mr-2" />
-                        Baixar Relatório de Auditoria
+                        {selectedOpportunity.go_no_go === "Participando" ? "Baixar Petição" : "Baixar Relatório de Auditoria"}
                       </>
                     )}
                   </Button>
