@@ -39,6 +39,7 @@ interface Ticket {
 interface TicketListProps {
   isPaidSubscriber: boolean;
   defaultCategory?: string;
+  defaultTitle?: string;
   openCreateModal?: boolean;
   onCreateModalChange?: (open: boolean) => void;
 }
@@ -133,7 +134,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 };
 
 
-const TicketList = ({ isPaidSubscriber, defaultCategory, openCreateModal, onCreateModalChange }: TicketListProps) => {
+const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreateModal, onCreateModalChange }: TicketListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -151,15 +152,18 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, openCreateModal, onCrea
   const [includeUpgrade, setIncludeUpgrade] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Handle external modal control and default category
+  // Handle external modal control and default category/title
   useEffect(() => {
     if (openCreateModal) {
       setCreateModalOpen(true);
       if (defaultCategory) {
         setNewCategory(defaultCategory);
       }
+      if (defaultTitle) {
+        setNewTitle(defaultTitle);
+      }
     }
-  }, [openCreateModal, defaultCategory]);
+  }, [openCreateModal, defaultCategory, defaultTitle]);
 
   // Sync modal state with parent
   useEffect(() => {

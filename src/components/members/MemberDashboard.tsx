@@ -26,12 +26,14 @@ const MemberDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const lastActivity = useRef(Date.now());
   
-  // State for pre-selecting ticket category from Jornal Auditado
+  // State for pre-selecting ticket category and title from Jornal Auditado
   const [preSelectedCategory, setPreSelectedCategory] = useState<string | undefined>(undefined);
+  const [preSelectedTitle, setPreSelectedTitle] = useState<string | undefined>(undefined);
   const [openTicketModal, setOpenTicketModal] = useState(false);
 
   const handleRequestParecer = (opportunityTitle: string) => {
     setPreSelectedCategory("parecer-go-no-go");
+    setPreSelectedTitle(opportunityTitle);
     setOpenTicketModal(true);
     setActiveTab("tickets");
   };
@@ -40,6 +42,7 @@ const MemberDashboard = () => {
     if (!open) {
       setOpenTicketModal(false);
       setPreSelectedCategory(undefined);
+      setPreSelectedTitle(undefined);
     }
   };
 
@@ -255,6 +258,7 @@ const MemberDashboard = () => {
             <TicketList 
               isPaidSubscriber={isPaidSubscriber} 
               defaultCategory={preSelectedCategory}
+              defaultTitle={preSelectedTitle}
               openCreateModal={openTicketModal}
               onCreateModalChange={handleTicketModalChange}
             />

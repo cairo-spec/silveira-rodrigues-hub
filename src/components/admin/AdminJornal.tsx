@@ -20,6 +20,37 @@ import { cn } from "@/lib/utils";
 
 type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada";
 
+// Notify all users in an organization
+const notifyOrganizationUsers = async (
+  organizationId: string, 
+  type: string, 
+  title: string, 
+  message: string, 
+  referenceId?: string
+) => {
+  try {
+    // Get all users from this organization
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("client_organization_id", organizationId);
+    
+    if (profiles && profiles.length > 0) {
+      const notifications = profiles.map(profile => ({
+        user_id: profile.user_id,
+        type,
+        title,
+        message,
+        reference_id: referenceId || null
+      }));
+      
+      await supabase.from("notifications").insert(notifications);
+    }
+  } catch (err) {
+    console.error("Error notifying organization users:", err);
+  }
+};
+
 interface Opportunity {
   id: string;
   title: string;
@@ -204,19 +235,55 @@ const AdminJornal = () => {
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
+        // Notify users if report was attached to a Solicitada opportunity
+        if (editingOpportunity.go_no_go === "Solicitada" && selectedFile && reportPath) {
+          notifyOrganizationUsers(
+            formData.client_organization_id,
+            'ticket_status',
+            'Relatório disponível',
+            `O relatório de auditoria para "${formData.title}" está disponível para download.`,
+            editingOpportunity.id
+          );
+        }
+        
+        // Notify if status changed to Go or No_Go
+        if ((finalGoNoGo === "Go" || finalGoNoGo === "No_Go") && 
+            editingOpportunity.go_no_go !== finalGoNoGo) {
+          notifyOrganizationUsers(
+            formData.client_organization_id,
+            'ticket_status',
+            `Parecer atualizado: ${finalGoNoGo === "Go" ? "GO" : "NO GO"}`,
+            `A oportunidade "${formData.title}" recebeu parecer: ${finalGoNoGo === "Go" ? "GO - Recomendado" : "NO GO - Não Recomendado"}`,
+            editingOpportunity.id
+          );
+        }
+        
         toast({ title: "Oportunidade atualizada" });
         setIsModalOpen(false);
         resetForm();
         fetchData();
       }
     } else {
-      const { error } = await supabase
+      const { data: newOpp, error } = await supabase
         .from("audited_opportunities")
-        .insert(opportunityData);
+        .insert(opportunityData)
+        .select()
+        .single();
 
       if (error) {
         toast({ title: "Erro ao criar", description: error.message, variant: "destructive" });
       } else {
+        // Notify users in the organization about new opportunity
+        if (formData.is_published && newOpp) {
+          notifyOrganizationUsers(
+            formData.client_organization_id,
+            'new_ticket',
+            'Nova oportunidade disponível',
+            `Uma nova oportunidade foi publicada: "${formData.title}" - ${formData.agency_name}`,
+            newOpp.id
+          );
+        }
+        
         toast({ title: "Oportunidade criada" });
         setIsModalOpen(false);
         resetForm();
@@ -250,6 +317,17 @@ const AdminJornal = () => {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
+      // Notify users when publishing
+      if (!opportunity.is_published) {
+        notifyOrganizationUsers(
+          opportunity.client_organization_id,
+          'new_ticket',
+          'Nova oportunidade disponível',
+          `Uma nova oportunidade foi publicada: "${opportunity.title}" - ${opportunity.agency_name}`,
+          opportunity.id
+        );
+      }
+      
       toast({ title: opportunity.is_published ? "Despublicado" : "Publicado" });
       fetchData();
     }
