@@ -90,19 +90,19 @@ const JornalAuditado = ({ isSubscriber }: JornalAuditadoProps) => {
     switch (status) {
       case "Go":
         return (
-          <Badge className="bg-green-600 hover:bg-green-700 text-white text-xs">
+          <Badge variant="outline" className="border-green-600 text-green-700 text-xs">
             GO
           </Badge>
         );
       case "No_Go":
         return (
-          <Badge className="bg-red-600 hover:bg-red-700 text-white text-xs">
+          <Badge variant="outline" className="border-red-600 text-red-700 text-xs">
             NO GO
           </Badge>
         );
       default:
         return (
-          <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs">
+          <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs">
             ANÁLISE
           </Badge>
         );
