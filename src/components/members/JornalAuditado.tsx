@@ -658,21 +658,16 @@ const JornalAuditado = ({
 
                 {/* Action buttons for Participando */}
                 {selectedOpportunity.go_no_go === "Participando" && (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm text-emerald-600 text-center py-2 font-medium">
-                      Participação confirmada na licitação.
-                    </p>
-                    <Button
-                      onClick={() => {
-                        onRequestParecer(selectedOpportunity.title);
-                        setSelectedOpportunity(null);
-                      }}
-                      className="bg-primary"
-                    >
-                      <ClipboardList className="h-4 w-4 mr-2" />
-                      Abrir Ticket
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => {
+                      onRequestParecer(selectedOpportunity.title);
+                      setSelectedOpportunity(null);
+                    }}
+                    className="bg-primary"
+                  >
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Abrir Ticket
+                  </Button>
                 )}
               </div>
             </div>
