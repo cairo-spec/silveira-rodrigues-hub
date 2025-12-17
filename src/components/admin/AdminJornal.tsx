@@ -109,6 +109,26 @@ const AdminJornal = () => {
 
   useEffect(() => {
     fetchData();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('admin-opportunities-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'audited_opportunities'
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -877,6 +897,7 @@ const AdminJornal = () => {
                       <TableHead>Título</TableHead>
                       <TableHead>Agência</TableHead>
                       <TableHead>Cliente</TableHead>
+                      <TableHead className="text-center">Docs</TableHead>
                       <TableHead className="text-center">Parecer</TableHead>
                       <TableHead className="text-center">Publicado</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -888,6 +909,22 @@ const AdminJornal = () => {
                         <TableCell className="font-medium max-w-[200px] truncate">{opp.title}</TableCell>
                         <TableCell>{opp.agency_name}</TableCell>
                         <TableCell>{getOrgName(opp.client_organization_id)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {opp.audit_report_path && (
+                              <Badge variant="outline" className="text-[10px] px-1">
+                                <FileText className="h-3 w-3 mr-0.5" />
+                                Rel
+                              </Badge>
+                            )}
+                            {opp.petition_path && (
+                              <Badge variant="outline" className="text-[10px] px-1 border-emerald-500 text-emerald-600">
+                                <FileText className="h-3 w-3 mr-0.5" />
+                                Pet
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-center">{getGoNoGoBadge(opp.go_no_go)}</TableCell>
                         <TableCell className="text-center">
                           <Switch
