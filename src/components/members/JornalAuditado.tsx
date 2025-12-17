@@ -736,6 +736,20 @@ const JornalAuditado = ({
                     Abrir Ticket
                   </Button>
                 )}
+
+                {/* Action buttons for Vencida/Perdida (concluded) */}
+                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && (
+                  <Button
+                    onClick={() => {
+                      onRequestParecer(selectedOpportunity.title);
+                      setSelectedOpportunity(null);
+                    }}
+                    className="bg-primary"
+                  >
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Abrir Ticket
+                  </Button>
+                )}
               </div>
             </div>
           )}
