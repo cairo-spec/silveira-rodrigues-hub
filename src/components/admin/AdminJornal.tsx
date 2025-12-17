@@ -217,15 +217,6 @@ const AdminJornal = () => {
           variant: "destructive"
         });
       } else {
-        // Notify users that the report was removed
-        notifyOrganizationUsers(
-          formData.client_organization_id,
-          'ticket_status',
-          'Relatório removido',
-          `O relatório de auditoria para "${formData.title}" foi removido. Aguarde nova análise.`,
-          editingOpportunity.id
-        );
-        
         toast({ title: "Arquivo excluído e oportunidade atualizada" });
         fetchData();
       }
