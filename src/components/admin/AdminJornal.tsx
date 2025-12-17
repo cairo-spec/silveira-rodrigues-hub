@@ -82,6 +82,7 @@ const AdminJornal = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeletingFile, setIsDeletingFile] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -179,6 +180,29 @@ const AdminJornal = () => {
     }
 
     return data.path;
+  };
+
+  const handleDeleteFile = async () => {
+    if (!formData.audit_report_path) return;
+    
+    setIsDeletingFile(true);
+    
+    const { error } = await supabase.storage
+      .from("audit-reports")
+      .remove([formData.audit_report_path]);
+    
+    if (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o arquivo",
+        variant: "destructive"
+      });
+    } else {
+      setFormData({ ...formData, audit_report_path: "" });
+      toast({ title: "Arquivo excluído" });
+    }
+    
+    setIsDeletingFile(false);
   };
 
   const handleSubmit = async () => {
@@ -503,12 +527,29 @@ const AdminJornal = () => {
                     type="file"
                     accept=".pdf"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="flex-1"
                   />
                   {formData.audit_report_path && !selectedFile && (
-                    <Badge variant="outline" className="whitespace-nowrap">
-                      <FileText className="h-3 w-3 mr-1" />
-                      Arquivo existente
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="whitespace-nowrap">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Arquivo existente
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={handleDeleteFile}
+                        disabled={isDeletingFile}
+                      >
+                        {isDeletingFile ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
