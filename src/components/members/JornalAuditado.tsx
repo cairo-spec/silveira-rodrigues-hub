@@ -737,31 +737,45 @@ const JornalAuditado = ({
 
                 {/* Action buttons for Review_Required status */}
                 {selectedOpportunity.go_no_go === "Review_Required" && !canRequestParecer(selectedOpportunity) && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="default"
-                      onClick={() => handleSolicitarRelatorio(selectedOpportunity)}
-                      disabled={isUpdating === selectedOpportunity.id}
-                      className="flex-1"
-                    >
-                      {isUpdating === selectedOpportunity.id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Solicitar Relatório
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
-                      disabled={isUpdating === selectedOpportunity.id}
-                      className="flex-1"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Rejeitar
-                    </Button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        onClick={() => handleSolicitarRelatorio(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1"
+                      >
+                        {isUpdating === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Solicitar Relatório
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                    {onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        variant="outline"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Abrir Ticket
+                      </Button>
+                    )}
                   </div>
                 )}
 
