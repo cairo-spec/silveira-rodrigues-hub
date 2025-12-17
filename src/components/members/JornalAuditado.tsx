@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -54,6 +55,7 @@ const JornalAuditado = ({
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
 
   useEffect(() => {
     fetchOpportunities();
@@ -308,10 +310,27 @@ const JornalAuditado = ({
     }
   };
 
-  const filteredOpportunities = opportunities.filter((opp) =>
+  // Filter by search term first
+  const searchFiltered = opportunities.filter((opp) =>
     opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     opp.agency_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Then filter by tab
+  const getTabFilteredOpportunities = () => {
+    switch (activeTab) {
+      case "andamento":
+        return searchFiltered.filter(opp => opp.go_no_go === "Participando");
+      case "concluidas":
+        return searchFiltered.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida");
+      default: // noticias
+        return searchFiltered.filter(opp => 
+          !["Participando", "Vencida", "Perdida"].includes(opp.go_no_go)
+        );
+    }
+  };
+
+  const filteredOpportunities = getTabFilteredOpportunities();
 
   if (isLoading) {
     return (
@@ -339,52 +358,122 @@ const JornalAuditado = ({
         />
       </div>
 
-      {filteredOpportunities.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium">Nenhuma oportunidade encontrada</h3>
-            <p className="text-muted-foreground text-sm">
-              {searchTerm ? "Tente buscar com outros termos" : "Aguarde novas publicações"}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Desktop Table View */}
-          <Card className="hidden md:block">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Agência</TableHead>
-                    <TableHead className="text-center">Data Limite</TableHead>
-                    <TableHead className="text-center">Parecer</TableHead>
-                    <TableHead className="text-center">Relatório</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOpportunities.map((opp) => (
-                    <TableRow 
-                      key={opp.id} 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedOpportunity(opp)}
-                    >
-                      <TableCell className="font-medium max-w-[250px]">
-                        <div className="truncate">{opp.title}</div>
-                      </TableCell>
-                      <TableCell>{opp.agency_name}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline" className="whitespace-nowrap">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="noticias">
+            Notícias ({searchFiltered.filter(o => !["Participando", "Vencida", "Perdida"].includes(o.go_no_go)).length})
+          </TabsTrigger>
+          <TabsTrigger value="andamento">
+            Em Andamento ({searchFiltered.filter(o => o.go_no_go === "Participando").length})
+          </TabsTrigger>
+          <TabsTrigger value="concluidas">
+            Concluídas ({searchFiltered.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida").length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-4">
+          {filteredOpportunities.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-medium">Nenhuma oportunidade nesta categoria</h3>
+                <p className="text-muted-foreground text-sm">
+                  {activeTab === "noticias" && (searchTerm ? "Tente buscar com outros termos" : "Aguarde novas publicações")}
+                  {activeTab === "andamento" && "Oportunidades com participação confirmada aparecerão aqui"}
+                  {activeTab === "concluidas" && "Licitações vencidas ou perdidas aparecerão aqui"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <Card className="hidden md:block">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Agência</TableHead>
+                        <TableHead className="text-center">Data Limite</TableHead>
+                        <TableHead className="text-center">Parecer</TableHead>
+                        <TableHead className="text-center">Relatório</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOpportunities.map((opp) => (
+                        <TableRow 
+                          key={opp.id} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => setSelectedOpportunity(opp)}
+                        >
+                          <TableCell className="font-medium max-w-[250px]">
+                            <div className="truncate">{opp.title}</div>
+                          </TableCell>
+                          <TableCell>{opp.agency_name}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="whitespace-nowrap">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {format(new Date(opp.closing_date), "dd/MM/yyyy")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {getGoNoGoBadge(opp.go_no_go)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              size="sm"
+                              variant={isSubscriber ? "default" : "secondary"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRequestReport(opp);
+                              }}
+                              disabled={!opp.audit_report_path || isDownloading === opp.id}
+                            >
+                              {isDownloading === opp.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : isSubscriber ? (
+                                <>
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Baixar
+                                </>
+                              ) : (
+                                "Solicitar"
+                              )}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredOpportunities.map((opp) => (
+                  <Card 
+                    key={opp.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setSelectedOpportunity(opp)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base line-clamp-2">{opp.title}</CardTitle>
+                          <CardDescription className="flex items-center gap-1 mt-1">
+                            <Building2 className="h-3 w-3" />
+                            {opp.agency_name}
+                          </CardDescription>
+                        </div>
+                        {getGoNoGoBadge(opp.go_no_go)}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
                           <Calendar className="h-3 w-3 mr-1" />
                           {format(new Date(opp.closing_date), "dd/MM/yyyy")}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getGoNoGoBadge(opp.go_no_go)}
-                      </TableCell>
-                      <TableCell className="text-center">
                         <Button
                           size="sm"
                           variant={isSubscriber ? "default" : "secondary"}
@@ -405,67 +494,15 @@ const JornalAuditado = ({
                             "Solicitar"
                           )}
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            {filteredOpportunities.map((opp) => (
-              <Card 
-                key={opp.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setSelectedOpportunity(opp)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base line-clamp-2">{opp.title}</CardTitle>
-                      <CardDescription className="flex items-center gap-1 mt-1">
-                        <Building2 className="h-3 w-3" />
-                        {opp.agency_name}
-                      </CardDescription>
-                    </div>
-                    {getGoNoGoBadge(opp.go_no_go)}
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-xs">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {format(new Date(opp.closing_date), "dd/MM/yyyy")}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant={isSubscriber ? "default" : "secondary"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRequestReport(opp);
-                      }}
-                      disabled={!opp.audit_report_path || isDownloading === opp.id}
-                    >
-                      {isDownloading === opp.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : isSubscriber ? (
-                        <>
-                          <Download className="h-4 w-4 mr-1" />
-                          Baixar
-                        </>
-                      ) : (
-                        "Solicitar"
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Detail Modal */}
       <Dialog open={!!selectedOpportunity} onOpenChange={() => handleCloseOpportunity()}>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -85,6 +86,7 @@ const AdminJornal = () => {
   const [isDeletingFile, setIsDeletingFile] = useState(false);
   const [isDownloadingFile, setIsDownloadingFile] = useState(false);
   const [isReopening, setIsReopening] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -454,6 +456,22 @@ const AdminJornal = () => {
     return org?.name || orgId.slice(0, 8) + "...";
   };
 
+  // Filter opportunities by tab
+  const getFilteredOpportunities = () => {
+    switch (activeTab) {
+      case "andamento":
+        return opportunities.filter(opp => opp.go_no_go === "Participando");
+      case "concluidas":
+        return opportunities.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida");
+      default: // noticias
+        return opportunities.filter(opp => 
+          !["Participando", "Vencida", "Perdida"].includes(opp.go_no_go)
+        );
+    }
+  };
+
+  const filteredOpportunities = getFilteredOpportunities();
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -671,74 +689,94 @@ const AdminJornal = () => {
         </Dialog>
       </div>
 
-      {opportunities.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium">Nenhuma oportunidade cadastrada</h3>
-            <p className="text-muted-foreground text-sm">Clique em "Nova Oportunidade" para começar</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Agência</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="text-center">Parecer</TableHead>
-                  <TableHead className="text-center">Publicado</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {opportunities.map((opp) => (
-                  <TableRow key={opp.id}>
-                    <TableCell className="font-medium max-w-[200px] truncate">{opp.title}</TableCell>
-                    <TableCell>{opp.agency_name}</TableCell>
-                    <TableCell>{getOrgName(opp.client_organization_id)}</TableCell>
-                    <TableCell className="text-center">{getGoNoGoBadge(opp.go_no_go)}</TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={opp.is_published}
-                        onCheckedChange={() => togglePublish(opp)}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {(opp.go_no_go === "Rejeitada" || opp.go_no_go === "Participando" || opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida") && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                            onClick={() => handleReopenOpportunity(opp)}
-                            disabled={isReopening === opp.id}
-                            title="Reabrir para análise"
-                          >
-                            {isReopening === opp.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <RotateCcw className="h-4 w-4" />
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="noticias">
+            Notícias ({opportunities.filter(o => !["Participando", "Vencida", "Perdida"].includes(o.go_no_go)).length})
+          </TabsTrigger>
+          <TabsTrigger value="andamento">
+            Em Andamento ({opportunities.filter(o => o.go_no_go === "Participando").length})
+          </TabsTrigger>
+          <TabsTrigger value="concluidas">
+            Concluídas ({opportunities.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida").length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-4">
+          {filteredOpportunities.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="font-medium">Nenhuma oportunidade nesta categoria</h3>
+                <p className="text-muted-foreground text-sm">
+                  {activeTab === "noticias" && "Clique em \"Nova Oportunidade\" para começar"}
+                  {activeTab === "andamento" && "Oportunidades com status \"Participando\" aparecerão aqui"}
+                  {activeTab === "concluidas" && "Oportunidades \"Vencidas\" ou \"Perdidas\" aparecerão aqui"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Agência</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead className="text-center">Parecer</TableHead>
+                      <TableHead className="text-center">Publicado</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOpportunities.map((opp) => (
+                      <TableRow key={opp.id}>
+                        <TableCell className="font-medium max-w-[200px] truncate">{opp.title}</TableCell>
+                        <TableCell>{opp.agency_name}</TableCell>
+                        <TableCell>{getOrgName(opp.client_organization_id)}</TableCell>
+                        <TableCell className="text-center">{getGoNoGoBadge(opp.go_no_go)}</TableCell>
+                        <TableCell className="text-center">
+                          <Switch
+                            checked={opp.is_published}
+                            onCheckedChange={() => togglePublish(opp)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {(opp.go_no_go === "Rejeitada" || opp.go_no_go === "Participando" || opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida") && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                onClick={() => handleReopenOpportunity(opp)}
+                                disabled={isReopening === opp.id}
+                                title="Reabrir para análise"
+                              >
+                                {isReopening === opp.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="h-4 w-4" />
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => openEditModal(opp)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(opp.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                            <Button variant="ghost" size="icon" onClick={() => openEditModal(opp)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(opp.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
