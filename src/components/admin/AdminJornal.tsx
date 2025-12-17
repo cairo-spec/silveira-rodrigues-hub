@@ -187,21 +187,52 @@ const AdminJornal = () => {
     
     setIsDeletingFile(true);
     
-    const { error } = await supabase.storage
+    // Remove file from storage
+    const { error: storageError } = await supabase.storage
       .from("audit-reports")
       .remove([formData.audit_report_path]);
     
-    if (error) {
+    if (storageError) {
       toast({
         title: "Erro ao excluir",
         description: "Não foi possível excluir o arquivo",
         variant: "destructive"
       });
+      setIsDeletingFile(false);
+      return;
+    }
+    
+    // If editing an existing opportunity, update database immediately
+    if (editingOpportunity) {
+      const { error: dbError } = await supabase
+        .from("audited_opportunities")
+        .update({ audit_report_path: null })
+        .eq("id", editingOpportunity.id);
+      
+      if (dbError) {
+        toast({
+          title: "Erro ao atualizar",
+          description: "Arquivo removido mas não foi possível atualizar a oportunidade",
+          variant: "destructive"
+        });
+      } else {
+        // Notify users that the report was removed
+        notifyOrganizationUsers(
+          formData.client_organization_id,
+          'ticket_status',
+          'Relatório removido',
+          `O relatório de auditoria para "${formData.title}" foi removido. Aguarde nova análise.`,
+          editingOpportunity.id
+        );
+        
+        toast({ title: "Arquivo excluído e oportunidade atualizada" });
+        fetchData();
+      }
     } else {
-      setFormData({ ...formData, audit_report_path: "" });
       toast({ title: "Arquivo excluído" });
     }
     
+    setFormData({ ...formData, audit_report_path: "" });
     setIsDeletingFile(false);
   };
 
