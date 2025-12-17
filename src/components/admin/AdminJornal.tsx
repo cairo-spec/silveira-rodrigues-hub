@@ -18,6 +18,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada";
+
 interface Opportunity {
   id: string;
   title: string;
@@ -26,11 +28,12 @@ interface Opportunity {
   closing_date: string;
   client_organization_id: string;
   agency_name: string;
-  go_no_go: "Go" | "No_Go" | "Review_Required";
+  go_no_go: GoNoGoStatus;
   audit_report_path: string | null;
   is_published: boolean;
   created_at: string;
   updated_at: string;
+  report_requested_at: string | null;
 }
 
 interface Organization {
@@ -57,7 +60,7 @@ const AdminJornal = () => {
     closing_date: null as Date | null,
     client_organization_id: "",
     agency_name: "",
-    go_no_go: "Review_Required" as "Go" | "No_Go" | "Review_Required",
+    go_no_go: "Review_Required" as GoNoGoStatus,
     audit_report_path: "",
     is_published: false,
   });
@@ -171,6 +174,15 @@ const AdminJornal = () => {
     // Upload file if selected
     const reportPath = await handleFileUpload();
 
+    // Auto-revert status to Review_Required if attaching report to a "Solicitada" opportunity
+    let finalGoNoGo = formData.go_no_go;
+    if (editingOpportunity && 
+        editingOpportunity.go_no_go === "Solicitada" && 
+        selectedFile && 
+        reportPath) {
+      finalGoNoGo = "Review_Required";
+    }
+
     const opportunityData = {
       title: formData.title,
       opportunity_url: formData.opportunity_url || null,
@@ -178,7 +190,7 @@ const AdminJornal = () => {
       closing_date: format(formData.closing_date, "yyyy-MM-dd"),
       client_organization_id: formData.client_organization_id,
       agency_name: formData.agency_name,
-      go_no_go: formData.go_no_go,
+      go_no_go: finalGoNoGo,
       audit_report_path: reportPath,
       is_published: formData.is_published,
     };
@@ -243,12 +255,16 @@ const AdminJornal = () => {
     }
   };
 
-  const getGoNoGoBadge = (status: string) => {
+  const getGoNoGoBadge = (status: GoNoGoStatus) => {
     switch (status) {
       case "Go":
         return <Badge variant="outline" className="border-green-600 text-green-700 text-xs">GO</Badge>;
       case "No_Go":
         return <Badge variant="outline" className="border-red-600 text-red-700 text-xs">NO GO</Badge>;
+      case "Solicitada":
+        return <Badge variant="outline" className="border-blue-500 text-blue-600 text-xs">SOLICITADA</Badge>;
+      case "Rejeitada":
+        return <Badge variant="outline" className="border-gray-500 text-gray-600 text-xs">REJEITADA</Badge>;
       default:
         return <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs">ANÁLISE</Badge>;
     }

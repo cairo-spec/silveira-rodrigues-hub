@@ -25,6 +25,23 @@ const MemberDashboard = () => {
   const [isFreeAuthorized, setIsFreeAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const lastActivity = useRef(Date.now());
+  
+  // State for pre-selecting ticket category from Jornal Auditado
+  const [preSelectedCategory, setPreSelectedCategory] = useState<string | undefined>(undefined);
+  const [openTicketModal, setOpenTicketModal] = useState(false);
+
+  const handleRequestParecer = (opportunityTitle: string) => {
+    setPreSelectedCategory("parecer-go-no-go");
+    setOpenTicketModal(true);
+    setActiveTab("tickets");
+  };
+
+  const handleTicketModalChange = (open: boolean) => {
+    if (!open) {
+      setOpenTicketModal(false);
+      setPreSelectedCategory(undefined);
+    }
+  };
 
   useEffect(() => {
     const checkSubscription = async () => {
@@ -231,11 +248,16 @@ const MemberDashboard = () => {
           </TabsList>
 
           <TabsContent value="jornal" className="mt-6">
-            <JornalAuditado isSubscriber={isSubscriber} />
+            <JornalAuditado isSubscriber={isSubscriber} onRequestParecer={handleRequestParecer} />
           </TabsContent>
 
           <TabsContent value="tickets" className="mt-6">
-            <TicketList isPaidSubscriber={isPaidSubscriber} />
+            <TicketList 
+              isPaidSubscriber={isPaidSubscriber} 
+              defaultCategory={preSelectedCategory}
+              openCreateModal={openTicketModal}
+              onCreateModalChange={handleTicketModalChange}
+            />
           </TabsContent>
 
           <TabsContent value="knowledge" className="mt-6">

@@ -7,12 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2 } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
+import { useToast } from "@/hooks/use-toast";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
+
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada";
 
 interface Opportunity {
   id: string;
@@ -21,24 +24,28 @@ interface Opportunity {
   opportunity_abstract: string | null;
   closing_date: string;
   agency_name: string;
-  go_no_go: "Go" | "No_Go" | "Review_Required";
+  go_no_go: GoNoGoStatus;
   audit_report_path: string | null;
   is_published: boolean;
   created_at: string;
+  report_requested_at: string | null;
 }
 
 interface JornalAuditadoProps {
   isSubscriber: boolean;
+  onRequestParecer?: (opportunityTitle: string) => void;
 }
 
-const JornalAuditado = ({ isSubscriber }: JornalAuditadoProps) => {
+const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOpportunities();
@@ -68,6 +75,60 @@ const JornalAuditado = ({ isSubscriber }: JornalAuditadoProps) => {
     }
   };
 
+  const handleSolicitarRelatorio = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ 
+        go_no_go: "Solicitada" as GoNoGoStatus,
+        report_requested_at: new Date().toISOString()
+      })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível solicitar o relatório", variant: "destructive" });
+    } else {
+      toast({ title: "Relatório solicitado", description: "Aguarde a análise da nossa equipe" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
+  const handleRejeitarOportunidade = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ go_no_go: "Rejeitada" as GoNoGoStatus })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível rejeitar a oportunidade", variant: "destructive" });
+    } else {
+      toast({ title: "Oportunidade rejeitada" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
+  const handleSolicitarParecer = (opportunity: Opportunity) => {
+    if (onRequestParecer) {
+      onRequestParecer(opportunity.title);
+    }
+    setSelectedOpportunity(null);
+  };
+
   const downloadReport = async (opportunity: Opportunity) => {
     if (!opportunity.audit_report_path) {
       return;
@@ -86,7 +147,14 @@ const JornalAuditado = ({ isSubscriber }: JornalAuditadoProps) => {
     setIsDownloading(null);
   };
 
-  const getGoNoGoBadge = (status: string) => {
+  // Check if opportunity was requested and now has a report attached (eligible for "Solicitar Parecer")
+  const canRequestParecer = (opp: Opportunity): boolean => {
+    return opp.report_requested_at !== null && 
+           opp.audit_report_path !== null && 
+           opp.go_no_go === "Review_Required";
+  };
+
+  const getGoNoGoBadge = (status: GoNoGoStatus) => {
     switch (status) {
       case "Go":
         return (
@@ -98,6 +166,18 @@ const JornalAuditado = ({ isSubscriber }: JornalAuditadoProps) => {
         return (
           <Badge variant="outline" className="border-red-600 text-red-700 text-xs">
             NO GO
+          </Badge>
+        );
+      case "Solicitada":
+        return (
+          <Badge variant="outline" className="border-blue-500 text-blue-600 text-xs">
+            SOLICITADA
+          </Badge>
+        );
+      case "Rejeitada":
+        return (
+          <Badge variant="outline" className="border-gray-500 text-gray-600 text-xs">
+            REJEITADA
           </Badge>
         );
       default:
@@ -319,24 +399,78 @@ const JornalAuditado = ({ isSubscriber }: JornalAuditadoProps) => {
                   </Button>
                 )}
 
-                <Button
-                  onClick={() => handleRequestReport(selectedOpportunity)}
-                  disabled={!selectedOpportunity.audit_report_path || isDownloading === selectedOpportunity.id}
-                >
-                  {isDownloading === selectedOpportunity.id ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : isSubscriber ? (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Baixar Relatório de Auditoria
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Solicitar Relatório
-                    </>
-                  )}
-                </Button>
+                {/* Download report if available */}
+                {selectedOpportunity.audit_report_path && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleRequestReport(selectedOpportunity)}
+                    disabled={isDownloading === selectedOpportunity.id}
+                  >
+                    {isDownloading === selectedOpportunity.id ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Baixar Relatório de Auditoria
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Solicitar Parecer - when report was requested and attached */}
+                {canRequestParecer(selectedOpportunity) && isSubscriber && (
+                  <Button
+                    onClick={() => handleSolicitarParecer(selectedOpportunity)}
+                    className="bg-primary"
+                  >
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Solicitar Parecer Go/No Go
+                  </Button>
+                )}
+
+                {/* Action buttons for Review_Required status */}
+                {selectedOpportunity.go_no_go === "Review_Required" && !canRequestParecer(selectedOpportunity) && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      onClick={() => handleSolicitarRelatorio(selectedOpportunity)}
+                      disabled={isUpdating === selectedOpportunity.id}
+                      className="flex-1"
+                    >
+                      {isUpdating === selectedOpportunity.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Solicitar Relatório
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                      disabled={isUpdating === selectedOpportunity.id}
+                      className="flex-1"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Rejeitar
+                    </Button>
+                  </div>
+                )}
+
+                {/* Status info for Solicitada */}
+                {selectedOpportunity.go_no_go === "Solicitada" && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    Aguardando análise da equipe técnica...
+                  </p>
+                )}
+
+                {/* Status info for Rejeitada */}
+                {selectedOpportunity.go_no_go === "Rejeitada" && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    Oportunidade rejeitada pelo cliente.
+                  </p>
+                )}
               </div>
             </div>
           )}
