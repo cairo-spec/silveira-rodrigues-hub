@@ -160,7 +160,8 @@ const AdminUsers = () => {
 
     setIsUpdating(true);
 
-    const newOrgId = organizationInput.trim() || null;
+    // Handle special "none" value
+    const newOrgId = organizationInput === "__none__" || !organizationInput.trim() ? null : organizationInput.trim();
 
     const { error } = await supabase
       .from('profiles')
@@ -373,14 +374,14 @@ const AdminUsers = () => {
             <div className="space-y-2">
               <Label>Selecionar Organização Existente</Label>
               <Select
-                value={organizationInput}
-                onValueChange={setOrganizationInput}
+                value={organizationInput || "__none__"}
+                onValueChange={(val) => setOrganizationInput(val === "__none__" ? "" : val)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Escolher organização..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="__none__">Nenhuma</SelectItem>
                   {existingOrgs.map((org) => (
                     <SelectItem key={org.id} value={org.id}>
                       {org.name}
