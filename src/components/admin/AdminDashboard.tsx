@@ -4,12 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User, PenTool } from "lucide-react";
 import AdminTickets from "./AdminTickets";
 import AdminKnowledgeBase from "./AdminKnowledgeBase";
 import AdminChats from "./AdminChats";
 import AdminUsers from "./AdminUsers";
 import AdminPricingTable from "./AdminPricingTable";
+import AdminJornal from "./AdminJornal";
 import SettingsPanel from "../members/SettingsPanel";
 import MemberProfile from "../members/MemberProfile";
 import NotificationBell from "../members/NotificationBell";
@@ -112,7 +113,7 @@ const AdminDashboard = () => {
 
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -120,6 +121,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="chats" className="gap-2">
               <MessageCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Chats</span>
+            </TabsTrigger>
+            <TabsTrigger value="jornal" className="gap-2">
+              <PenTool className="h-4 w-4" />
+              <span className="hidden sm:inline">Publicar</span>
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
@@ -137,6 +142,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="tickets"><AdminTickets /></TabsContent>
           <TabsContent value="chats"><AdminChats /></TabsContent>
+          <TabsContent value="jornal"><AdminJornal /></TabsContent>
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
           <TabsContent value="users"><AdminUsers /></TabsContent>

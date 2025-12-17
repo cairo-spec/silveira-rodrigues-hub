@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
-import { Ticket, BookOpen, LogOut, User, Settings, Headphones, DollarSign, Lock } from "lucide-react";
+import { Ticket, BookOpen, LogOut, User, Settings, Headphones, DollarSign, Lock, FileText } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
@@ -14,6 +14,7 @@ import MemberProfile from "./MemberProfile";
 import SettingsPanel from "./SettingsPanel";
 import NotificationBell from "./NotificationBell";
 import PricingTable from "./PricingTable";
+import JornalAuditado from "./JornalAuditado";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
@@ -198,7 +199,11 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="jornal" className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Jornal</span>
+            </TabsTrigger>
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="h-4 w-4" />
               <span className="hidden sm:inline">Tickets</span>
@@ -224,6 +229,10 @@ const MemberDashboard = () => {
               </TabsTrigger>
             )}
           </TabsList>
+
+          <TabsContent value="jornal" className="mt-6">
+            <JornalAuditado isSubscriber={isSubscriber} />
+          </TabsContent>
 
           <TabsContent value="tickets" className="mt-6">
             <TicketList isPaidSubscriber={isPaidSubscriber} />
