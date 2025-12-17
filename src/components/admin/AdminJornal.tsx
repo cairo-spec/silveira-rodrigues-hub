@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -83,6 +83,7 @@ const AdminJornal = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
+  const [isDownloadingFile, setIsDownloadingFile] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -234,6 +235,28 @@ const AdminJornal = () => {
     
     setFormData({ ...formData, audit_report_path: "" });
     setIsDeletingFile(false);
+  };
+
+  const handleDownloadFile = async () => {
+    if (!formData.audit_report_path) return;
+    
+    setIsDownloadingFile(true);
+    
+    const { data, error } = await supabase.storage
+      .from("audit-reports")
+      .createSignedUrl(formData.audit_report_path, 60);
+    
+    if (error) {
+      toast({
+        title: "Erro ao baixar",
+        description: "Não foi possível gerar link de download",
+        variant: "destructive"
+      });
+    } else if (data?.signedUrl) {
+      window.open(data.signedUrl, "_blank");
+    }
+    
+    setIsDownloadingFile(false);
   };
 
   const handleSubmit = async () => {
@@ -570,9 +593,25 @@ const AdminJornal = () => {
                         type="button"
                         variant="ghost"
                         size="icon"
+                        className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={handleDownloadFile}
+                        disabled={isDownloadingFile}
+                        title="Baixar arquivo"
+                      >
+                        {isDownloadingFile ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={handleDeleteFile}
                         disabled={isDeletingFile}
+                        title="Excluir arquivo"
                       >
                         {isDeletingFile ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
