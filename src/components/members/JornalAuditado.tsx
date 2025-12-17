@@ -50,10 +50,31 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
 
   useEffect(() => {
     fetchOpportunities();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('opportunities-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'audited_opportunities'
+        },
+        () => {
+          fetchOpportunities();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchOpportunities = async () => {
-    setIsLoading(true);
+    const wasLoading = opportunities.length === 0;
+    if (wasLoading) setIsLoading(true);
     
     const { data, error } = await supabase
       .from("audited_opportunities")
@@ -63,9 +84,20 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
 
     if (data) {
       setOpportunities(data as Opportunity[]);
+      
+      // Update selected opportunity if it exists (for realtime updates)
+      if (selectedOpportunity) {
+        const updated = data.find(o => o.id === selectedOpportunity.id);
+        if (updated) {
+          setSelectedOpportunity(updated as Opportunity);
+        } else {
+          // Opportunity was unpublished or deleted
+          setSelectedOpportunity(null);
+        }
+      }
     }
 
-    setIsLoading(false);
+    if (wasLoading) setIsLoading(false);
   };
 
   const handleRequestReport = (opportunity: Opportunity) => {
