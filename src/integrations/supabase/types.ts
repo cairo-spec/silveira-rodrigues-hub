@@ -559,6 +559,7 @@ export type Database = {
         | "Review_Required"
         | "Solicitada"
         | "Rejeitada"
+        | "Participando"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
     }
@@ -695,6 +696,7 @@ export const Constants = {
         "Review_Required",
         "Solicitada",
         "Rejeitada",
+        "Participando",
       ],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],

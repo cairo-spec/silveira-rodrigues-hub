@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando";
 
 // Notify all users in an organization
 const notifyOrganizationUsers = async (
@@ -438,6 +438,8 @@ const AdminJornal = () => {
         return <Badge variant="outline" className="border-blue-500 text-blue-600 text-xs">SOLICITADA</Badge>;
       case "Rejeitada":
         return <Badge variant="outline" className="border-gray-500 text-gray-600 text-xs">REJEITADA</Badge>;
+      case "Participando":
+        return <Badge variant="outline" className="border-emerald-500 text-emerald-600 text-xs">PARTICIPANDO</Badge>;
       default:
         return <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs">ANÁLISE</Badge>;
     }
@@ -700,7 +702,7 @@ const AdminJornal = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {opp.go_no_go === "Rejeitada" && (
+                        {(opp.go_no_go === "Rejeitada" || opp.go_no_go === "Participando") && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
