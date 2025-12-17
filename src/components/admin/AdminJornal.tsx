@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida";
 
 // Notify all users in an organization
 const notifyOrganizationUsers = async (
@@ -440,6 +440,10 @@ const AdminJornal = () => {
         return <Badge variant="outline" className="border-gray-500 text-gray-600 text-xs">REJEITADA</Badge>;
       case "Participando":
         return <Badge variant="outline" className="border-emerald-500 text-emerald-600 text-xs">PARTICIPANDO</Badge>;
+      case "Vencida":
+        return <Badge variant="outline" className="border-purple-600 text-purple-700 text-xs bg-purple-50">VENCIDA</Badge>;
+      case "Perdida":
+        return <Badge variant="outline" className="border-orange-600 text-orange-700 text-xs bg-orange-50">PERDIDA</Badge>;
       default:
         return <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs">ANÁLISE</Badge>;
     }
@@ -533,7 +537,7 @@ const AdminJornal = () => {
                   <Label>Parecer *</Label>
                   <Select
                     value={formData.go_no_go}
-                    onValueChange={(value: "Go" | "No_Go" | "Review_Required") => setFormData({ ...formData, go_no_go: value })}
+                    onValueChange={(value: GoNoGoStatus) => setFormData({ ...formData, go_no_go: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -542,6 +546,8 @@ const AdminJornal = () => {
                       <SelectItem value="Go">GO - Recomendado</SelectItem>
                       <SelectItem value="No_Go">NO GO - Não Recomendado</SelectItem>
                       <SelectItem value="Review_Required">Análise Necessária</SelectItem>
+                      <SelectItem value="Vencida">VENCIDA - Licitação Ganha</SelectItem>
+                      <SelectItem value="Perdida">PERDIDA - Licitação Perdida</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -702,7 +708,7 @@ const AdminJornal = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {(opp.go_no_go === "Rejeitada" || opp.go_no_go === "Participando") && (
+                        {(opp.go_no_go === "Rejeitada" || opp.go_no_go === "Participando" || opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida") && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
