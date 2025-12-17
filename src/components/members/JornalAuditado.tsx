@@ -35,9 +35,16 @@ interface Opportunity {
 interface JornalAuditadoProps {
   isSubscriber: boolean;
   onRequestParecer?: (opportunityTitle: string) => void;
+  selectedOpportunityId?: string;
+  onOpportunityClose?: () => void;
 }
 
-const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps) => {
+const JornalAuditado = ({ 
+  isSubscriber, 
+  onRequestParecer, 
+  selectedOpportunityId,
+  onOpportunityClose 
+}: JornalAuditadoProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -71,6 +78,22 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  // Auto-open opportunity from mention click
+  useEffect(() => {
+    if (selectedOpportunityId && opportunities.length > 0) {
+      const opp = opportunities.find(o => o.id === selectedOpportunityId);
+      if (opp) {
+        setSelectedOpportunity(opp);
+      }
+    }
+  }, [selectedOpportunityId, opportunities]);
+
+  // Notify parent when opportunity is closed
+  const handleCloseOpportunity = () => {
+    setSelectedOpportunity(null);
+    onOpportunityClose?.();
+  };
 
   const fetchOpportunities = async () => {
     const wasLoading = opportunities.length === 0;
@@ -433,7 +456,7 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
       )}
 
       {/* Detail Modal */}
-      <Dialog open={!!selectedOpportunity} onOpenChange={() => setSelectedOpportunity(null)}>
+      <Dialog open={!!selectedOpportunity} onOpenChange={() => handleCloseOpportunity()}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedOpportunity?.title}</DialogTitle>

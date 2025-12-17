@@ -30,12 +30,20 @@ const MemberDashboard = () => {
   const [preSelectedCategory, setPreSelectedCategory] = useState<string | undefined>(undefined);
   const [preSelectedTitle, setPreSelectedTitle] = useState<string | undefined>(undefined);
   const [openTicketModal, setOpenTicketModal] = useState(false);
+  
+  // State for opening opportunity from mention
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | undefined>(undefined);
 
   const handleRequestParecer = (opportunityTitle: string) => {
     setPreSelectedCategory("parecer-go-no-go");
     setPreSelectedTitle(opportunityTitle);
     setOpenTicketModal(true);
     setActiveTab("tickets");
+  };
+
+  const handleMentionClick = (opportunityId: string) => {
+    setSelectedOpportunityId(opportunityId);
+    setActiveTab("jornal");
   };
 
   const handleTicketModalChange = (open: boolean) => {
@@ -251,7 +259,12 @@ const MemberDashboard = () => {
           </TabsList>
 
           <TabsContent value="jornal" className="mt-6">
-            <JornalAuditado isSubscriber={isSubscriber} onRequestParecer={handleRequestParecer} />
+            <JornalAuditado 
+              isSubscriber={isSubscriber} 
+              onRequestParecer={handleRequestParecer}
+              selectedOpportunityId={selectedOpportunityId}
+              onOpportunityClose={() => setSelectedOpportunityId(undefined)}
+            />
           </TabsContent>
 
           <TabsContent value="tickets" className="mt-6">
@@ -273,7 +286,7 @@ const MemberDashboard = () => {
           </TabsContent>
 
           <TabsContent value="suporte" className="mt-6">
-            <LiveChat roomType="suporte" />
+            <LiveChat roomType="suporte" onMentionClick={handleMentionClick} />
           </TabsContent>
 
           {isSubscriber && (

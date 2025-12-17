@@ -10,6 +10,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { MentionTextarea } from "@/components/ui/mention-textarea";
+import { MentionRenderer } from "@/components/ui/mention-renderer";
 
 interface ChatMessage {
   id: string;
@@ -29,9 +31,10 @@ interface ChatRoom {
 
 interface LiveChatProps {
   roomType: "lobby" | "suporte";
+  onMentionClick?: (opportunityId: string) => void;
 }
 
-const LiveChat = ({ roomType }: LiveChatProps) => {
+const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [room, setRoom] = useState<ChatRoom | null>(null);
@@ -524,7 +527,16 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                     }`}>
                       <p className={`text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${
                         isDeleted ? "italic text-muted-foreground" : ""
-                      }`}>{displayMessage}</p>
+                      }`}>
+                        {!isLobby && !isDeleted ? (
+                          <MentionRenderer 
+                            text={displayMessage} 
+                            onMentionClick={onMentionClick}
+                          />
+                        ) : (
+                          displayMessage
+                        )}
+                      </p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
@@ -601,14 +613,29 @@ const LiveChat = ({ roomType }: LiveChatProps) => {
                 </Button>
               </>
             )}
-            <Textarea
-              placeholder="Digite sua mensagem..."
-              value={newMessage}
-              onChange={handleMessageChange}
-              onBlur={() => stopTyping()}
-              className="min-h-[120px] max-h-[200px] resize-none"
-              rows={5}
-            />
+            {isLobby ? (
+              <Textarea
+                placeholder="Digite sua mensagem..."
+                value={newMessage}
+                onChange={handleMessageChange}
+                onBlur={() => stopTyping()}
+                className="min-h-[120px] max-h-[200px] resize-none flex-1"
+                rows={5}
+              />
+            ) : (
+              <MentionTextarea
+                placeholder="Digite sua mensagem... Use @ para mencionar oportunidades"
+                value={newMessage}
+                onChange={(value) => {
+                  setNewMessage(value);
+                  if (value && currentUserName) {
+                    startTyping(currentUserName);
+                  }
+                }}
+                onBlur={() => stopTyping()}
+                disabled={isSending}
+              />
+            )}
             <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
               {isSending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
