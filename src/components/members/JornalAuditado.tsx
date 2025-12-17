@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
@@ -16,7 +16,7 @@ import { notifyAdmins } from "@/lib/notifications";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando";
 
 interface Opportunity {
   id: string;
@@ -178,6 +178,35 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
     setSelectedOpportunity(null);
   };
 
+  const handleParticipar = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ go_no_go: "Participando" as GoNoGoStatus })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível confirmar participação", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Participação confirmada',
+        `Cliente confirmou participação na oportunidade: "${opportunity.title}"`,
+        opportunity.id
+      );
+      
+      toast({ title: "Participação confirmada!" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
   const downloadReport = async (opportunity: Opportunity) => {
     if (!opportunity.audit_report_path) {
       return;
@@ -227,6 +256,12 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
         return (
           <Badge variant="outline" className="border-gray-500 text-gray-600 text-xs">
             REJEITADA
+          </Badge>
+        );
+      case "Participando":
+        return (
+          <Badge variant="outline" className="border-emerald-500 text-emerald-600 text-xs">
+            PARTICIPANDO
           </Badge>
         );
       default:
@@ -466,15 +501,32 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
                   </Button>
                 )}
 
-                {/* Solicitar Parecer - when report was requested and attached */}
+                {/* Solicitar Parecer e Participar - when report was requested and attached */}
                 {canRequestParecer(selectedOpportunity) && isSubscriber && (
-                  <Button
-                    onClick={() => handleSolicitarParecer(selectedOpportunity)}
-                    className="bg-primary"
-                  >
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    Solicitar Parecer Go/No Go
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => handleSolicitarParecer(selectedOpportunity)}
+                      className="bg-primary"
+                    >
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      Solicitar Parecer Go/No Go
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleParticipar(selectedOpportunity)}
+                      disabled={isUpdating === selectedOpportunity.id}
+                      className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      {isUpdating === selectedOpportunity.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Participar
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
 
                 {/* Action buttons for Review_Required status */}
@@ -518,6 +570,13 @@ const JornalAuditado = ({ isSubscriber, onRequestParecer }: JornalAuditadoProps)
                 {selectedOpportunity.go_no_go === "Rejeitada" && (
                   <p className="text-sm text-muted-foreground text-center py-2">
                     Oportunidade rejeitada pelo cliente.
+                  </p>
+                )}
+
+                {/* Status info for Participando */}
+                {selectedOpportunity.go_no_go === "Participando" && (
+                  <p className="text-sm text-emerald-600 text-center py-2 font-medium">
+                    Participação confirmada na licitação.
                   </p>
                 )}
               </div>
