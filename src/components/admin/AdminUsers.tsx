@@ -60,12 +60,17 @@ const AdminUsers = () => {
     setProfiles(profilesRes.data || []);
     setRoles(rolesRes.data || []);
 
-    // Get unique organizations from profiles
+    // Get unique organizations from profiles - prioritize empresa names
     if (profilesRes.data) {
       const orgsMap = new Map<string, string>();
+      // First pass: collect all org IDs with empresa names
       profilesRes.data.forEach((p) => {
         if (p.client_organization_id) {
-          orgsMap.set(p.client_organization_id, p.empresa || `Org ${p.client_organization_id.slice(0, 8)}`);
+          // Only set if we don't have a name yet, or if this one has a better name
+          const existing = orgsMap.get(p.client_organization_id);
+          if (!existing || (existing.startsWith("Org ") && p.empresa)) {
+            orgsMap.set(p.client_organization_id, p.empresa || `Org ${p.client_organization_id.slice(0, 8)}`);
+          }
         }
       });
       const orgs: Organization[] = Array.from(orgsMap.entries()).map(([id, name]) => ({ id, name }));
