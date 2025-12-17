@@ -10,6 +10,8 @@ import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Use
 import { format, differenceInHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
+import { MentionTextarea } from "@/components/ui/mention-textarea";
+import { MentionRenderer } from "@/components/ui/mention-renderer";
 
 interface ChatRoom {
   id: string;
@@ -30,7 +32,11 @@ interface ChatMessage {
   user_id: string;
 }
 
-const AdminChats = () => {
+interface AdminChatsProps {
+  onMentionClick?: (opportunityId: string) => void;
+}
+
+const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
   const { toast } = useToast();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [lobbyRoom, setLobbyRoom] = useState<ChatRoom | null>(null);
@@ -352,7 +358,16 @@ const AdminChats = () => {
                     <div className={`rounded-lg p-3 inline-block max-w-full ${
                       msg.is_admin ? "bg-primary text-primary-foreground" : "bg-muted"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{msg.message}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                        {!isLobby ? (
+                          <MentionRenderer 
+                            text={msg.message} 
+                            onMentionClick={onMentionClick}
+                          />
+                        ) : (
+                          msg.message
+                        )}
+                      </p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${msg.is_admin ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
@@ -407,13 +422,22 @@ const AdminChats = () => {
                   </Button>
                 </>
               )}
-              <Textarea
-                placeholder="Responder..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="min-h-[120px] max-h-[200px] resize-none"
-                rows={5}
-              />
+              {isLobby ? (
+                <Textarea
+                  placeholder="Responder..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  className="min-h-[120px] max-h-[200px] resize-none flex-1"
+                  rows={5}
+                />
+              ) : (
+                <MentionTextarea
+                  placeholder="Responder... Use @ para mencionar oportunidades"
+                  value={newMessage}
+                  onChange={setNewMessage}
+                  disabled={isSending}
+                />
+              )}
               <Button type="submit" size="icon" disabled={isSending || (!newMessage.trim() && !attachment)}>
                 {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>

@@ -25,6 +25,11 @@ const AdminDashboard = () => {
     window.location.href = "/";
   };
 
+  const handleMentionClick = (opportunityId: string) => {
+    // Navigate to jornal tab - the admin can find the opportunity there
+    setActiveTab("jornal");
+  };
+
   // Activity tracking for session timeout
   useEffect(() => {
     const handleActivity = () => {
@@ -141,7 +146,7 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="tickets"><AdminTickets /></TabsContent>
-          <TabsContent value="chats"><AdminChats /></TabsContent>
+          <TabsContent value="chats"><AdminChats onMentionClick={handleMentionClick} /></TabsContent>
           <TabsContent value="jornal"><AdminJornal /></TabsContent>
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
