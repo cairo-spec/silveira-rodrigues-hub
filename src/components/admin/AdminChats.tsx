@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Users, Headphones, Paperclip, X, FileText } from "lucide-react";
-import { format, differenceInHours } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
@@ -177,19 +177,12 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
       };
     }));
 
-    // Filter: show only rooms with messages in last 24h OR with unread messages
-    const now = new Date();
-    const activeRooms = roomsWithDetails.filter(room => {
-      const hoursSinceLastMessage = differenceInHours(now, new Date(room.last_message_at || room.created_at));
-      return hoursSinceLastMessage <= 24 || (room.unread_count && room.unread_count > 0);
-    });
-
     // Sort by last message time (most recent first)
-    activeRooms.sort((a, b) => 
+    roomsWithDetails.sort((a, b) => 
       new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
     );
 
-    setRooms(activeRooms);
+    setRooms(roomsWithDetails);
     setLobbyRoom(lobbyData);
     setIsLoading(false);
   };
