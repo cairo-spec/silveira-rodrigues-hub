@@ -26,6 +26,7 @@ export type Database = {
           is_published: boolean
           opportunity_abstract: string | null
           opportunity_url: string | null
+          report_requested_at: string | null
           title: string
           updated_at: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           is_published?: boolean
           opportunity_abstract?: string | null
           opportunity_url?: string | null
+          report_requested_at?: string | null
           title: string
           updated_at?: string
         }
@@ -54,6 +56,7 @@ export type Database = {
           is_published?: boolean
           opportunity_abstract?: string | null
           opportunity_url?: string | null
+          report_requested_at?: string | null
           title?: string
           updated_at?: string
         }
@@ -550,7 +553,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      go_no_go_status: "Go" | "No_Go" | "Review_Required"
+      go_no_go_status:
+        | "Go"
+        | "No_Go"
+        | "Review_Required"
+        | "Solicitada"
+        | "Rejeitada"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "resolved" | "closed"
     }
@@ -681,7 +689,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      go_no_go_status: ["Go", "No_Go", "Review_Required"],
+      go_no_go_status: [
+        "Go",
+        "No_Go",
+        "Review_Required",
+        "Solicitada",
+        "Rejeitada",
+      ],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "resolved", "closed"],
     },

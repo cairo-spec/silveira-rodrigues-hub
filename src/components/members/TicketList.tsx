@@ -38,6 +38,9 @@ interface Ticket {
 
 interface TicketListProps {
   isPaidSubscriber: boolean;
+  defaultCategory?: string;
+  openCreateModal?: boolean;
+  onCreateModalChange?: (open: boolean) => void;
 }
 
 // Brazilian holidays calculation
@@ -130,7 +133,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 };
 
 
-const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
+const TicketList = ({ isPaidSubscriber, defaultCategory, openCreateModal, onCreateModalChange }: TicketListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -147,6 +150,23 @@ const TicketList = ({ isPaidSubscriber }: TicketListProps) => {
   const [newCategory, setNewCategory] = useState<string>("");
   const [includeUpgrade, setIncludeUpgrade] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Handle external modal control and default category
+  useEffect(() => {
+    if (openCreateModal) {
+      setCreateModalOpen(true);
+      if (defaultCategory) {
+        setNewCategory(defaultCategory);
+      }
+    }
+  }, [openCreateModal, defaultCategory]);
+
+  // Sync modal state with parent
+  useEffect(() => {
+    if (onCreateModalChange) {
+      onCreateModalChange(createModalOpen);
+    }
+  }, [createModalOpen, onCreateModalChange]);
 
   // Get selected category details
   const selectedCategory = getCategoryById(newCategory);
