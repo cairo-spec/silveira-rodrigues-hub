@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Ticket, BookOpen, LogOut, User, Settings, Headphones, DollarSign, Lock, FileText } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
@@ -15,15 +16,17 @@ import SettingsPanel from "./SettingsPanel";
 import NotificationBell from "./NotificationBell";
 import PricingTable from "./PricingTable";
 import JornalAuditado from "./JornalAuditado";
+import JornalSalesPage from "./JornalSalesPage";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("tickets");
+  const [activeTab, setActiveTab] = useState("jornal");
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [isPaidSubscriber, setIsPaidSubscriber] = useState(false);
   const [isFreeAuthorized, setIsFreeAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [pricingSheetOpen, setPricingSheetOpen] = useState(false);
   const lastActivity = useRef(Date.now());
   
   // State for pre-selecting ticket category and title from Jornal Auditado
@@ -34,11 +37,15 @@ const MemberDashboard = () => {
   // State for opening opportunity from mention
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | undefined>(undefined);
 
-  const handleRequestParecer = (opportunityTitle: string) => {
-    setPreSelectedCategory("parecer-go-no-go");
+  // State for showing tickets inside Jornal
+  const [showTicketsInJornal, setShowTicketsInJornal] = useState(false);
+  const [ticketOpportunityId, setTicketOpportunityId] = useState<string | undefined>(undefined);
+
+  const handleRequestParecer = (opportunityTitle: string, category?: string) => {
+    setPreSelectedCategory(category || undefined);
     setPreSelectedTitle(opportunityTitle);
     setOpenTicketModal(true);
-    setActiveTab("tickets");
+    setShowTicketsInJornal(true);
   };
 
   const handleMentionClick = (opportunityId: string) => {
@@ -52,6 +59,19 @@ const MemberDashboard = () => {
       setPreSelectedCategory(undefined);
       setPreSelectedTitle(undefined);
     }
+  };
+
+  const handleShowTickets = (opportunityId?: string) => {
+    setTicketOpportunityId(opportunityId);
+    setShowTicketsInJornal(true);
+  };
+
+  const handleBackToJornal = () => {
+    setShowTicketsInJornal(false);
+    setTicketOpportunityId(undefined);
+    setPreSelectedCategory(undefined);
+    setPreSelectedTitle(undefined);
+    setOpenTicketModal(false);
   };
 
   useEffect(() => {
@@ -154,6 +174,9 @@ const MemberDashboard = () => {
     );
   }
 
+  // Determine which tabs to show based on subscription status
+  const isFreeUser = !isSubscriber;
+
   return (
     <div className="min-h-screen bg-secondary">
       {/* Header */}
@@ -174,10 +197,32 @@ const MemberDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Miniaturized Pricing Table for subscribers */}
+              {isSubscriber && (
+                <Sheet open={pricingSheetOpen} onOpenChange={setPricingSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                      <DollarSign className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Tabela de Honorários</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      <PricingTable isPaidSubscriber={isPaidSubscriber} />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
               <NotificationBell 
                 onNotificationClick={(type, refId) => {
                   if (type === 'ticket_message' || type === 'ticket_status') {
-                    setActiveTab('tickets');
+                    if (isSubscriber) {
+                      setShowTicketsInJornal(true);
+                    } else {
+                      setActiveTab('tickets');
+                    }
                   } else if (type === 'chat_message') {
                     setActiveTab('suporte');
                   }
@@ -227,29 +272,35 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+          <TabsList className={`grid w-full lg:w-auto lg:inline-grid ${isFreeUser ? 'grid-cols-6' : 'grid-cols-4'}`}>
             <TabsTrigger value="jornal" className="gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Jornal</span>
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="gap-2">
-              <Ticket className="h-4 w-4" />
-              <span className="hidden sm:inline">Tickets</span>
-            </TabsTrigger>
+            {/* Tickets tab only for free users */}
+            {isFreeUser && (
+              <TabsTrigger value="tickets" className="gap-2">
+                <Ticket className="h-4 w-4" />
+                <span className="hidden sm:inline">Tickets</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Ajuda</span>
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">Honorários</span>
-            </TabsTrigger>
-            {/* Support chat available for all authorized users (item 9) */}
+            {/* Honorários tab only for free users */}
+            {isFreeUser && (
+              <TabsTrigger value="pricing" className="gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span className="hidden sm:inline">Honorários</span>
+              </TabsTrigger>
+            )}
+            {/* Support chat available for all authorized users */}
             <TabsTrigger value="suporte" className="gap-2">
               <Headphones className="h-4 w-4" />
               <span className="hidden sm:inline">Suporte</span>
             </TabsTrigger>
-            {/* Lobby only for subscribers and trial users (item 9) */}
+            {/* Lobby only for subscribers and trial users */}
             {isSubscriber && (
               <TabsTrigger value="lobby" className="gap-2">
                 <User className="h-4 w-4" />
@@ -259,31 +310,56 @@ const MemberDashboard = () => {
           </TabsList>
 
           <TabsContent value="jornal" className="mt-6">
-            <JornalAuditado 
-              isSubscriber={isSubscriber} 
-              onRequestParecer={handleRequestParecer}
-              selectedOpportunityId={selectedOpportunityId}
-              onOpportunityClose={() => setSelectedOpportunityId(undefined)}
-            />
+            {isFreeUser ? (
+              <JornalSalesPage />
+            ) : showTicketsInJornal ? (
+              <div className="space-y-4">
+                <Button variant="ghost" onClick={handleBackToJornal}>
+                  ← Voltar ao Jornal
+                </Button>
+                <TicketList 
+                  isPaidSubscriber={isPaidSubscriber} 
+                  defaultCategory={preSelectedCategory}
+                  defaultTitle={preSelectedTitle}
+                  openCreateModal={openTicketModal}
+                  onCreateModalChange={handleTicketModalChange}
+                  opportunityId={ticketOpportunityId}
+                />
+              </div>
+            ) : (
+              <JornalAuditado 
+                isSubscriber={isSubscriber} 
+                onRequestParecer={handleRequestParecer}
+                selectedOpportunityId={selectedOpportunityId}
+                onOpportunityClose={() => setSelectedOpportunityId(undefined)}
+                onShowTickets={handleShowTickets}
+              />
+            )}
           </TabsContent>
 
-          <TabsContent value="tickets" className="mt-6">
-            <TicketList 
-              isPaidSubscriber={isPaidSubscriber} 
-              defaultCategory={preSelectedCategory}
-              defaultTitle={preSelectedTitle}
-              openCreateModal={openTicketModal}
-              onCreateModalChange={handleTicketModalChange}
-            />
-          </TabsContent>
+          {/* Tickets tab only for free users */}
+          {isFreeUser && (
+            <TabsContent value="tickets" className="mt-6">
+              <TicketList 
+                isPaidSubscriber={isPaidSubscriber} 
+                defaultCategory={preSelectedCategory}
+                defaultTitle={preSelectedTitle}
+                openCreateModal={openTicketModal}
+                onCreateModalChange={handleTicketModalChange}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="knowledge" className="mt-6">
             <KnowledgeBase isSubscriber={isSubscriber} />
           </TabsContent>
 
-          <TabsContent value="pricing" className="mt-6">
-            <PricingTable isPaidSubscriber={isPaidSubscriber} />
-          </TabsContent>
+          {/* Pricing tab only for free users */}
+          {isFreeUser && (
+            <TabsContent value="pricing" className="mt-6">
+              <PricingTable isPaidSubscriber={isPaidSubscriber} />
+            </TabsContent>
+          )}
 
           <TabsContent value="suporte" className="mt-6">
             <LiveChat roomType="suporte" onMentionClick={handleMentionClick} />
