@@ -27,6 +27,7 @@ export type Database = {
           opportunity_abstract: string | null
           opportunity_url: string | null
           petition_path: string | null
+          portal_url: string | null
           report_requested_at: string | null
           title: string
           updated_at: string
@@ -43,6 +44,7 @@ export type Database = {
           opportunity_abstract?: string | null
           opportunity_url?: string | null
           petition_path?: string | null
+          portal_url?: string | null
           report_requested_at?: string | null
           title: string
           updated_at?: string
@@ -59,6 +61,7 @@ export type Database = {
           opportunity_abstract?: string | null
           opportunity_url?: string | null
           petition_path?: string | null
+          portal_url?: string | null
           report_requested_at?: string | null
           title?: string
           updated_at?: string
@@ -460,6 +463,7 @@ export type Database = {
           description: string
           id: string
           is_archived: boolean
+          opportunity_id: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
           service_category: string | null
           service_price: string | null
@@ -476,6 +480,7 @@ export type Database = {
           description: string
           id?: string
           is_archived?: boolean
+          opportunity_id?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           service_category?: string | null
           service_price?: string | null
@@ -492,6 +497,7 @@ export type Database = {
           description?: string
           id?: string
           is_archived?: boolean
+          opportunity_id?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           service_category?: string | null
           service_price?: string | null
@@ -502,6 +508,13 @@ export type Database = {
           version?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "audited_opportunities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_user_id_profiles_fkey"
             columns: ["user_id"]
