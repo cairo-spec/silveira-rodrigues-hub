@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText, CalendarIcon, Tag } from "lucide-react";
+import { Plus, MessageSquare, Clock, AlertCircle, CheckCircle, Loader2, Paperclip, FileText, CalendarIcon, Tag, Eye } from "lucide-react";
 import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ interface Ticket {
   attachment_url: string | null;
   service_category: string | null;
   service_price: string | null;
+  opportunity_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,11 +43,11 @@ interface TicketListProps {
   defaultTitle?: string;
   openCreateModal?: boolean;
   onCreateModalChange?: (open: boolean) => void;
+  opportunityId?: string; // Filter tickets by opportunity, or show all if undefined
 }
 
 // Brazilian holidays calculation
 const getEasterDate = (year: number): Date => {
-  // Computus algorithm for Easter Sunday
   const a = year % 19;
   const b = Math.floor(year / 100);
   const c = year % 100;
@@ -66,27 +67,22 @@ const getEasterDate = (year: number): Date => {
 
 const getBrazilianHolidays = (year: number): Date[] => {
   const easter = getEasterDate(year);
-  
-  // Fixed holidays
   const fixedHolidays = [
-    new Date(year, 0, 1),   // Confraternização Universal
-    new Date(year, 3, 21),  // Tiradentes
-    new Date(year, 4, 1),   // Dia do Trabalho
-    new Date(year, 8, 7),   // Independência do Brasil
-    new Date(year, 9, 12),  // Nossa Senhora Aparecida
-    new Date(year, 10, 2),  // Finados
-    new Date(year, 10, 15), // Proclamação da República
-    new Date(year, 11, 25), // Natal
+    new Date(year, 0, 1),
+    new Date(year, 3, 21),
+    new Date(year, 4, 1),
+    new Date(year, 8, 7),
+    new Date(year, 9, 12),
+    new Date(year, 10, 2),
+    new Date(year, 10, 15),
+    new Date(year, 11, 25),
   ];
-  
-  // Movable holidays (based on Easter)
   const movableHolidays = [
-    addDays(easter, -48),   // Segunda-feira de Carnaval
-    addDays(easter, -47),   // Terça-feira de Carnaval
-    addDays(easter, -2),    // Sexta-feira Santa
-    addDays(easter, 60),    // Corpus Christi
+    addDays(easter, -48),
+    addDays(easter, -47),
+    addDays(easter, -2),
+    addDays(easter, 60),
   ];
-  
   return [...fixedHolidays, ...movableHolidays];
 };
 
@@ -101,18 +97,15 @@ const isBusinessDay = (date: Date): boolean => {
   return !isWeekend(date) && !isBrazilianHoliday(date);
 };
 
-// Calculate minimum deadline (2 business days from today)
 const addBusinessDays = (date: Date, days: number): Date => {
   let result = new Date(date);
   let addedDays = 0;
-  
   while (addedDays < days) {
     result = addDays(result, 1);
     if (isBusinessDay(result)) {
       addedDays++;
     }
   }
-  
   return result;
 };
 
@@ -133,8 +126,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   closed: { label: "Fechado", color: "bg-gray-500", icon: <CheckCircle className="h-3 w-3" /> }
 };
 
-
-const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreateModal, onCreateModalChange }: TicketListProps) => {
+const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreateModal, onCreateModalChange, opportunityId }: TicketListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -195,7 +187,6 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
   useEffect(() => {
     fetchTickets();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('tickets-updates')
       .on(
@@ -215,7 +206,7 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, opportunityId]);
 
   // Reset upgrade when category changes
   useEffect(() => {
@@ -225,11 +216,16 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
   const fetchTickets = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('tickets')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
+
+    // If opportunityId is provided, filter by it; otherwise show all tickets
+    // No filter means show all tickets (including those without opportunity)
+
+    const { data, error } = await query;
 
     if (error) {
       toast({
@@ -252,7 +248,6 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
 
     let attachmentUrl: string | null = null;
 
-    // Upload attachment if provided
     if (newAttachment) {
       const fileExt = newAttachment.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
@@ -273,10 +268,9 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         return;
       }
 
-      // Get signed URL for private bucket
       const { data: urlData } = await supabase.storage
         .from('ticket-files')
-        .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365);
 
       attachmentUrl = urlData?.signedUrl || null;
     }
@@ -293,14 +287,13 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
     
     let categoryToStore = newCategory;
     
-    // If upgrade is included for technical services, append upgrade info
     if (isTech && includeUpgrade && upgrade) {
       const upgradePriceValue = isPaidSubscriber ? upgrade.priceSubscriber : upgrade.priceRegular;
       priceToStore = `${priceToStore} + ${upgradePriceValue} (Upgrade)`;
       categoryToStore = `${newCategory}+upgrade`;
     }
 
-    // Optimistic UI: Add temp ticket to list immediately
+    // Optimistic UI
     const tempId = `temp-${Date.now()}`;
     const tempTicket: Ticket = {
       id: tempId,
@@ -312,6 +305,7 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
       attachment_url: attachmentUrl,
       service_category: categoryToStore,
       service_price: priceToStore,
+      opportunity_id: opportunityId || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -328,7 +322,8 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         deadline: newDeadline ? format(newDeadline, 'yyyy-MM-dd') : null,
         attachment_url: attachmentUrl,
         service_category: categoryToStore,
-        service_price: priceToStore
+        service_price: priceToStore,
+        opportunity_id: opportunityId || null
       })
       .select()
       .single();
@@ -336,7 +331,6 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
     setIsCreating(false);
 
     if (error) {
-      // Rollback on error
       setTickets(prev => prev.filter(t => t.id !== tempId));
       toast({
         title: "Erro",
@@ -344,10 +338,8 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         variant: "destructive"
       });
     } else {
-      // Replace temp with real ticket
       setTickets(prev => prev.map(t => t.id === tempId ? data : t));
       
-      // Create audit event
       await supabase.from('ticket_events').insert({
         ticket_id: data.id,
         user_id: user.id,
@@ -355,7 +347,6 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         new_value: 'open',
       });
       
-      // Notify admins about new ticket
       notifyAdmins(
         'new_ticket',
         'Novo ticket criado',
@@ -377,6 +368,11 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
     }
   };
 
+  // Filter displayed tickets based on opportunityId if provided
+  const displayedTickets = opportunityId 
+    ? tickets.filter(t => t.opportunity_id === opportunityId)
+    : tickets;
+
   if (selectedTicket) {
     return (
       <TicketChat 
@@ -390,8 +386,12 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-foreground">Meus Tickets</h2>
-          <p className="text-muted-foreground">Acompanhe suas solicitações de suporte</p>
+          <h2 className="text-2xl font-semibold text-foreground">
+            {opportunityId ? "Tickets desta Oportunidade" : "Meus Tickets"}
+          </h2>
+          <p className="text-muted-foreground">
+            {opportunityId ? "Tickets relacionados a esta oportunidade" : "Acompanhe suas solicitações de suporte"}
+          </p>
         </div>
         <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
           <DialogTrigger asChild>
@@ -413,7 +413,7 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo de serviço" />
                     </SelectTrigger>
-                <SelectContent>
+                    <SelectContent>
                       {Object.entries(filteredCategories).map(([categoryName, items]) => (
                         <div key={categoryName}>
                           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
@@ -462,7 +462,6 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
                         </div>
                       </div>
                       
-                      {/* Honorários de Êxito */}
                       {selectedCategory.successFee !== "N/A" && (
                         <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
                           <p className="text-sm font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-2">
@@ -471,7 +470,6 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
                         </div>
                       )}
                       
-                      {/* Upgrade Switch for Technical Services */}
                       {isTechnicalService && upgradeCategory && (
                         <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 space-y-2">
                           <div className="flex items-center justify-between">
@@ -604,13 +602,13 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : tickets.length === 0 ? (
+      ) : displayedTickets.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">Nenhum ticket ainda</h3>
             <p className="text-muted-foreground text-center mb-4">
-              Crie seu primeiro ticket para solicitar suporte
+              {opportunityId ? "Nenhum ticket para esta oportunidade" : "Crie seu primeiro ticket para solicitar suporte"}
             </p>
             <Button onClick={() => setCreateModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -620,7 +618,7 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         </Card>
       ) : (
         <div className="grid gap-4">
-          {tickets.map((ticket) => {
+          {displayedTickets.map((ticket) => {
             const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
             return (
               <Card 
@@ -651,6 +649,12 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
                         {ticket.service_price && (
                           <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
                             {ticket.service_price}
+                          </Badge>
+                        )}
+                        {ticket.opportunity_id && (
+                          <Badge variant="outline" className="gap-1 w-fit bg-blue-500/10 text-blue-600 border-blue-500/20">
+                            <Eye className="h-3 w-3" />
+                            Vinculado
                           </Badge>
                         )}
                       </div>

@@ -36,16 +36,18 @@ interface Opportunity {
 
 interface JornalAuditadoProps {
   isSubscriber: boolean;
-  onRequestParecer?: (opportunityTitle: string) => void;
+  onRequestParecer?: (opportunityTitle: string, category?: string) => void;
   selectedOpportunityId?: string;
   onOpportunityClose?: () => void;
+  onShowTickets?: (opportunityId?: string) => void;
 }
 
 const JornalAuditado = ({ 
   isSubscriber, 
   onRequestParecer, 
   selectedOpportunityId,
-  onOpportunityClose 
+  onOpportunityClose,
+  onShowTickets
 }: JornalAuditadoProps) => {
   const { user } = useAuth();
   const { toast } = useToast();

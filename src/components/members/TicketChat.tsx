@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History, Paperclip, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History, Paperclip, X, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
@@ -32,12 +32,14 @@ interface Ticket {
   status: string;
   priority: string;
   attachment_url: string | null;
+  opportunity_id?: string | null;
   created_at: string;
 }
 
 interface TicketChatProps {
   ticket: Ticket;
   onBack: () => void;
+  onViewOpportunity?: (opportunityId: string) => void;
 }
 
 const statusLabels: Record<string, string> = {
@@ -54,7 +56,7 @@ const statusColors: Record<string, string> = {
   closed: "bg-muted"
 };
 
-const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
+const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<TicketMessage[]>([]);
@@ -64,16 +66,20 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [opportunityTitle, setOpportunityTitle] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchMessages();
     
-    // Clear notifications for this ticket when viewing
+    // Fetch opportunity title if ticket has opportunity_id
+    if (ticket.opportunity_id) {
+      fetchOpportunityTitle();
+    }
+    
     clearNotificationsByReference(ticket.id);
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel(`ticket-messages-${ticket.id}`)
       .on(
@@ -86,7 +92,6 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as TicketMessage]);
-          // Clear notifications when new message arrives while viewing
           clearNotificationsByReference(ticket.id);
         }
       )
@@ -95,11 +100,25 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ticket.id]);
+  }, [ticket.id, ticket.opportunity_id]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const fetchOpportunityTitle = async () => {
+    if (!ticket.opportunity_id) return;
+    
+    const { data } = await supabase
+      .from('audited_opportunities')
+      .select('title')
+      .eq('id', ticket.opportunity_id)
+      .single();
+    
+    if (data) {
+      setOpportunityTitle(data.title);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -131,7 +150,6 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
     setIsSending(true);
     let messageText = newMessage.trim();
 
-    // Handle file upload
     if (attachment) {
       setIsUploading(true);
       const fileExt = attachment.name.split('.').pop();
@@ -174,7 +192,6 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
       });
 
     if (!error) {
-      // Notify admins about new message
       notifyAdmins(
         'ticket_message',
         'Nova mensagem em ticket',
@@ -223,7 +240,31 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
             {statusLabels[ticket.status]}
           </Badge>
         </div>
+        {/* Ver Oportunidade button when ticket has opportunity_id */}
+        {ticket.opportunity_id && onViewOpportunity && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onViewOpportunity(ticket.opportunity_id!)}
+            className="gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Ver Oportunidade
+          </Button>
+        )}
       </div>
+
+      {/* Opportunity link info */}
+      {ticket.opportunity_id && opportunityTitle && (
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="py-3 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-blue-600" />
+            <span className="text-sm">
+              Vinculado à oportunidade: <strong>{opportunityTitle}</strong>
+            </span>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-2">
@@ -251,7 +292,6 @@ const TicketChat = ({ ticket, onBack }: TicketChatProps) => {
         </CardContent>
       </Card>
 
-      {/* Timeline Collapsible */}
       <Collapsible open={timelineOpen} onOpenChange={setTimelineOpen}>
         <CollapsibleTrigger asChild>
           <Button variant="outline" className="w-full justify-between">
