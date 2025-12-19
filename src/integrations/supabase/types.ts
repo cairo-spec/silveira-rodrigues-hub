@@ -21,6 +21,7 @@ export type Database = {
           client_organization_id: string
           closing_date: string
           created_at: string
+          estimated_value: number | null
           go_no_go: Database["public"]["Enums"]["go_no_go_status"]
           id: string
           is_published: boolean
@@ -38,6 +39,7 @@ export type Database = {
           client_organization_id: string
           closing_date: string
           created_at?: string
+          estimated_value?: number | null
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
           is_published?: boolean
@@ -55,6 +57,7 @@ export type Database = {
           client_organization_id?: string
           closing_date?: string
           created_at?: string
+          estimated_value?: number | null
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
           is_published?: boolean
@@ -579,7 +582,12 @@ export type Database = {
         | "Vencida"
         | "Perdida"
       ticket_priority: "low" | "medium" | "high" | "urgent"
-      ticket_status: "open" | "in_progress" | "resolved" | "closed"
+      ticket_status:
+        | "open"
+        | "in_progress"
+        | "under_review"
+        | "resolved"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -719,7 +727,13 @@ export const Constants = {
         "Perdida",
       ],
       ticket_priority: ["low", "medium", "high", "urgent"],
-      ticket_status: ["open", "in_progress", "resolved", "closed"],
+      ticket_status: [
+        "open",
+        "in_progress",
+        "under_review",
+        "resolved",
+        "closed",
+      ],
     },
   },
 } as const

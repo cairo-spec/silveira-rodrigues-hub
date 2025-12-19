@@ -9,6 +9,7 @@ interface MentionTextareaProps {
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   className?: string;
   rows?: number;
@@ -19,6 +20,7 @@ export const MentionTextarea = ({
   value,
   onChange,
   onBlur,
+  onKeyDown: externalOnKeyDown,
   placeholder,
   className,
   rows = 5,
@@ -72,7 +74,16 @@ export const MentionTextarea = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!showSuggestions || suggestions.length === 0) return;
+    // First check for Ctrl+Enter to send message
+    if (e.key === 'Enter' && e.ctrlKey) {
+      externalOnKeyDown?.(e);
+      return;
+    }
+
+    if (!showSuggestions || suggestions.length === 0) {
+      externalOnKeyDown?.(e);
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowDown':
@@ -99,6 +110,8 @@ export const MentionTextarea = ({
           selectSuggestion(suggestions[selectedIndex]);
         }
         break;
+      default:
+        externalOnKeyDown?.(e);
     }
   };
 
