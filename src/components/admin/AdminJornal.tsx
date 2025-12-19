@@ -97,13 +97,15 @@ const AdminJornal = () => {
   const [formData, setFormData] = useState({
     title: "",
     opportunity_url: "",
+    portal_url: "",
     opportunity_abstract: "",
     closing_date: null as Date | null,
     client_organization_id: "",
     agency_name: "",
     go_no_go: "Review_Required" as GoNoGoStatus,
-    audit_report_path: "",
-    petition_path: "",
+    audit_report_path: "",  // Now stores Google Drive link
+    petition_path: "",  // Now stores Google Drive link
+    estimated_value: "" as string,
     is_published: false,
   });
 
@@ -159,6 +161,7 @@ const AdminJornal = () => {
     setFormData({
       title: "",
       opportunity_url: "",
+      portal_url: "",
       opportunity_abstract: "",
       closing_date: null,
       client_organization_id: "",
@@ -166,6 +169,7 @@ const AdminJornal = () => {
       go_no_go: "Review_Required",
       audit_report_path: "",
       petition_path: "",
+      estimated_value: "",
       is_published: false,
     });
     setSelectedFile(null);
@@ -178,6 +182,7 @@ const AdminJornal = () => {
     setFormData({
       title: opportunity.title,
       opportunity_url: opportunity.opportunity_url || "",
+      portal_url: (opportunity as any).portal_url || "",
       opportunity_abstract: opportunity.opportunity_abstract || "",
       closing_date: opportunity.closing_date ? new Date(opportunity.closing_date) : null,
       client_organization_id: opportunity.client_organization_id,
@@ -185,6 +190,7 @@ const AdminJornal = () => {
       go_no_go: opportunity.go_no_go,
       audit_report_path: opportunity.audit_report_path || "",
       petition_path: opportunity.petition_path || "",
+      estimated_value: (opportunity as any).estimated_value?.toString() || "",
       is_published: opportunity.is_published,
     });
     setIsModalOpen(true);

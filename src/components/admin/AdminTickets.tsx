@@ -12,6 +12,8 @@ import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
 import { getCategoryById } from "@/lib/pricing-categories";
+import { cn } from "@/lib/utils";
+import LinkifiedText from "@/components/ui/linkified-text";
 
 interface Ticket {
   id: string;
@@ -40,6 +42,7 @@ interface TicketMessage {
 const statusConfig: Record<string, { label: string; color: string }> = {
   open: { label: "Aberto", color: "bg-blue-500" },
   in_progress: { label: "Em andamento", color: "bg-yellow-500" },
+  under_review: { label: "Em revisão", color: "bg-purple-500" },
   resolved: { label: "Concluído", color: "bg-green-500" },
   closed: { label: "Cancelado", color: "bg-gray-500" }
 };
@@ -414,6 +417,7 @@ const AdminTickets = () => {
               <SelectContent>
                 <SelectItem value="open">Aberto</SelectItem>
                 <SelectItem value="in_progress">Em andamento</SelectItem>
+                <SelectItem value="under_review">Em revisão</SelectItem>
                 <SelectItem value="resolved">Concluído</SelectItem>
                 <SelectItem value="closed">Cancelado</SelectItem>
               </SelectContent>
@@ -470,10 +474,12 @@ const AdminTickets = () => {
                   <div className={`rounded-lg p-3 ${
                     msg.is_admin ? "bg-primary text-primary-foreground" : "bg-muted"
                   }`}>
-                    <p className="text-sm">{msg.message}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                      <LinkifiedText text={msg.message} />
+                    </p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                    {format(new Date(msg.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
               </div>
@@ -511,6 +517,14 @@ const AdminTickets = () => {
                   placeholder="Responder ao usuário..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                      e.preventDefault();
+                      if (newMessage.trim() || attachment) {
+                        handleSendMessage(e as any);
+                      }
+                    }
+                  }}
                   className="min-h-[40px] max-h-[120px] resize-none"
                   rows={1}
                 />
@@ -540,6 +554,7 @@ const AdminTickets = () => {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="open">Abertos</SelectItem>
             <SelectItem value="in_progress">Em andamento</SelectItem>
+            <SelectItem value="under_review">Em revisão</SelectItem>
             <SelectItem value="resolved">Concluídos</SelectItem>
             <SelectItem value="closed">Cancelados</SelectItem>
           </SelectContent>
@@ -575,8 +590,16 @@ const AdminTickets = () => {
               {filteredTickets.map((ticket) => {
                 const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
                 const showArchiveButton = canArchiveTicket(ticket);
+                const hasUpgrade = ticket.service_category?.includes('+upgrade');
                 return (
-                  <Card key={ticket.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedTicket(ticket)}>
+                  <Card 
+                    key={ticket.id} 
+                    className={cn(
+                      "cursor-pointer hover:shadow-md",
+                      hasUpgrade && "border-2 border-amber-400 bg-amber-50/30 dark:bg-amber-950/10"
+                    )} 
+                    onClick={() => setSelectedTicket(ticket)}
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">

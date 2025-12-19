@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2, Paperclip, X, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import LinkifiedText from "@/components/ui/linkified-text";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
@@ -532,13 +533,13 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
                             onMentionClick={onMentionClick}
                           />
                         ) : (
-                          displayMessage
+                          <LinkifiedText text={displayMessage} />
                         )}
                       </p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${isOwnMessage ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(message.created_at), "HH:mm", { locale: ptBR })}
+                        {format(new Date(message.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                       </p>
                       {isLobby && isOwnMessage && !message.is_admin && !isDeleted && (
                         <Button
@@ -617,6 +618,14 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
                 value={newMessage}
                 onChange={handleMessageChange}
                 onBlur={() => stopTyping()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    if (newMessage.trim() || attachment) {
+                      handleSendMessage(e as any);
+                    }
+                  }
+                }}
                 className="min-h-[120px] max-h-[200px] resize-none flex-1"
                 rows={5}
               />
@@ -631,6 +640,14 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
                   }
                 }}
                 onBlur={() => stopTyping()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    if (newMessage.trim() || attachment) {
+                      handleSendMessage(e as any);
+                    }
+                  }
+                }}
                 disabled={isSending}
               />
             )}

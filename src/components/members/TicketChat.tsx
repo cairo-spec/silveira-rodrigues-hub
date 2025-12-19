@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History, Paperclip, X, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import LinkifiedText from "@/components/ui/linkified-text";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
 import TicketTimeline from "./TicketTimeline";
 import {
@@ -45,6 +46,7 @@ interface TicketChatProps {
 const statusLabels: Record<string, string> = {
   open: "Aberto",
   in_progress: "Em andamento",
+  under_review: "Em revisão",
   resolved: "Resolvido",
   closed: "Fechado"
 };
@@ -52,6 +54,7 @@ const statusLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   open: "bg-blue-500",
   in_progress: "bg-amber-500",
+  under_review: "bg-purple-500",
   resolved: "bg-green-500",
   closed: "bg-muted"
 };
@@ -347,10 +350,12 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
                       ? "bg-muted text-foreground" 
                       : "bg-primary text-primary-foreground"
                   }`}>
-                    <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.message}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                      <LinkifiedText text={message.message} />
+                    </p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(message.created_at), "HH:mm", { locale: ptBR })}
+                    {format(new Date(message.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
               </div>
@@ -396,6 +401,14 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
                 placeholder="Digite sua mensagem..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    if (newMessage.trim() || attachment) {
+                      handleSendMessage(e as any);
+                    }
+                  }
+                }}
                 className="min-h-[120px] max-h-[200px] resize-none"
                 rows={5}
               />

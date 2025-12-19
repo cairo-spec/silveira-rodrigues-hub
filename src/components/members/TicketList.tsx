@@ -122,6 +122,7 @@ const isValidDeadline = (date: Date): boolean => {
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   open: { label: "Aberto", color: "bg-blue-500", icon: <Clock className="h-3 w-3" /> },
   in_progress: { label: "Em andamento", color: "bg-yellow-500", icon: <AlertCircle className="h-3 w-3" /> },
+  under_review: { label: "Em revisão", color: "bg-purple-500", icon: <AlertCircle className="h-3 w-3" /> },
   resolved: { label: "Resolvido", color: "bg-green-500", icon: <CheckCircle className="h-3 w-3" /> },
   closed: { label: "Fechado", color: "bg-gray-500", icon: <CheckCircle className="h-3 w-3" /> }
 };
@@ -620,10 +621,14 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         <div className="grid gap-4">
           {displayedTickets.map((ticket) => {
             const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
+            const hasUpgrade = ticket.service_category?.includes('+upgrade');
             return (
               <Card 
                 key={ticket.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className={cn(
+                  "cursor-pointer hover:shadow-md transition-shadow",
+                  hasUpgrade && "border-2 border-amber-400 bg-amber-50/30 dark:bg-amber-950/10"
+                )}
                 onClick={() => setSelectedTicket(ticket)}
               >
                 <CardHeader className="pb-2">

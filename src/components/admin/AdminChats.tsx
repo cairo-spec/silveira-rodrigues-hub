@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Users, Headphones, Paperclip, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import LinkifiedText from "@/components/ui/linkified-text";
 import { clearNotificationsByReference } from "@/lib/notifications";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
 import { MentionRenderer } from "@/components/ui/mention-renderer";
@@ -358,13 +359,13 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
                             onMentionClick={onMentionClick}
                           />
                         ) : (
-                          msg.message
+                          <LinkifiedText text={msg.message} />
                         )}
                       </p>
                     </div>
                     <div className={`flex items-center gap-2 mt-1 ${msg.is_admin ? "justify-end" : ""}`}>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {format(new Date(msg.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                       </p>
                       {/* Admin can delete any message in lobby */}
                       {isLobby && !msg.is_admin && (
@@ -420,6 +421,14 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
                   placeholder="Responder..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                      e.preventDefault();
+                      if (newMessage.trim() || attachment) {
+                        handleSendMessage(e as any);
+                      }
+                    }
+                  }}
                   className="min-h-[120px] max-h-[200px] resize-none flex-1"
                   rows={5}
                 />
@@ -428,6 +437,14 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
                   placeholder="Responder... Use @ para mencionar oportunidades"
                   value={newMessage}
                   onChange={setNewMessage}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                      e.preventDefault();
+                      if (newMessage.trim() || attachment) {
+                        handleSendMessage(e as any);
+                      }
+                    }
+                  }}
                   disabled={isSending}
                 />
               )}
