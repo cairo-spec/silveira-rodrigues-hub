@@ -5,8 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Users, Headphones, Paperclip, X, FileText } from "lucide-react";
+import { Loader2, MessageCircle, ArrowLeft, Send, User, ShieldCheck, Trash2, Users, Headphones, Paperclip, X, FileText, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LinkifiedText from "@/components/ui/linkified-text";
@@ -33,6 +36,12 @@ interface ChatMessage {
   user_id: string;
 }
 
+interface Profile {
+  user_id: string;
+  nome: string;
+  email: string;
+}
+
 interface AdminChatsProps {
   onMentionClick?: (opportunityId: string) => void;
 }
@@ -50,11 +59,16 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchRooms();
+    fetchProfiles();
 
     const channel = supabase
       .channel('admin-chat-rooms')
@@ -67,6 +81,16 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
 
     return () => { supabase.removeChannel(channel); };
   }, [selectedRoom]);
+
+  const fetchProfiles = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, nome, email')
+      .order('nome');
+    if (data) {
+      setAllProfiles(data);
+    }
+  };
 
   useEffect(() => {
     if (selectedRoom) {
@@ -304,6 +328,76 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
     }
   };
 
+  const handleStartNewChat = async () => {
+    if (!selectedUserId) {
+      toast({ title: "Erro", description: "Selecione um usuário", variant: "destructive" });
+      return;
+    }
+
+    setIsCreatingChat(true);
+
+    // Check if there's already an active support room for this user
+    const { data: existingRoom } = await supabase
+      .from('chat_rooms')
+      .select('*')
+      .eq('user_id', selectedUserId)
+      .eq('room_type', 'suporte')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (existingRoom) {
+      // Room exists, just open it
+      const profile = allProfiles.find(p => p.user_id === selectedUserId);
+      setSelectedRoom({
+        ...existingRoom,
+        profiles: profile ? { nome: profile.nome, email: profile.email } : null
+      });
+      setIsNewChatOpen(false);
+      setSelectedUserId("");
+      setIsCreatingChat(false);
+      return;
+    }
+
+    // Create new support room
+    const { data: newRoom, error } = await supabase
+      .from('chat_rooms')
+      .insert({
+        user_id: selectedUserId,
+        room_type: 'suporte',
+        is_active: true
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível criar o chat", variant: "destructive" });
+      setIsCreatingChat(false);
+      return;
+    }
+
+    // Notify the user
+    await supabase.from('notifications').insert({
+      user_id: selectedUserId,
+      type: 'chat_message',
+      title: 'Nova conversa de suporte',
+      message: 'A equipe de suporte iniciou uma conversa com você',
+      reference_id: newRoom.id
+    });
+
+    const profile = allProfiles.find(p => p.user_id === selectedUserId);
+    setSelectedRoom({
+      ...newRoom,
+      profiles: profile ? { nome: profile.nome, email: profile.email } : null
+    });
+    
+    setIsNewChatOpen(false);
+    setSelectedUserId("");
+    setIsCreatingChat(false);
+    fetchRooms();
+
+    toast({ title: "Chat criado", description: "Você pode começar a conversar" });
+  };
+
   if (selectedRoom) {
     const isLobby = selectedRoom.room_type === 'lobby';
     
@@ -460,20 +554,64 @@ const AdminChats = ({ onMentionClick }: AdminChatsProps) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Chats ao Vivo</h2>
-        <p className="text-muted-foreground">Conversas ativas com usuários</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Chats ao Vivo</h2>
+          <p className="text-muted-foreground">Conversas ativas com usuários</p>
+        </div>
+        <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 w-full sm:w-auto">
+              <Plus className="h-4 w-4" />
+              Iniciar Chat
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Iniciar Conversa de Suporte</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Selecionar Usuário</Label>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um usuário..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allProfiles.map((profile) => (
+                      <SelectItem key={profile.user_id} value={profile.user_id}>
+                        {profile.nome} ({profile.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={handleStartNewChat}
+                disabled={isCreatingChat || !selectedUserId}
+                className="w-full"
+              >
+                {isCreatingChat ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                )}
+                Iniciar Conversa
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-grid">
           <TabsTrigger value="support" className="gap-2">
             <Headphones className="h-4 w-4" />
-            Suporte
+            <span className="hidden sm:inline">Suporte</span>
           </TabsTrigger>
           <TabsTrigger value="lobby" className="gap-2">
             <Users className="h-4 w-4" />
-            Lobby
+            <span className="hidden sm:inline">Lobby</span>
           </TabsTrigger>
         </TabsList>
 

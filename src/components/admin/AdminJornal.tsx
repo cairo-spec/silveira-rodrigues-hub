@@ -82,14 +82,6 @@ const AdminJornal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedPetitionFile, setSelectedPetitionFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isUploadingPetition, setIsUploadingPetition] = useState(false);
-  const [isDeletingFile, setIsDeletingFile] = useState(false);
-  const [isDeletingPetition, setIsDeletingPetition] = useState(false);
-  const [isDownloadingFile, setIsDownloadingFile] = useState(false);
-  const [isDownloadingPetition, setIsDownloadingPetition] = useState(false);
   const [isReopening, setIsReopening] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
 
@@ -172,8 +164,6 @@ const AdminJornal = () => {
       estimated_value: "",
       is_published: false,
     });
-    setSelectedFile(null);
-    setSelectedPetitionFile(null);
     setEditingOpportunity(null);
   };
 
@@ -196,187 +186,23 @@ const AdminJornal = () => {
     setIsModalOpen(true);
   };
 
-  const handleFileUpload = async (): Promise<string | null> => {
-    if (!selectedFile) return formData.audit_report_path || null;
-
-    setIsUploading(true);
-    const fileExt = selectedFile.name.split('.').pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
-
-    const { data, error } = await supabase.storage
-      .from("audit-reports")
-      .upload(fileName, selectedFile);
-
-    setIsUploading(false);
-
-    if (error) {
-      toast({
-        title: "Erro no upload",
-        description: "Não foi possível enviar o arquivo",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    return data.path;
+  // Parse currency input
+  const parseCurrencyValue = (value: string): number | null => {
+    if (!value) return null;
+    // Remove R$, dots (thousands) and replace comma with dot for decimals
+    const cleaned = value.replace(/[R$\s.]/g, '').replace(',', '.');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? null : num;
   };
 
-  const handleDeleteFile = async () => {
-    if (!formData.audit_report_path) return;
-    
-    setIsDeletingFile(true);
-    
-    // Remove file from storage
-    const { error: storageError } = await supabase.storage
-      .from("audit-reports")
-      .remove([formData.audit_report_path]);
-    
-    if (storageError) {
-      toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir o arquivo",
-        variant: "destructive"
-      });
-      setIsDeletingFile(false);
-      return;
-    }
-    
-    // If editing an existing opportunity, update database immediately
-    if (editingOpportunity) {
-      const { error: dbError } = await supabase
-        .from("audited_opportunities")
-        .update({ audit_report_path: null })
-        .eq("id", editingOpportunity.id);
-      
-      if (dbError) {
-        toast({
-          title: "Erro ao atualizar",
-          description: "Arquivo removido mas não foi possível atualizar a oportunidade",
-          variant: "destructive"
-        });
-      } else {
-        toast({ title: "Arquivo excluído e oportunidade atualizada" });
-        fetchData();
-      }
-    } else {
-      toast({ title: "Arquivo excluído" });
-    }
-    
-    setFormData({ ...formData, audit_report_path: "" });
-    setIsDeletingFile(false);
-  };
-
-  const handleDownloadFile = async () => {
-    if (!formData.audit_report_path) return;
-    
-    setIsDownloadingFile(true);
-    
-    const { data, error } = await supabase.storage
-      .from("audit-reports")
-      .createSignedUrl(formData.audit_report_path, 60);
-    
-    if (error) {
-      toast({
-        title: "Erro ao baixar",
-        description: "Não foi possível gerar link de download",
-        variant: "destructive"
-      });
-    } else if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank");
-    }
-    
-    setIsDownloadingFile(false);
-  };
-
-  // Petition handlers
-  const handlePetitionUpload = async (): Promise<string | null> => {
-    if (!selectedPetitionFile) return formData.petition_path || null;
-
-    setIsUploadingPetition(true);
-    const fileExt = selectedPetitionFile.name.split('.').pop();
-    const fileName = `petition_${crypto.randomUUID()}.${fileExt}`;
-
-    const { data, error } = await supabase.storage
-      .from("audit-reports")
-      .upload(fileName, selectedPetitionFile);
-
-    setIsUploadingPetition(false);
-
-    if (error) {
-      toast({
-        title: "Erro no upload da petição",
-        description: "Não foi possível enviar o arquivo",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    return data.path;
-  };
-
-  const handleDeletePetition = async () => {
-    if (!formData.petition_path) return;
-    
-    setIsDeletingPetition(true);
-    
-    const { error: storageError } = await supabase.storage
-      .from("audit-reports")
-      .remove([formData.petition_path]);
-    
-    if (storageError) {
-      toast({
-        title: "Erro ao excluir",
-        description: "Não foi possível excluir a petição",
-        variant: "destructive"
-      });
-      setIsDeletingPetition(false);
-      return;
-    }
-    
-    if (editingOpportunity) {
-      const { error: dbError } = await supabase
-        .from("audited_opportunities")
-        .update({ petition_path: null })
-        .eq("id", editingOpportunity.id);
-      
-      if (dbError) {
-        toast({
-          title: "Erro ao atualizar",
-          description: "Arquivo removido mas não foi possível atualizar a oportunidade",
-          variant: "destructive"
-        });
-      } else {
-        toast({ title: "Petição excluída e oportunidade atualizada" });
-        fetchData();
-      }
-    } else {
-      toast({ title: "Petição excluída" });
-    }
-    
-    setFormData({ ...formData, petition_path: "" });
-    setIsDeletingPetition(false);
-  };
-
-  const handleDownloadPetition = async () => {
-    if (!formData.petition_path) return;
-    
-    setIsDownloadingPetition(true);
-    
-    const { data, error } = await supabase.storage
-      .from("audit-reports")
-      .createSignedUrl(formData.petition_path, 60);
-    
-    if (error) {
-      toast({
-        title: "Erro ao baixar",
-        description: "Não foi possível gerar link de download",
-        variant: "destructive"
-      });
-    } else if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank");
-    }
-    
-    setIsDownloadingPetition(false);
+  // Format currency for display
+  const formatCurrencyValue = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return "";
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2
+    }).format(value);
   };
 
   const handleSubmit = async () => {
@@ -400,29 +226,21 @@ const AdminJornal = () => {
 
     setIsSubmitting(true);
 
-    // Upload files if selected
-    const reportPath = await handleFileUpload();
-    const petitionPath = await handlePetitionUpload();
-
-    // Auto-revert status to Review_Required if attaching report to a "Solicitada" opportunity
-    let finalGoNoGo = formData.go_no_go;
-    if (editingOpportunity && 
-        editingOpportunity.go_no_go === "Solicitada" && 
-        selectedFile && 
-        reportPath) {
-      finalGoNoGo = "Review_Required";
-    }
+    // Parse estimated value
+    const estimatedValue = parseCurrencyValue(formData.estimated_value);
 
     const opportunityData = {
       title: formData.title,
       opportunity_url: formData.opportunity_url || null,
+      portal_url: formData.portal_url || null,
       opportunity_abstract: formData.opportunity_abstract || null,
       closing_date: format(formData.closing_date, "yyyy-MM-dd"),
       client_organization_id: formData.client_organization_id,
       agency_name: formData.agency_name,
-      go_no_go: finalGoNoGo,
-      audit_report_path: reportPath,
-      petition_path: petitionPath,
+      go_no_go: formData.go_no_go,
+      audit_report_path: formData.audit_report_path || null,  // Now stores Google Drive link
+      petition_path: formData.petition_path || null,  // Now stores Google Drive link
+      estimated_value: estimatedValue,
       is_published: formData.is_published,
     };
 
@@ -435,25 +253,27 @@ const AdminJornal = () => {
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
-        // Notify users if report was attached to a Solicitada opportunity
-        if (editingOpportunity.go_no_go === "Solicitada" && selectedFile && reportPath) {
+        // Notify users if report link was added to a Solicitada opportunity
+        if (editingOpportunity.go_no_go === "Solicitada" && 
+            formData.audit_report_path && 
+            !editingOpportunity.audit_report_path) {
           notifyOrganizationUsers(
             formData.client_organization_id,
             'ticket_status',
             'Relatório disponível',
-            `O relatório de auditoria para "${formData.title}" está disponível para download.`,
+            `O relatório de auditoria para "${formData.title}" está disponível.`,
             editingOpportunity.id
           );
         }
         
         // Notify if status changed to Go or No_Go
-        if ((finalGoNoGo === "Go" || finalGoNoGo === "No_Go") && 
-            editingOpportunity.go_no_go !== finalGoNoGo) {
+        if ((formData.go_no_go === "Go" || formData.go_no_go === "No_Go") && 
+            editingOpportunity.go_no_go !== formData.go_no_go) {
           notifyOrganizationUsers(
             formData.client_organization_id,
             'ticket_status',
-            `Parecer atualizado: ${finalGoNoGo === "Go" ? "GO" : "NO GO"}`,
-            `A oportunidade "${formData.title}" recebeu parecer: ${finalGoNoGo === "Go" ? "GO - Recomendado" : "NO GO - Não Recomendado"}`,
+            `Parecer atualizado: ${formData.go_no_go === "Go" ? "GO" : "NO GO"}`,
+            `A oportunidade "${formData.title}" recebeu parecer: ${formData.go_no_go === "Go" ? "GO - Recomendado" : "NO GO - Não Recomendado"}`,
             editingOpportunity.id
           );
         }
@@ -719,12 +539,37 @@ const AdminJornal = () => {
               </div>
 
               <div className="grid gap-2">
+                <Label htmlFor="estimated_value">Valor Estimado</Label>
+                <Input
+                  id="estimated_value"
+                  type="text"
+                  value={formData.estimated_value}
+                  onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+                  placeholder="R$ 0,00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Digite o valor estimado da licitação (até R$ 10 bilhões)
+                </p>
+              </div>
+
+              <div className="grid gap-2">
                 <Label htmlFor="url">URL do Edital</Label>
                 <Input
                   id="url"
                   type="url"
                   value={formData.opportunity_url}
                   onChange={(e) => setFormData({ ...formData, opportunity_url: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="portal_url">URL do Portal (para acompanhamento)</Label>
+                <Input
+                  id="portal_url"
+                  type="url"
+                  value={formData.portal_url}
+                  onChange={(e) => setFormData({ ...formData, portal_url: e.target.value })}
                   placeholder="https://..."
                 />
               </div>
@@ -745,105 +590,59 @@ const AdminJornal = () => {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="report">Relatório de Auditoria (PDF)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="report"
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="flex-1"
-                  />
-                  {formData.audit_report_path && !selectedFile && (
-                    <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="whitespace-nowrap">
-                        <FileText className="h-3 w-3 mr-1" />
-                        Arquivo existente
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={handleDownloadFile}
-                        disabled={isDownloadingFile}
-                        title="Baixar arquivo"
-                      >
-                        {isDownloadingFile ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={handleDeleteFile}
-                        disabled={isDeletingFile}
-                        title="Excluir arquivo"
-                      >
-                        {isDeletingFile ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <Label htmlFor="report">Link do Relatório de Auditoria (Google Drive)</Label>
+                <Input
+                  id="report"
+                  type="url"
+                  value={formData.audit_report_path}
+                  onChange={(e) => setFormData({ ...formData, audit_report_path: e.target.value })}
+                  placeholder="https://drive.google.com/..."
+                />
+                {formData.audit_report_path && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Link configurado
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(formData.audit_report_path, "_blank")}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Abrir
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="petition">Petição (PDF)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="petition"
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setSelectedPetitionFile(e.target.files?.[0] || null)}
-                    className="flex-1"
-                  />
-                  {formData.petition_path && !selectedPetitionFile && (
-                    <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="whitespace-nowrap">
-                        <FileText className="h-3 w-3 mr-1" />
-                        Petição existente
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={handleDownloadPetition}
-                        disabled={isDownloadingPetition}
-                        title="Baixar petição"
-                      >
-                        {isDownloadingPetition ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={handleDeletePetition}
-                        disabled={isDeletingPetition}
-                        title="Excluir petição"
-                      >
-                        {isDeletingPetition ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <Label htmlFor="petition">Link da Petição (Google Drive)</Label>
+                <Input
+                  id="petition"
+                  type="url"
+                  value={formData.petition_path}
+                  onChange={(e) => setFormData({ ...formData, petition_path: e.target.value })}
+                  placeholder="https://drive.google.com/..."
+                />
+                {formData.petition_path && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-emerald-600 border-emerald-600">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Link configurado
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(formData.petition_path, "_blank")}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Abrir
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -859,8 +658,8 @@ const AdminJornal = () => {
               <Button variant="outline" onClick={() => { setIsModalOpen(false); resetForm(); }}>
                 Cancelar
               </Button>
-              <Button onClick={handleSubmit} disabled={isSubmitting || isUploading}>
-                {(isSubmitting || isUploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingOpportunity ? "Salvar" : "Criar"}
               </Button>
             </DialogFooter>

@@ -50,22 +50,22 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-secondary">
       <header className="bg-primary text-primary-foreground shadow-md">
-        <div className="container-custom py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container-custom py-3 sm:py-4 px-2 sm:px-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link 
                 to="/" 
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
               >
-                <span className="font-bold text-lg">Silveira & Rodrigues</span>
+                <span className="font-bold text-sm sm:text-lg">S&R</span>
               </Link>
               <div className="hidden sm:block h-6 w-px bg-primary-foreground/30" />
-              <div>
-                <h1 className="text-xl font-bold">Painel Administrativo</h1>
-                <p className="text-sm opacity-80">{user?.email}</p>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold truncate">Admin</h1>
+                <p className="text-xs sm:text-sm opacity-80 truncate hidden sm:block">{user?.email}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <NotificationBell 
                 onNotificationClick={(type) => {
                   if (type === 'ticket_message' || type === 'new_ticket') {
@@ -116,34 +116,36 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <main className="container-custom py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="tickets" className="gap-2">
-              <Ticket className="h-4 w-4" />
-              <span className="hidden sm:inline">Tickets</span>
-            </TabsTrigger>
-            <TabsTrigger value="chats" className="gap-2">
-              <MessageCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Chats</span>
-            </TabsTrigger>
-            <TabsTrigger value="jornal" className="gap-2">
-              <PenTool className="h-4 w-4" />
-              <span className="hidden sm:inline">Publicar</span>
-            </TabsTrigger>
-            <TabsTrigger value="knowledge" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Base</span>
-            </TabsTrigger>
-            <TabsTrigger value="pricing" className="gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">Honorários</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Usuários</span>
-            </TabsTrigger>
-          </TabsList>
+      <main className="container-custom py-4 sm:py-8 px-2 sm:px-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-2 px-2">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 sm:w-auto gap-1">
+              <TabsTrigger value="tickets" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <Ticket className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Tickets</span>
+              </TabsTrigger>
+              <TabsTrigger value="chats" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <MessageCircle className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Chats</span>
+              </TabsTrigger>
+              <TabsTrigger value="jornal" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <PenTool className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Publicar</span>
+              </TabsTrigger>
+              <TabsTrigger value="knowledge" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Base</span>
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <DollarSign className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Honor.</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <Users className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Users</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="tickets"><AdminTickets /></TabsContent>
           <TabsContent value="chats"><AdminChats onMentionClick={handleMentionClick} /></TabsContent>

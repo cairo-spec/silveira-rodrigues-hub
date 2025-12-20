@@ -236,6 +236,86 @@ const JornalAuditado = ({
     setIsUpdating(null);
   };
 
+  const handleVitoria = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    
+    // Delete the audit report when advancing to Vencida
+    if (opportunity.audit_report_path) {
+      await supabase.storage
+        .from("audit-reports")
+        .remove([opportunity.audit_report_path]);
+    }
+    
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ 
+        go_no_go: "Vencida" as GoNoGoStatus,
+        audit_report_path: null  // Clear the path since we deleted the file
+      })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível registrar vitória", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Vitória registrada!',
+        `Cliente registrou VITÓRIA na oportunidade: "${opportunity.title}"`,
+        opportunity.id
+      );
+      
+      toast({ title: "Vitória registrada! 🎉" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
+  const handleDerrota = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    
+    // Delete the audit report when advancing to Perdida
+    if (opportunity.audit_report_path) {
+      await supabase.storage
+        .from("audit-reports")
+        .remove([opportunity.audit_report_path]);
+    }
+    
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ 
+        go_no_go: "Perdida" as GoNoGoStatus,
+        audit_report_path: null  // Clear the path since we deleted the file
+      })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível registrar derrota", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Derrota registrada',
+        `Cliente registrou DERROTA na oportunidade: "${opportunity.title}"`,
+        opportunity.id
+      );
+      
+      toast({ title: "Derrota registrada" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
   const downloadReport = async (opportunity: Opportunity) => {
     if (!opportunity.audit_report_path) {
       return;
@@ -592,20 +672,23 @@ const JornalAuditado = ({
                 {getGoNoGoBadge(selectedOpportunity.go_no_go)}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Data Limite</p>
-                  <p className="font-medium">
-                    {format(new Date(selectedOpportunity.closing_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  </p>
+              {/* Hide dates for completed opportunities */}
+              {!["Vencida", "Perdida"].includes(selectedOpportunity.go_no_go) && (
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Data Limite</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedOpportunity.closing_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Publicado em</p>
+                    <p className="font-medium">
+                      {format(new Date(selectedOpportunity.created_at), "dd/MM/yyyy")}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Publicado em</p>
-                  <p className="font-medium">
-                    {format(new Date(selectedOpportunity.created_at), "dd/MM/yyyy")}
-                  </p>
-                </div>
-              </div>
+              )}
 
               {selectedOpportunity.opportunity_abstract && (
                 <div>
@@ -614,6 +697,21 @@ const JornalAuditado = ({
                     {selectedOpportunity.opportunity_abstract}
                   </p>
                 </div>
+              )}
+
+              {/* Ver Tickets Button */}
+              {onShowTickets && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onShowTickets(selectedOpportunity.id);
+                    handleCloseOpportunity();
+                  }}
+                  className="w-full"
+                >
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Ver Tickets desta Oportunidade
+                </Button>
               )}
 
               <div className="flex flex-col gap-2 pt-4">
@@ -682,8 +780,8 @@ const JornalAuditado = ({
                         )}
                       </Button>
                     )}
-                    {/* Actions for Go/No_Go (non-Participando) */}
-                    {(selectedOpportunity.go_no_go === "Go" || selectedOpportunity.go_no_go === "No_Go") && (
+                    {/* Actions for Go - Participar or Rejeitar */}
+                    {selectedOpportunity.go_no_go === "Go" && (
                       <div className="flex flex-col gap-2">
                         <div className="flex gap-2">
                           <Button
@@ -701,6 +799,47 @@ const JornalAuditado = ({
                               </>
                             )}
                           </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="flex-1"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Rejeitar
+                          </Button>
+                        </div>
+                        {onRequestParecer && (
+                          <Button
+                            onClick={() => {
+                              onRequestParecer(selectedOpportunity.title);
+                              setSelectedOpportunity(null);
+                            }}
+                            variant="outline"
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Abrir Ticket
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions for No_Go - Solicitar Impugnação or Rejeitar */}
+                    {selectedOpportunity.go_no_go === "No_Go" && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          {onRequestParecer && (
+                            <Button
+                              onClick={() => {
+                                onRequestParecer(selectedOpportunity.title, "impugnacao");
+                                setSelectedOpportunity(null);
+                              }}
+                              className="flex-1 bg-amber-500 hover:bg-amber-600"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Solicitar Impugnação
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
@@ -853,22 +992,52 @@ const JornalAuditado = ({
                   </div>
                 )}
 
-                {/* Action buttons for Participando */}
+                {/* Action buttons for Participando - Vitória/Derrota */}
                 {selectedOpportunity.go_no_go === "Participando" && (
-                  <Button
-                    onClick={() => {
-                      onRequestParecer(selectedOpportunity.title);
-                      setSelectedOpportunity(null);
-                    }}
-                    className="bg-primary"
-                  >
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    Abrir Ticket
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleVitoria(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                      >
+                        {isUpdating === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Vitória
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDerrota(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Derrota
+                      </Button>
+                    </div>
+                    {onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        variant="outline"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Abrir Ticket
+                      </Button>
+                    )}
+                  </div>
                 )}
 
                 {/* Action buttons for Vencida/Perdida (concluded) */}
-                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && (
+                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && onRequestParecer && (
                   <Button
                     onClick={() => {
                       onRequestParecer(selectedOpportunity.title);
