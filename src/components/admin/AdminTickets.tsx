@@ -354,8 +354,9 @@ const AdminTickets = () => {
   const filteredTickets = displayTickets.filter(t => statusFilter === "all" || t.status === statusFilter);
 
   if (selectedTicket) {
-    const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category) : null;
-    const canReopen = selectedTicket.status === 'closed' && 
+    const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category.replace('+upgrade', '')) : null;
+    const hasUpgradeInDetail = selectedTicket.service_category?.includes('+upgrade');
+    const canReopen = selectedTicket.status === 'closed' &&
                       differenceInDays(new Date(), new Date(selectedTicket.updated_at)) <= 30;
     const canDelete = canDeleteTicket(selectedTicket);
     const hasAttachment = selectedTicket.attachment_url;
@@ -436,6 +437,7 @@ const AdminTickets = () => {
                 <Badge variant="outline" className="gap-1 bg-primary/5">
                   <Tag className="h-3 w-3" />
                   {category.service}
+                  {hasUpgradeInDetail && " + Upgrade"}
                 </Badge>
               )}
               {selectedTicket.service_price && (
@@ -588,7 +590,7 @@ const AdminTickets = () => {
           ) : (
             <div className="grid gap-4">
               {filteredTickets.map((ticket) => {
-                const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
+                const category = ticket.service_category ? getCategoryById(ticket.service_category.replace('+upgrade', '')) : null;
                 const showArchiveButton = canArchiveTicket(ticket);
                 const hasUpgrade = ticket.service_category?.includes('+upgrade');
                 return (
@@ -610,6 +612,7 @@ const AdminTickets = () => {
                               <Badge variant="outline" className="gap-1 bg-primary/5">
                                 <Tag className="h-3 w-3" />
                                 {category.service}
+                                {hasUpgrade && " + Upgrade"}
                               </Badge>
                             )}
                             {ticket.service_price && (
