@@ -620,7 +620,7 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
       ) : (
         <div className="grid gap-4">
           {displayedTickets.map((ticket) => {
-            const category = ticket.service_category ? getCategoryById(ticket.service_category) : null;
+            const category = ticket.service_category ? getCategoryById(ticket.service_category.replace('+upgrade', '')) : null;
             const hasUpgrade = ticket.service_category?.includes('+upgrade');
             return (
               <Card 
@@ -649,6 +649,7 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
                           <Badge variant="outline" className="gap-1 w-fit bg-primary/5">
                             <Tag className="h-3 w-3" />
                             {category.service}
+                            {hasUpgrade && " + Upgrade"}
                           </Badge>
                         )}
                         {ticket.service_price && (
