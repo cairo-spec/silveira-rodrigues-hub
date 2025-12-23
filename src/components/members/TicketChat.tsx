@@ -199,7 +199,8 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
         'ticket_message',
         'Nova mensagem em ticket',
         `O usuário enviou uma mensagem no ticket "${ticket.title}"`,
-        ticket.id
+        ticket.id,
+        user.id
       );
       
       toast({
