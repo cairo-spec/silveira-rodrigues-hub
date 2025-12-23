@@ -29,6 +29,8 @@ interface Opportunity {
   go_no_go: GoNoGoStatus;
   audit_report_path: string | null;
   petition_path: string | null;
+  portal_url: string | null;
+  estimated_value: number | null;
   is_published: boolean;
   created_at: string;
   report_requested_at: string | null;
@@ -509,6 +511,7 @@ const JornalAuditado = ({
                       <TableRow>
                         <TableHead>Título</TableHead>
                         <TableHead>Agência</TableHead>
+                        <TableHead className="text-center">Valor Estimado</TableHead>
                         <TableHead className="text-center">Data Limite</TableHead>
                         <TableHead className="text-center">Parecer</TableHead>
                         <TableHead className="text-center">Relatório</TableHead>
@@ -526,6 +529,15 @@ const JornalAuditado = ({
                             <div className="truncate">{opp.title}</div>
                           </TableCell>
                           <TableCell>{opp.agency_name}</TableCell>
+                          <TableCell className="text-center">
+                            {opp.estimated_value ? (
+                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.estimated_value)}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className="whitespace-nowrap">
                               <Calendar className="h-3 w-3 mr-1" />
@@ -607,11 +619,18 @@ const JornalAuditado = ({
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {format(new Date(opp.closing_date), "dd/MM/yyyy")}
-                        </Badge>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {format(new Date(opp.closing_date), "dd/MM/yyyy")}
+                          </Badge>
+                          {opp.estimated_value && (
+                            <Badge variant="secondary" className="text-xs bg-gold/10 text-gold border-gold/20">
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.estimated_value)}
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -695,6 +714,16 @@ const JornalAuditado = ({
                 </div>
               )}
 
+              {/* Valor Estimado */}
+              {selectedOpportunity.estimated_value && (
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Valor Estimado</p>
+                  <p className="font-medium text-lg text-gold">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOpportunity.estimated_value)}
+                  </p>
+                </div>
+              )}
+
               {selectedOpportunity.opportunity_abstract && (
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">Resumo</p>
@@ -732,6 +761,15 @@ const JornalAuditado = ({
                 {/* Download documents */}
                 {selectedOpportunity.go_no_go === "Participando" ? (
                   <>
+                    {/* Portal URL for tracking */}
+                    {selectedOpportunity.portal_url && (
+                      <Button variant="default" asChild>
+                        <a href={selectedOpportunity.portal_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Acessar Portal de Acompanhamento
+                        </a>
+                      </Button>
+                    )}
                     {/* For Participando: show both Petição and Relatório separately */}
                     {selectedOpportunity.petition_path && (
                       <Button
