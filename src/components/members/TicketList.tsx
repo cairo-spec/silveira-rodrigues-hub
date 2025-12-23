@@ -352,7 +352,8 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
         'new_ticket',
         'Novo ticket criado',
         `Um usuário criou o ticket "${newTitle}" - ${category?.service || 'Sem categoria'}`,
-        data.id
+        data.id,
+        user.id
       );
       
       toast({

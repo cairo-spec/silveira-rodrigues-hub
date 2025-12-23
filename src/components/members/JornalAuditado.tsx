@@ -160,7 +160,8 @@ const JornalAuditado = ({
         'ticket_status',
         'Relatório solicitado',
         `Cliente solicitou relatório para: "${opportunity.title}"`,
-        opportunity.id
+        opportunity.id,
+        user?.id
       );
       
       toast({ title: "Relatório solicitado", description: "Aguarde a análise da nossa equipe" });
@@ -190,7 +191,8 @@ const JornalAuditado = ({
         'ticket_status',
         'Oportunidade rejeitada',
         `Cliente rejeitou a oportunidade: "${opportunity.title}"`,
-        opportunity.id
+        opportunity.id,
+        user?.id
       );
       
       toast({ title: "Oportunidade rejeitada" });
@@ -226,7 +228,8 @@ const JornalAuditado = ({
         'ticket_status',
         'Participação confirmada',
         `Cliente confirmou participação na oportunidade: "${opportunity.title}"`,
-        opportunity.id
+        opportunity.id,
+        user?.id
       );
       
       toast({ title: "Participação confirmada!" });
@@ -266,7 +269,8 @@ const JornalAuditado = ({
         'ticket_status',
         'Vitória registrada!',
         `Cliente registrou VITÓRIA na oportunidade: "${opportunity.title}"`,
-        opportunity.id
+        opportunity.id,
+        user?.id
       );
       
       toast({ title: "Vitória registrada! 🎉" });
@@ -306,7 +310,8 @@ const JornalAuditado = ({
         'ticket_status',
         'Derrota registrada',
         `Cliente registrou DERROTA na oportunidade: "${opportunity.title}"`,
-        opportunity.id
+        opportunity.id,
+        user?.id
       );
       
       toast({ title: "Derrota registrada" });

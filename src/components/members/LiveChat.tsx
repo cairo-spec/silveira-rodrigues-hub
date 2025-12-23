@@ -334,7 +334,8 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
           'chat_message',
           'Nova mensagem no suporte',
           `Um usuário enviou uma mensagem no chat de suporte`,
-          room.id
+          room.id,
+          user.id
         );
       }
       toast({
@@ -388,7 +389,8 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
         'message_deleted',
         'Mensagem apagada no Lobby',
         `${userName} apagou: "${originalContent.substring(0, 200)}${originalContent.length > 200 ? '...' : ''}"`,
-        room?.id || undefined
+        room?.id || undefined,
+        user.id
       );
 
       toast({
