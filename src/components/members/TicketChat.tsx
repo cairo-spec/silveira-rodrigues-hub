@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History, Paperclip, X, Eye } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, ShieldCheck, FileText, Download, History, Paperclip, X, Eye, Tag, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LinkifiedText from "@/components/ui/linkified-text";
 import { notifyAdmins, clearNotificationsByReference } from "@/lib/notifications";
 import TicketTimeline from "./TicketTimeline";
+import { getCategoryById } from "@/lib/pricing-categories";
 import {
   Collapsible,
   CollapsibleContent,
@@ -32,7 +33,10 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  deadline: string | null;
   attachment_url: string | null;
+  service_category: string | null;
+  service_price: string | null;
   opportunity_id?: string | null;
   created_at: string;
 }
@@ -276,13 +280,47 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
             Descrição original
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+          
+          {/* Service info badges - same as admin view */}
+          {(() => {
+            const category = ticket.service_category ? getCategoryById(ticket.service_category.replace('+upgrade', '')) : null;
+            const hasUpgrade = ticket.service_category?.includes('+upgrade');
+            return (
+              <div className="flex flex-wrap gap-2">
+                {category && (
+                  <Badge variant="outline" className="gap-1 bg-primary/5">
+                    <Tag className="h-3 w-3" />
+                    {category.service}
+                    {hasUpgrade && " + Upgrade"}
+                  </Badge>
+                )}
+                {ticket.service_price && (
+                  <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                    {ticket.service_price}
+                  </Badge>
+                )}
+                {category?.successFee && category.successFee !== "N/A" && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                    Êxito: {category.successFee}
+                  </Badge>
+                )}
+                {ticket.deadline && (
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    Prazo: {format(new Date(ticket.deadline), "dd/MM/yyyy")}
+                  </Badge>
+                )}
+              </div>
+            );
+          })()}
+          
           {ticket.attachment_url && (
             <Button 
               variant="outline" 
               size="sm" 
-              className="mt-3 gap-2"
+              className="gap-2"
               onClick={() => window.open(ticket.attachment_url!, '_blank')}
             >
               <FileText className="h-4 w-4" />
@@ -290,7 +328,7 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
               <Download className="h-3 w-3" />
             </Button>
           )}
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground">
             Criado em {format(new Date(ticket.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
           </p>
         </CardContent>
