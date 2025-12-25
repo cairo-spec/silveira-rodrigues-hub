@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2 } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones } from "lucide-react";
 import { SearchCriteriaModal } from "./SearchCriteriaModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -64,6 +64,26 @@ const JornalAuditado = ({
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
+  const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
+
+  // Fetch active tickets count for opportunities
+  const fetchActiveTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, status")
+      .in("opportunity_id", opportunityIds)
+      .not("status", "in", '("canceled","concluded")');
+
+    const countMap = new Map<string, number>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id) {
+        countMap.set(ticket.opportunity_id, (countMap.get(ticket.opportunity_id) || 0) + 1);
+      }
+    });
+    setActiveTicketsByOpportunity(countMap);
+  };
 
   useEffect(() => {
     fetchOpportunities();
@@ -84,10 +104,31 @@ const JornalAuditado = ({
       )
       .subscribe();
 
+    // Subscribe to ticket updates to refresh active tickets count
+    const ticketChannel = supabase
+      .channel('tickets-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets'
+        },
+        () => {
+          // Refresh tickets for "Participando" opportunities
+          const participandoIds = opportunities
+            .filter(o => o.go_no_go === "Participando")
+            .map(o => o.id);
+          fetchActiveTickets(participandoIds);
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(ticketChannel);
     };
-  }, [user]);
+  }, [user, opportunities]);
 
   // Auto-open opportunity from mention click
   useEffect(() => {
@@ -117,6 +158,12 @@ const JornalAuditado = ({
 
     if (data) {
       setOpportunities(data as Opportunity[]);
+      
+      // Fetch active tickets for "Participando" opportunities
+      const participandoIds = (data as Opportunity[])
+        .filter(o => o.go_no_go === "Participando")
+        .map(o => o.id);
+      fetchActiveTickets(participandoIds);
       
       // Update selected opportunity if it exists (for realtime updates)
       if (selectedOpportunity) {
@@ -527,6 +574,9 @@ const JornalAuditado = ({
                         <TableHead className="text-center">Valor Estimado</TableHead>
                         <TableHead className="text-center">Data Limite</TableHead>
                         <TableHead className="text-center">Parecer</TableHead>
+                        {activeTab === "andamento" && (
+                          <TableHead className="text-center">Atendimento</TableHead>
+                        )}
                         <TableHead className="text-center">Relatório</TableHead>
                         <TableHead className="text-center">Petição</TableHead>
                       </TableRow>
@@ -560,6 +610,18 @@ const JornalAuditado = ({
                           <TableCell className="text-center">
                             {getGoNoGoBadge(opp.go_no_go)}
                           </TableCell>
+                          {activeTab === "andamento" && (
+                            <TableCell className="text-center">
+                              {activeTicketsByOpportunity.get(opp.id) ? (
+                                <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
+                                  <Headphones className="h-3 w-3 mr-1" />
+                                  Atendimento
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="text-center">
                             <Button
                               size="sm"
@@ -628,7 +690,15 @@ const JornalAuditado = ({
                             {opp.agency_name}
                           </CardDescription>
                         </div>
-                        {getGoNoGoBadge(opp.go_no_go)}
+                        <div className="flex flex-col gap-1 items-end">
+                          {getGoNoGoBadge(opp.go_no_go)}
+                          {activeTab === "andamento" && activeTicketsByOpportunity.get(opp.id) && (
+                            <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50 text-xs">
+                              <Headphones className="h-3 w-3 mr-1" />
+                              Atendimento
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0 space-y-2">
@@ -705,8 +775,14 @@ const JornalAuditado = ({
 
           {selectedOpportunity && (
             <div className="space-y-4">
-              <div className="flex items-center justify-center py-4">
+              <div className="flex items-center justify-center gap-2 py-4">
                 {getGoNoGoBadge(selectedOpportunity.go_no_go)}
+                {selectedOpportunity.go_no_go === "Participando" && activeTicketsByOpportunity.get(selectedOpportunity.id) && (
+                  <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
+                    <Headphones className="h-3 w-3 mr-1" />
+                    Atendimento
+                  </Badge>
+                )}
               </div>
 
               {/* Hide dates for completed opportunities */}
