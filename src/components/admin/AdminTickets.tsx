@@ -176,10 +176,11 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     
     // Categories that require petition_path before concluding
     const categoriesRequiringPetition = ['impugnacao-edital', 'recurso-administrativo', 'contrarrazoes'];
+    const baseCategory = ticket?.service_category?.replace('+upgrade', '') || '';
     
     // Check if trying to resolve a ticket that requires petition
     if (newStatus === 'resolved' && ticket?.opportunity_id && 
-        categoriesRequiringPetition.includes(ticket?.service_category || '')) {
+        categoriesRequiringPetition.includes(baseCategory)) {
       // Fetch the opportunity to check petition_path
       const { data: opportunity } = await supabase
         .from('audited_opportunities')
