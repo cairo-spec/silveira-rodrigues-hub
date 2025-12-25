@@ -1,5 +1,6 @@
 import { ArrowDown, Shield, TrendingUp, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import heroBackgroundTeam from "@/assets/hero-background-team.png";
 
 const HeroSection = () => {
   const scrollToJornal = () => {
@@ -11,6 +12,14 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center bg-primary overflow-hidden">
+      {/* Team background image with transparency */}
+      <div 
+        className="absolute inset-0 bg-no-repeat bg-bottom bg-contain md:bg-right-bottom opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: `url(${heroBackgroundTeam})`,
+        }}
+      />
+
       {/* Subtle pattern overlay */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
