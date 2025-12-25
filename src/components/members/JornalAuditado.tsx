@@ -459,9 +459,19 @@ const JornalAuditado = ({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Jornal Auditado</h2>
-        <p className="text-muted-foreground">Oportunidades de licitação analisadas pela nossa equipe</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Jornal Auditado</h2>
+          <p className="text-muted-foreground">Oportunidades de licitação analisadas pela nossa equipe</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => onShowTickets?.()}
+          className="shrink-0"
+        >
+          <ClipboardList className="h-4 w-4 mr-2" />
+          Todos os Tickets
+        </Button>
       </div>
 
       {/* Search */}
