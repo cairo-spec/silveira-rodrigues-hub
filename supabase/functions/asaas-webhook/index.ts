@@ -67,8 +67,8 @@ function isTimestampValid(dateCreated: string): boolean {
     return diffMs <= maxAgeMs;
   } catch (error) {
     console.error("Error parsing timestamp:", error);
-    // Be lenient with parsing errors but log them
-    return true;
+    // Fail closed - reject invalid timestamps to prevent replay attacks
+    return false;
   }
 }
 
