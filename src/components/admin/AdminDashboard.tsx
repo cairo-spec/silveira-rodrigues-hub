@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User, PenTool } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User, PenTool, Key } from "lucide-react";
 import AdminTickets from "./AdminTickets";
 import AdminKnowledgeBase from "./AdminKnowledgeBase";
 import AdminChats from "./AdminChats";
 import AdminUsers from "./AdminUsers";
 import AdminPricingTable from "./AdminPricingTable";
 import AdminJornal from "./AdminJornal";
+import { AdminSearchCriteria } from "./AdminSearchCriteria";
 import SettingsPanel from "../members/SettingsPanel";
 import MemberProfile from "../members/MemberProfile";
 import NotificationBell from "../members/NotificationBell";
@@ -144,6 +145,10 @@ const AdminDashboard = () => {
                 <Users className="h-4 w-4" />
                 <span className="hidden xs:inline sm:inline">Users</span>
               </TabsTrigger>
+              <TabsTrigger value="chaves" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <Key className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Chaves</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -153,6 +158,7 @@ const AdminDashboard = () => {
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
           <TabsContent value="users"><AdminUsers /></TabsContent>
+          <TabsContent value="chaves"><AdminSearchCriteria /></TabsContent>
           <TabsContent value="profile"><MemberProfile /></TabsContent>
           <TabsContent value="settings"><SettingsPanel /></TabsContent>
         </Tabs>

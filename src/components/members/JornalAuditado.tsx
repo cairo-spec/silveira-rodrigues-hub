@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2 } from "lucide-react";
+import { SearchCriteriaModal } from "./SearchCriteriaModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
@@ -62,6 +63,7 @@ const JornalAuditado = ({
   const [isDownloadingPetition, setIsDownloadingPetition] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
+  const [showCriteriaModal, setShowCriteriaModal] = useState(false);
 
   useEffect(() => {
     fetchOpportunities();
@@ -444,15 +446,28 @@ const JornalAuditado = ({
           <h2 className="text-2xl font-bold">Jornal Auditado</h2>
           <p className="text-muted-foreground">Oportunidades de licitação analisadas pela nossa equipe</p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => onShowTickets?.()}
-          className="shrink-0"
-        >
-          <ClipboardList className="h-4 w-4 mr-2" />
-          Todos os Tickets
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowCriteriaModal(true)}
+          >
+            <Settings2 className="h-4 w-4 mr-2" />
+            Meus Critérios
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => onShowTickets?.()}
+          >
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Todos os Tickets
+          </Button>
+        </div>
       </div>
+
+      <SearchCriteriaModal 
+        open={showCriteriaModal} 
+        onOpenChange={setShowCriteriaModal} 
+      />
 
       {/* Search */}
       <div className="relative">
