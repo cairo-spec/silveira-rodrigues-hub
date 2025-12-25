@@ -67,6 +67,7 @@ const JornalAuditado = ({
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
   const [concludedRecursoByOpportunity, setConcludedRecursoByOpportunity] = useState<Set<string>>(new Set());
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
+  const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
 
   // Fetch active tickets count for opportunities
   const fetchActiveTickets = async (opportunityIds: string[]) => {
@@ -134,6 +135,30 @@ const JornalAuditado = ({
       }
     });
     setActiveParecerByOpportunity(parecerSet);
+  };
+
+  // Fetch active impugnacao-edital tickets for opportunities
+  const fetchActiveImpugnacaoTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    // Fetch tickets that are NOT resolved or closed AND have impugnacao-edital category
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, service_category, status")
+      .in("opportunity_id", opportunityIds)
+      .not("status", "in", "(resolved,closed)");
+
+    const impugnacaoSet = new Set<string>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id && ticket.service_category) {
+        // Check if service_category contains impugnacao-edital (with or without +upgrade)
+        const baseCategory = ticket.service_category.replace('+upgrade', '');
+        if (baseCategory === 'impugnacao-edital') {
+          impugnacaoSet.add(ticket.opportunity_id);
+        }
+      }
+    });
+    setActiveImpugnacaoByOpportunity(impugnacaoSet);
   };
 
   useEffect(() => {
@@ -212,6 +237,7 @@ const JornalAuditado = ({
       fetchActiveTickets(allOpportunityIds);
       fetchConcludedRecursoTickets(allOpportunityIds);
       fetchActiveParecerTickets(allOpportunityIds);
+      fetchActiveImpugnacaoTickets(allOpportunityIds);
       
       // Update selected opportunity if it exists (for realtime updates)
       if (selectedOpportunity) {
@@ -1036,52 +1062,74 @@ const JornalAuditado = ({
                     {/* Actions for No_Go - Solicitar Impugnação or Rejeitar */}
                     {selectedOpportunity.go_no_go === "No_Go" && (
                       <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          {onRequestParecer && (
-                            <Button
-                              onClick={() => {
-                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "impugnacao");
-                                setSelectedOpportunity(null);
-                              }}
-                              className="flex-1 bg-amber-500 hover:bg-amber-600"
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Solicitar Impugnação
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
-                            disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Rejeitar
-                          </Button>
-                        </div>
-                        {onRequestParecer && (
-                          <Button
-                            onClick={() => {
-                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
-                              setSelectedOpportunity(null);
-                            }}
-                            variant="outline"
-                          >
-                            <ClipboardList className="h-4 w-4 mr-2" />
-                            Abrir Novo Ticket
-                          </Button>
-                        )}
-                        {onShowTickets && (
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              onShowTickets(selectedOpportunity.id);
-                              handleCloseOpportunity();
-                            }}
-                          >
-                            <ClipboardList className="h-4 w-4 mr-2" />
-                            Ver Tickets desta Oportunidade
-                          </Button>
+                        {activeImpugnacaoByOpportunity.has(selectedOpportunity.id) ? (
+                          <>
+                            <p className="text-sm text-muted-foreground text-center py-2">
+                              Impugnação em andamento. Aguardando análise da equipe técnica...
+                            </p>
+                            {onShowTickets && (
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  onShowTickets(selectedOpportunity.id);
+                                  handleCloseOpportunity();
+                                }}
+                              >
+                                <ClipboardList className="h-4 w-4 mr-2" />
+                                Ver Tickets da Oportunidade
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex gap-2">
+                              {onRequestParecer && (
+                                <Button
+                                  onClick={() => {
+                                    onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "impugnacao");
+                                    setSelectedOpportunity(null);
+                                  }}
+                                  className="flex-1 bg-amber-500 hover:bg-amber-600"
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Solicitar Impugnação
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                                disabled={isUpdating === selectedOpportunity.id}
+                                className="flex-1"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Rejeitar
+                              </Button>
+                            </div>
+                            {onRequestParecer && (
+                              <Button
+                                onClick={() => {
+                                  onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
+                                  setSelectedOpportunity(null);
+                                }}
+                                variant="outline"
+                              >
+                                <ClipboardList className="h-4 w-4 mr-2" />
+                                Abrir Novo Ticket
+                              </Button>
+                            )}
+                            {onShowTickets && (
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  onShowTickets(selectedOpportunity.id);
+                                  handleCloseOpportunity();
+                                }}
+                              >
+                                <ClipboardList className="h-4 w-4 mr-2" />
+                                Ver Tickets desta Oportunidade
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
