@@ -47,18 +47,32 @@ const JornalSalesPage = () => {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="text-center space-y-4">
-        <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
-          Jornal Auditado
-        </Badge>
-        <h1 className="text-3xl md:text-4xl font-bold">
-          Participe de Licitações com<br />
-          <span className="text-primary">Inteligência e Segurança</span>
+      <div className="text-center space-y-6 py-8 px-4 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-gold/5 border border-primary/10">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20 animate-pulse">
+            🔥 Jornal Auditado
+          </Badge>
+          <Badge variant="destructive" className="bg-red-500/90 text-white border-red-600 animate-pulse">
+            ⏰ Vagas Limitadas
+          </Badge>
+        </div>
+        
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight">
+          <span className="block text-foreground">Pare de Perder Dinheiro</span>
+          <span className="block mt-2 bg-gradient-to-r from-primary via-emerald-600 to-primary bg-clip-text text-transparent animate-pulse">
+            em Licitações Erradas
+          </span>
         </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Tenha acesso a oportunidades de licitação previamente analisadas pela nossa equipe 
-          de especialistas. Economize tempo e aumente suas chances de sucesso.
+        
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <span className="font-semibold text-foreground">Empresas perdem até R$ 50.000</span> por licitação mal escolhida. 
+          Nossas oportunidades auditadas eliminam esse risco.
         </p>
+        
+        <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-400 font-medium">
+          <AlertTriangle className="h-4 w-4" />
+          <span>Apenas 15 empresas são aceitas por mês</span>
+        </div>
       </div>
 
       {/* Warning Card */}
