@@ -733,35 +733,18 @@ const JornalAuditado = ({
                 </div>
               )}
 
-              {/* Ver Tickets Button */}
-              {onShowTickets && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    onShowTickets(selectedOpportunity.id);
-                    handleCloseOpportunity();
-                  }}
-                  className="w-full"
-                >
-                  <ClipboardList className="h-4 w-4 mr-2" />
-                  Ver Tickets desta Oportunidade
-                </Button>
-              )}
-
               <div className="flex flex-col gap-2 pt-4">
-                {selectedOpportunity.opportunity_url && (
-                  <Button variant="outline" asChild>
-                    <a href={selectedOpportunity.opportunity_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Ver Edital Original
-                    </a>
-                  </Button>
-                )}
-
-                {/* Download documents */}
+                {/* Links - for Participando show both edital and portal */}
                 {selectedOpportunity.go_no_go === "Participando" ? (
                   <>
-                    {/* Portal URL for tracking */}
+                    {selectedOpportunity.opportunity_url && (
+                      <Button variant="outline" asChild>
+                        <a href={selectedOpportunity.opportunity_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Ver Edital Original
+                        </a>
+                      </Button>
+                    )}
                     {selectedOpportunity.portal_url && (
                       <Button variant="default" asChild>
                         <a href={selectedOpportunity.portal_url} target="_blank" rel="noopener noreferrer">
@@ -770,6 +753,21 @@ const JornalAuditado = ({
                         </a>
                       </Button>
                     )}
+                  </>
+                ) : (
+                  selectedOpportunity.opportunity_url && (
+                    <Button variant="outline" asChild>
+                      <a href={selectedOpportunity.opportunity_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Ver Edital Original
+                      </a>
+                    </Button>
+                  )
+                )}
+
+                {/* Download documents */}
+                {selectedOpportunity.go_no_go === "Participando" ? (
+                  <>
                     {/* For Participando: show both Petição and Relatório separately */}
                     {selectedOpportunity.petition_path && (
                       <Button
@@ -861,7 +859,19 @@ const JornalAuditado = ({
                             variant="outline"
                           >
                             <ClipboardList className="h-4 w-4 mr-2" />
-                            Abrir Ticket
+                            Abrir Novo Ticket
+                          </Button>
+                        )}
+                        {onShowTickets && (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              onShowTickets(selectedOpportunity.id);
+                              handleCloseOpportunity();
+                            }}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Ver Tickets desta Oportunidade
                           </Button>
                         )}
                       </div>
@@ -902,7 +912,19 @@ const JornalAuditado = ({
                             variant="outline"
                           >
                             <ClipboardList className="h-4 w-4 mr-2" />
-                            Abrir Ticket
+                            Abrir Novo Ticket
+                          </Button>
+                        )}
+                        {onShowTickets && (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              onShowTickets(selectedOpportunity.id);
+                              handleCloseOpportunity();
+                            }}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Ver Tickets desta Oportunidade
                           </Button>
                         )}
                       </div>
@@ -987,7 +1009,19 @@ const JornalAuditado = ({
                         variant="outline"
                       >
                         <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Ticket
+                        Abrir Novo Ticket
+                      </Button>
+                    )}
+                    {onShowTickets && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onShowTickets(selectedOpportunity.id);
+                          handleCloseOpportunity();
+                        }}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Ver Tickets desta Oportunidade
                       </Button>
                     )}
                   </div>
@@ -1008,7 +1042,19 @@ const JornalAuditado = ({
                         variant="outline"
                       >
                         <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Ticket
+                        Abrir Novo Ticket
+                      </Button>
+                    )}
+                    {onShowTickets && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onShowTickets(selectedOpportunity.id);
+                          handleCloseOpportunity();
+                        }}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Ver Tickets desta Oportunidade
                       </Button>
                     )}
                   </div>
@@ -1029,7 +1075,19 @@ const JornalAuditado = ({
                         variant="outline"
                       >
                         <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Ticket
+                        Abrir Novo Ticket
+                      </Button>
+                    )}
+                    {onShowTickets && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onShowTickets(selectedOpportunity.id);
+                          handleCloseOpportunity();
+                        }}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Ver Tickets desta Oportunidade
                       </Button>
                     )}
                   </div>
@@ -1073,24 +1131,52 @@ const JornalAuditado = ({
                         variant="outline"
                       >
                         <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Ticket
+                        Abrir Novo Ticket
+                      </Button>
+                    )}
+                    {onShowTickets && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onShowTickets(selectedOpportunity.id);
+                          handleCloseOpportunity();
+                        }}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Ver Tickets desta Oportunidade
                       </Button>
                     )}
                   </div>
                 )}
 
                 {/* Action buttons for Vencida/Perdida (concluded) */}
-                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && onRequestParecer && (
-                  <Button
-                    onClick={() => {
-                      onRequestParecer(selectedOpportunity.title);
-                      setSelectedOpportunity(null);
-                    }}
-                    className="bg-primary"
-                  >
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    Abrir Ticket
-                  </Button>
+                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && (
+                  <div className="flex flex-col gap-2">
+                    {onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        className="bg-primary"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Abrir Novo Ticket
+                      </Button>
+                    )}
+                    {onShowTickets && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onShowTickets(selectedOpportunity.id);
+                          handleCloseOpportunity();
+                        }}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Ver Tickets desta Oportunidade
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
