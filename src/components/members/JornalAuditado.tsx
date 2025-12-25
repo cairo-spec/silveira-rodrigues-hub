@@ -356,6 +356,14 @@ const JornalAuditado = ({
            opp.go_no_go === "Review_Required";
   };
 
+  // Check if closing date has passed by at least 1 day (for showing Vitória/Derrota buttons)
+  const isAfterClosingDate = (opp: Opportunity): boolean => {
+    const closingDate = new Date(opp.closing_date);
+    const oneDayAfterClosing = new Date(closingDate);
+    oneDayAfterClosing.setDate(oneDayAfterClosing.getDate() + 1);
+    return new Date() >= oneDayAfterClosing;
+  };
+
   const getGoNoGoBadge = (status: GoNoGoStatus) => {
     switch (status) {
       case "Go":
@@ -1101,32 +1109,38 @@ const JornalAuditado = ({
                 {/* Action buttons for Participando - Vitória/Derrota */}
                 {selectedOpportunity.go_no_go === "Participando" && (
                   <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleVitoria(selectedOpportunity)}
-                        disabled={isUpdating === selectedOpportunity.id}
-                        className="flex-1 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
-                      >
-                        {isUpdating === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Vitória
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDerrota(selectedOpportunity)}
-                        disabled={isUpdating === selectedOpportunity.id}
-                        className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Derrota
-                      </Button>
-                    </div>
+                    {isAfterClosingDate(selectedOpportunity) ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleVitoria(selectedOpportunity)}
+                          disabled={isUpdating === selectedOpportunity.id}
+                          className="flex-1 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                        >
+                          {isUpdating === selectedOpportunity.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Vitória
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDerrota(selectedOpportunity)}
+                          disabled={isUpdating === selectedOpportunity.id}
+                          className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Derrota
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        Os botões de resultado estarão disponíveis após a data limite.
+                      </p>
+                    )}
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
