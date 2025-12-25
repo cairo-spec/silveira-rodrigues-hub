@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,6 +21,21 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida";
+
+type FormData = {
+  title: string;
+  opportunity_url: string;
+  portal_url: string;
+  opportunity_abstract: string;
+  closing_date: Date | null;
+  client_organization_id: string;
+  agency_name: string;
+  go_no_go: GoNoGoStatus;
+  audit_report_path: string;
+  petition_path: string;
+  estimated_value: string;
+  is_published: boolean;
+};
 
 // Notify all users in an organization
 const notifyOrganizationUsers = async (
@@ -86,20 +102,60 @@ const AdminJornal = () => {
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
 
   // Form state
-  const [formData, setFormData] = useState({
+  const initialFormData: FormData = {
     title: "",
     opportunity_url: "",
     portal_url: "",
     opportunity_abstract: "",
-    closing_date: null as Date | null,
+    closing_date: null,
     client_organization_id: "",
     agency_name: "",
-    go_no_go: "Review_Required" as GoNoGoStatus,
-    audit_report_path: "",  // Now stores Google Drive link
-    petition_path: "",  // Now stores Google Drive link
-    estimated_value: "" as string,
+    go_no_go: "Review_Required",
+    audit_report_path: "",
+    petition_path: "",
+    estimated_value: "",
     is_published: false,
-  });
+  };
+
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [originalFormData, setOriginalFormData] = useState<FormData>(initialFormData);
+  const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
+
+  // Check if form has unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    return (
+      formData.title !== originalFormData.title ||
+      formData.opportunity_url !== originalFormData.opportunity_url ||
+      formData.portal_url !== originalFormData.portal_url ||
+      formData.opportunity_abstract !== originalFormData.opportunity_abstract ||
+      formData.closing_date?.getTime() !== originalFormData.closing_date?.getTime() ||
+      formData.client_organization_id !== originalFormData.client_organization_id ||
+      formData.agency_name !== originalFormData.agency_name ||
+      formData.go_no_go !== originalFormData.go_no_go ||
+      formData.audit_report_path !== originalFormData.audit_report_path ||
+      formData.petition_path !== originalFormData.petition_path ||
+      formData.estimated_value !== originalFormData.estimated_value ||
+      formData.is_published !== originalFormData.is_published
+    );
+  }, [formData, originalFormData]);
+
+  // Handle modal close with unsaved changes check
+  const handleModalClose = useCallback((open: boolean) => {
+    if (!open && hasUnsavedChanges()) {
+      setShowUnsavedAlert(true);
+    } else if (!open) {
+      setIsModalOpen(false);
+      resetForm();
+    } else {
+      setIsModalOpen(open);
+    }
+  }, [hasUnsavedChanges]);
+
+  const confirmCloseWithoutSaving = () => {
+    setShowUnsavedAlert(false);
+    setIsModalOpen(false);
+    resetForm();
+  };
 
   useEffect(() => {
     fetchData();
@@ -150,26 +206,14 @@ const AdminJornal = () => {
   };
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      opportunity_url: "",
-      portal_url: "",
-      opportunity_abstract: "",
-      closing_date: null,
-      client_organization_id: "",
-      agency_name: "",
-      go_no_go: "Review_Required",
-      audit_report_path: "",
-      petition_path: "",
-      estimated_value: "",
-      is_published: false,
-    });
+    setFormData(initialFormData);
+    setOriginalFormData(initialFormData);
     setEditingOpportunity(null);
   };
 
   const openEditModal = (opportunity: Opportunity) => {
     setEditingOpportunity(opportunity);
-    setFormData({
+    const editFormData: FormData = {
       title: opportunity.title,
       opportunity_url: opportunity.opportunity_url || "",
       portal_url: (opportunity as any).portal_url || "",
@@ -182,7 +226,14 @@ const AdminJornal = () => {
       petition_path: opportunity.petition_path || "",
       estimated_value: (opportunity as any).estimated_value?.toString() || "",
       is_published: opportunity.is_published,
-    });
+    };
+    setFormData(editFormData);
+    setOriginalFormData(editFormData);
+    setIsModalOpen(true);
+  };
+
+  const openNewModal = () => {
+    resetForm();
     setIsModalOpen(true);
   };
 
@@ -435,9 +486,9 @@ const AdminJornal = () => {
           <h2 className="text-2xl font-bold">Gerenciar Oportunidades</h2>
           <p className="text-muted-foreground">Publique e gerencie oportunidades do Jornal Auditado</p>
         </div>
-        <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) resetForm(); }}>
+        <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={openNewModal}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Oportunidade
             </Button>
@@ -655,7 +706,7 @@ const AdminJornal = () => {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setIsModalOpen(false); resetForm(); }}>
+              <Button variant="outline" onClick={() => handleModalClose(false)}>
                 Cancelar
               </Button>
               <Button onClick={handleSubmit} disabled={isSubmitting}>
@@ -665,6 +716,24 @@ const AdminJornal = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Alert for unsaved changes */}
+        <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você tem alterações não salvas. Deseja sair sem salvar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmCloseWithoutSaving}>
+                Sair sem salvar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
