@@ -177,8 +177,8 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Meus Critérios de Busca</DialogTitle>
         </DialogHeader>
 
@@ -187,7 +187,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 max-h-[calc(90vh-120px)] pr-4">
             <div className="flex flex-col gap-6 pb-4">
               {/* Company Presentation Section */}
               <div className="space-y-3">
