@@ -351,8 +351,9 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     }
   };
 
-  const canDeleteTicket = (ticket: Ticket) => {
-    return ticket.status === 'closed' && differenceInDays(new Date(), new Date(ticket.updated_at)) >= 5;
+  const canDeleteTicket = () => {
+    // Admins can delete tickets at any time
+    return true;
   };
 
   const canArchiveTicket = (ticket: Ticket) => {
@@ -501,7 +502,7 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     const hasUpgradeInDetail = selectedTicket.service_category?.includes('+upgrade');
     const canReopen = selectedTicket.status === 'closed' &&
                       differenceInDays(new Date(), new Date(selectedTicket.updated_at)) <= 30;
-    const canDelete = canDeleteTicket(selectedTicket);
+    const canDelete = canDeleteTicket();
     const hasAttachment = selectedTicket.attachment_url;
     
     return (
