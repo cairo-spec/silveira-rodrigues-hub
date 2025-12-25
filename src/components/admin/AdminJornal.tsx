@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw, Headphones } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -100,6 +100,7 @@ const AdminJornal = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReopening, setIsReopening] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
+  const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
 
   // Form state
   const initialFormData: FormData = {
@@ -157,6 +158,25 @@ const AdminJornal = () => {
     resetForm();
   };
 
+  // Fetch active tickets count for opportunities
+  const fetchActiveTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, status")
+      .in("opportunity_id", opportunityIds)
+      .not("status", "in", '("canceled","concluded")');
+
+    const countMap = new Map<string, number>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id) {
+        countMap.set(ticket.opportunity_id, (countMap.get(ticket.opportunity_id) || 0) + 1);
+      }
+    });
+    setActiveTicketsByOpportunity(countMap);
+  };
+
   useEffect(() => {
     fetchData();
 
@@ -176,10 +196,30 @@ const AdminJornal = () => {
       )
       .subscribe();
 
+    // Subscribe to ticket updates
+    const ticketChannel = supabase
+      .channel('admin-tickets-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets'
+        },
+        () => {
+          const participandoIds = opportunities
+            .filter(o => o.go_no_go === "Participando")
+            .map(o => o.id);
+          fetchActiveTickets(participandoIds);
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(ticketChannel);
     };
-  }, []);
+  }, [opportunities]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -195,7 +235,14 @@ const AdminJornal = () => {
     ]);
 
     if (opportunitiesRes.data) {
-      setOpportunities(opportunitiesRes.data as Opportunity[]);
+      const opps = opportunitiesRes.data as Opportunity[];
+      setOpportunities(opps);
+      
+      // Fetch active tickets for "Participando" opportunities
+      const participandoIds = opps
+        .filter(o => o.go_no_go === "Participando")
+        .map(o => o.id);
+      fetchActiveTickets(participandoIds);
     }
 
     if (orgsRes.data) {
@@ -783,6 +830,9 @@ const AdminJornal = () => {
                       <TableHead>Cliente</TableHead>
                       <TableHead className="text-center">Docs</TableHead>
                       <TableHead className="text-center">Parecer</TableHead>
+                      {activeTab === "andamento" && (
+                        <TableHead className="text-center">Atendimento</TableHead>
+                      )}
                       <TableHead className="text-center">Publicado</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -810,6 +860,18 @@ const AdminJornal = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-center">{getGoNoGoBadge(opp.go_no_go)}</TableCell>
+                        {activeTab === "andamento" && (
+                          <TableCell className="text-center">
+                            {activeTicketsByOpportunity.get(opp.id) ? (
+                              <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
+                                <Headphones className="h-3 w-3 mr-1" />
+                                Atendimento
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell className="text-center">
                           <Switch
                             checked={opp.is_published}
