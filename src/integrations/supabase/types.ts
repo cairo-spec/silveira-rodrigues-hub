@@ -548,6 +548,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_search_criteria: {
+        Row: {
+          created_at: string
+          id: string
+          keywords: string[]
+          states: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keywords?: string[]
+          states?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keywords?: string[]
+          states?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
