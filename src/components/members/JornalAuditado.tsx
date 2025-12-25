@@ -66,6 +66,7 @@ const JornalAuditado = ({
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
   const [concludedRecursoByOpportunity, setConcludedRecursoByOpportunity] = useState<Set<string>>(new Set());
+  const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
 
   // Fetch active tickets count for opportunities
   const fetchActiveTickets = async (opportunityIds: string[]) => {
@@ -109,6 +110,30 @@ const JornalAuditado = ({
       }
     });
     setConcludedRecursoByOpportunity(recursoSet);
+  };
+
+  // Fetch active parecer-go-no-go tickets for opportunities
+  const fetchActiveParecerTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    // Fetch tickets that are NOT resolved or closed AND have parecer-go-no-go category
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, service_category, status")
+      .in("opportunity_id", opportunityIds)
+      .not("status", "in", "(resolved,closed)");
+
+    const parecerSet = new Set<string>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id && ticket.service_category) {
+        // Check if service_category contains parecer-go-no-go (with or without +upgrade)
+        const baseCategory = ticket.service_category.replace('+upgrade', '');
+        if (baseCategory === 'parecer-go-no-go') {
+          parecerSet.add(ticket.opportunity_id);
+        }
+      }
+    });
+    setActiveParecerByOpportunity(parecerSet);
   };
 
   useEffect(() => {
@@ -186,6 +211,7 @@ const JornalAuditado = ({
       const allOpportunityIds = (data as Opportunity[]).map(o => o.id);
       fetchActiveTickets(allOpportunityIds);
       fetchConcludedRecursoTickets(allOpportunityIds);
+      fetchActiveParecerTickets(allOpportunityIds);
       
       // Update selected opportunity if it exists (for realtime updates)
       if (selectedOpportunity) {
@@ -1065,13 +1091,28 @@ const JornalAuditado = ({
                 {/* Solicitar Parecer e Participar - when report was requested and attached */}
                 {canRequestParecer(selectedOpportunity) && isSubscriber && (
                   <div className="flex flex-col gap-2">
-                    <Button
-                      onClick={() => handleSolicitarParecer(selectedOpportunity)}
-                      className="bg-primary"
-                    >
-                      <ClipboardList className="h-4 w-4 mr-2" />
-                      Solicitar Parecer Go/No Go
-                    </Button>
+                    {activeParecerByOpportunity.has(selectedOpportunity.id) ? (
+                      <Button
+                        onClick={() => {
+                          if (onShowTickets) {
+                            onShowTickets(selectedOpportunity.id);
+                            handleCloseOpportunity();
+                          }
+                        }}
+                        variant="outline"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Ver Tickets da Oportunidade
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleSolicitarParecer(selectedOpportunity)}
+                        className="bg-primary"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Solicitar Parecer Go/No Go
+                      </Button>
+                    )}
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
