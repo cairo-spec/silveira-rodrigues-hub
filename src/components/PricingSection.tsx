@@ -9,7 +9,7 @@ const benefits = [{
   highlight: false
 }, {
   icon: FileText,
-  text: "Relatório de Risco Parametrizado (Metodologia COSO ERM)",
+  text: "Relatório de Risco (Metodologia COSO ERM)",
   highlight: false
 }, {
   icon: FileText,
