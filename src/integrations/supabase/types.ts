@@ -554,6 +554,7 @@ export type Database = {
           created_at: string
           id: string
           keywords: string[]
+          minimum_value: number | null
           states: string[]
           updated_at: string
           user_id: string
@@ -563,6 +564,7 @@ export type Database = {
           created_at?: string
           id?: string
           keywords?: string[]
+          minimum_value?: number | null
           states?: string[]
           updated_at?: string
           user_id: string
@@ -572,6 +574,7 @@ export type Database = {
           created_at?: string
           id?: string
           keywords?: string[]
+          minimum_value?: number | null
           states?: string[]
           updated_at?: string
           user_id?: string
