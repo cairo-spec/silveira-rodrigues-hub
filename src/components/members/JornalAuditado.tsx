@@ -67,6 +67,7 @@ const JornalAuditado = ({
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
   const [concludedRecursoByOpportunity, setConcludedRecursoByOpportunity] = useState<Set<string>>(new Set());
   const [concludedContrarrazoesOpportunity, setConcludedContrarrazoesOpportunity] = useState<Set<string>>(new Set());
+  const [concludedImpugnacaoByOpportunity, setConcludedImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
 
@@ -185,6 +186,30 @@ const JornalAuditado = ({
     setActiveImpugnacaoByOpportunity(impugnacaoSet);
   };
 
+  // Fetch concluded impugnacao-edital tickets for opportunities
+  const fetchConcludedImpugnacaoTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    // Fetch tickets that are resolved/closed AND have impugnacao-edital category
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, service_category, status")
+      .in("opportunity_id", opportunityIds)
+      .in("status", ["resolved", "closed"]);
+
+    const impugnacaoSet = new Set<string>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id && ticket.service_category) {
+        // Check if service_category contains impugnacao-edital (with or without +upgrade)
+        const baseCategory = ticket.service_category.replace('+upgrade', '');
+        if (baseCategory === 'impugnacao-edital') {
+          impugnacaoSet.add(ticket.opportunity_id);
+        }
+      }
+    });
+    setConcludedImpugnacaoByOpportunity(impugnacaoSet);
+  };
+
   useEffect(() => {
     fetchOpportunities();
 
@@ -261,6 +286,7 @@ const JornalAuditado = ({
       fetchActiveTickets(allOpportunityIds);
       fetchConcludedRecursoTickets(allOpportunityIds);
       fetchConcludedContrarrazoesTickets(allOpportunityIds);
+      fetchConcludedImpugnacaoTickets(allOpportunityIds);
       fetchActiveParecerTickets(allOpportunityIds);
       fetchActiveImpugnacaoTickets(allOpportunityIds);
       
@@ -1231,6 +1257,19 @@ const JornalAuditado = ({
                       >
                         <ClipboardList className="h-4 w-4 mr-2" />
                         Ver Tickets da Oportunidade
+                      </Button>
+                    ) : concludedImpugnacaoByOpportunity.has(selectedOpportunity.id) ? (
+                      <Button
+                        onClick={() => {
+                          if (onRequestParecer) {
+                            onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, 'recurso-administrativo');
+                          }
+                          handleCloseOpportunity();
+                        }}
+                        className="bg-primary"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Solicitar Recurso
                       </Button>
                     ) : (
                       <Button
