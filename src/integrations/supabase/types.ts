@@ -590,26 +590,16 @@ export type Database = {
         }
         Returns: boolean
       }
-      notify_admins:
-        | {
-            Args: {
-              _message: string
-              _reference_id?: string
-              _title: string
-              _type: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              _exclude_user_id?: string
-              _message: string
-              _reference_id?: string
-              _title: string
-              _type: string
-            }
-            Returns: undefined
-          }
+      notify_admins: {
+        Args: {
+          _exclude_user_id?: string
+          _message: string
+          _reference_id?: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
