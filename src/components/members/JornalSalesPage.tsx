@@ -66,7 +66,7 @@ const JornalSalesPage = () => {
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
           <span className="font-semibold text-foreground">Empresas perdem milhões</span> por licitação mal escolhida. 
-          Nossas oportunidades auditadas eliminam esse risco.
+          Nossas oportunidades auditadas mitigam esse risco.
         </p>
         
         <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-400 font-medium">
