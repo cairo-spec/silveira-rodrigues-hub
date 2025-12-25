@@ -964,18 +964,18 @@ const JornalAuditado = ({
 
       {/* Detail Modal */}
       <Dialog open={!!selectedOpportunity} onOpenChange={() => handleCloseOpportunity()}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedOpportunity?.title}</DialogTitle>
-            <DialogDescription className="flex items-center gap-1">
-              <Building2 className="h-4 w-4" />
-              {selectedOpportunity?.agency_name}
+        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-base sm:text-lg pr-6 leading-tight">{selectedOpportunity?.title}</DialogTitle>
+            <DialogDescription className="flex items-center gap-1 text-sm">
+              <Building2 className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{selectedOpportunity?.agency_name}</span>
             </DialogDescription>
           </DialogHeader>
 
           {selectedOpportunity && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-center gap-2 py-4">
+            <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 pr-1">
+              <div className="flex flex-wrap items-center justify-center gap-2 py-2 sm:py-4">
                 {getGoNoGoBadge(selectedOpportunity.go_no_go)}
                 {activeTicketsByOpportunity.get(selectedOpportunity.id) && (
                   <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
@@ -987,11 +987,11 @@ const JornalAuditado = ({
 
               {/* Hide dates for completed opportunities */}
               {!["Vencida", "Perdida"].includes(selectedOpportunity.go_no_go) && (
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div>
                     <p className="text-muted-foreground">Data Limite</p>
                     <p className="font-medium">
-                      {format(new Date(selectedOpportunity.closing_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      {format(new Date(selectedOpportunity.closing_date), "dd/MM/yyyy", { locale: ptBR })}
                     </p>
                   </div>
                   <div>
@@ -1005,9 +1005,9 @@ const JornalAuditado = ({
 
               {/* Valor Estimado */}
               {selectedOpportunity.estimated_value && (
-                <div className="text-sm">
+                <div className="text-xs sm:text-sm">
                   <p className="text-muted-foreground">Valor Estimado</p>
-                  <p className="font-medium text-lg text-gold">
+                  <p className="font-medium text-base sm:text-lg text-gold">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOpportunity.estimated_value)}
                   </p>
                 </div>
@@ -1015,39 +1015,39 @@ const JornalAuditado = ({
 
               {selectedOpportunity.opportunity_abstract && (
                 <div>
-                  <p className="text-muted-foreground text-sm mb-1">Resumo</p>
-                  <p className="text-sm bg-muted p-3 rounded-md">
+                  <p className="text-muted-foreground text-xs sm:text-sm mb-1">Resumo</p>
+                  <p className="text-xs sm:text-sm bg-muted p-2 sm:p-3 rounded-md leading-relaxed">
                     {selectedOpportunity.opportunity_abstract}
                   </p>
                 </div>
               )}
 
-              <div className="flex flex-col gap-2 pt-4">
+              <div className="flex flex-col gap-2 pt-2 sm:pt-4">
                 {/* Links - for Participando show both edital and portal */}
                 {selectedOpportunity.go_no_go === "Participando" ? (
                   <>
                     {selectedOpportunity.opportunity_url && (
-                      <Button variant="outline" asChild>
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-9" asChild>
                         <a href={selectedOpportunity.opportunity_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
                           Ver Edital Original
                         </a>
                       </Button>
                     )}
                     {selectedOpportunity.portal_url && (
-                      <Button variant="default" asChild>
+                      <Button variant="default" size="sm" className="text-xs sm:text-sm h-9" asChild>
                         <a href={selectedOpportunity.portal_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Acessar Portal de Acompanhamento
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                          Acessar Portal
                         </a>
                       </Button>
                     )}
                   </>
                 ) : (
                   selectedOpportunity.opportunity_url && (
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm h-9" asChild>
                       <a href={selectedOpportunity.opportunity_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" />
+                        <ExternalLink className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
                         Ver Edital Original
                       </a>
                     </Button>
@@ -1061,14 +1061,16 @@ const JornalAuditado = ({
                     {selectedOpportunity.petition_path && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => handleRequestPetition(selectedOpportunity)}
                         disabled={isDownloadingPetition === selectedOpportunity.id}
                       >
                         {isDownloadingPetition === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-2" />
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
                             Baixar Petição
                           </>
                         )}
@@ -1077,15 +1079,17 @@ const JornalAuditado = ({
                     {selectedOpportunity.audit_report_path && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => handleRequestReport(selectedOpportunity)}
                         disabled={isDownloading === selectedOpportunity.id}
                       >
                         {isDownloading === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-2" />
-                            Baixar Relatório de Auditoria
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
+                            Baixar Relatório
                           </>
                         )}
                       </Button>
@@ -1097,45 +1101,49 @@ const JornalAuditado = ({
                     {selectedOpportunity.audit_report_path && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => handleRequestReport(selectedOpportunity)}
                         disabled={isDownloading === selectedOpportunity.id}
                       >
                         {isDownloading === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                         ) : (
                           <>
-                            <Download className="h-4 w-4 mr-2" />
-                            Baixar Relatório de Auditoria
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
+                            Baixar Relatório
                           </>
                         )}
                       </Button>
                     )}
                     {/* Actions for Go - Participar or Rejeitar */}
                     {selectedOpportunity.go_no_go === "Go" && (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
+                      <div className="flex flex-col gap-1.5 sm:gap-2">
+                        <div className="flex gap-1.5 sm:gap-2">
                           <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => handleParticipar(selectedOpportunity)}
                             disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                            className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 text-xs sm:text-sm h-9"
                           >
                             {isUpdating === selectedOpportunity.id ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                             ) : (
                               <>
-                                <CheckCircle className="h-4 w-4 mr-2" />
+                                <CheckCircle className="h-3.5 w-3.5 mr-1" />
                                 Participar
                               </>
                             )}
                           </Button>
                           <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
                             disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1"
+                            className="flex-1 text-xs sm:text-sm h-9"
                           >
-                            <X className="h-4 w-4 mr-2" />
+                            <X className="h-3.5 w-3.5 mr-1" />
                             Rejeitar
                           </Button>
                         </div>
@@ -1146,21 +1154,25 @@ const JornalAuditado = ({
                               setSelectedOpportunity(null);
                             }}
                             variant="outline"
+                            size="sm"
+                            className="text-xs sm:text-sm h-9"
                           >
-                            <ClipboardList className="h-4 w-4 mr-2" />
+                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
                             Abrir Novo Ticket
                           </Button>
                         )}
                         {onShowTickets && (
                           <Button
                             variant="outline"
+                            size="sm"
+                            className="text-xs sm:text-sm h-9"
                             onClick={() => {
                               onShowTickets(selectedOpportunity.id);
                               handleCloseOpportunity();
                             }}
                           >
-                            <ClipboardList className="h-4 w-4 mr-2" />
-                            Ver Tickets desta Oportunidade
+                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                            Ver Tickets
                           </Button>
                         )}
                       </div>
@@ -1168,47 +1180,51 @@ const JornalAuditado = ({
 
                     {/* Actions for No_Go - Solicitar Impugnação or Rejeitar */}
                     {selectedOpportunity.go_no_go === "No_Go" && (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1.5 sm:gap-2">
                         {activeImpugnacaoByOpportunity.has(selectedOpportunity.id) ? (
                           <>
-                            <p className="text-sm text-muted-foreground text-center py-2">
-                              Impugnação em andamento. Aguardando análise da equipe técnica...
+                            <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5 sm:py-2">
+                              Impugnação em andamento...
                             </p>
                             {onShowTickets && (
                               <Button
                                 variant="outline"
+                                size="sm"
+                                className="text-xs sm:text-sm h-9"
                                 onClick={() => {
                                   onShowTickets(selectedOpportunity.id);
                                   handleCloseOpportunity();
                                 }}
                               >
-                                <ClipboardList className="h-4 w-4 mr-2" />
-                                Ver Tickets da Oportunidade
+                                <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                                Ver Tickets
                               </Button>
                             )}
                           </>
                         ) : (
                           <>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1.5 sm:gap-2">
                               {onRequestParecer && (
                                 <Button
+                                  size="sm"
                                   onClick={() => {
                                     onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "impugnacao");
                                     setSelectedOpportunity(null);
                                   }}
-                                  className="flex-1 bg-amber-500 hover:bg-amber-600"
+                                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-xs sm:text-sm h-9"
                                 >
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  Solicitar Impugnação
+                                  <FileText className="h-3.5 w-3.5 mr-1" />
+                                  Impugnação
                                 </Button>
                               )}
                               <Button
                                 variant="outline"
+                                size="sm"
                                 onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
                                 disabled={isUpdating === selectedOpportunity.id}
-                                className="flex-1"
+                                className="flex-1 text-xs sm:text-sm h-9"
                               >
-                                <X className="h-4 w-4 mr-2" />
+                                <X className="h-3.5 w-3.5 mr-1" />
                                 Rejeitar
                               </Button>
                             </div>
@@ -1219,21 +1235,25 @@ const JornalAuditado = ({
                                   setSelectedOpportunity(null);
                                 }}
                                 variant="outline"
+                                size="sm"
+                                className="text-xs sm:text-sm h-9"
                               >
-                                <ClipboardList className="h-4 w-4 mr-2" />
+                                <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
                                 Abrir Novo Ticket
                               </Button>
                             )}
                             {onShowTickets && (
                               <Button
                                 variant="outline"
+                                size="sm"
+                                className="text-xs sm:text-sm h-9"
                                 onClick={() => {
                                   onShowTickets(selectedOpportunity.id);
                                   handleCloseOpportunity();
                                 }}
                               >
-                                <ClipboardList className="h-4 w-4 mr-2" />
-                                Ver Tickets desta Oportunidade
+                                <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                                Ver Tickets
                               </Button>
                             )}
                           </>
@@ -1245,7 +1265,7 @@ const JornalAuditado = ({
 
                 {/* Solicitar Parecer e Participar - when report was requested and attached */}
                 {canRequestParecer(selectedOpportunity) && isSubscriber && (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5 sm:gap-2">
                     {activeParecerByOpportunity.has(selectedOpportunity.id) ? (
                       <Button
                         onClick={() => {
@@ -1255,9 +1275,11 @@ const JornalAuditado = ({
                           }
                         }}
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Ver Tickets da Oportunidade
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Tickets
                       </Button>
                     ) : concludedImpugnacaoByOpportunity.has(selectedOpportunity.id) ? (
                       <Button
@@ -1267,43 +1289,47 @@ const JornalAuditado = ({
                           }
                           handleCloseOpportunity();
                         }}
-                        className="bg-primary"
+                        size="sm"
+                        className="bg-primary text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
                         Solicitar Recurso
                       </Button>
                     ) : (
                       <Button
                         onClick={() => handleSolicitarParecer(selectedOpportunity)}
-                        className="bg-primary"
+                        size="sm"
+                        className="bg-primary text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Solicitar Parecer Go/No Go
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Parecer Go/No Go
                       </Button>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => handleParticipar(selectedOpportunity)}
                         disabled={isUpdating === selectedOpportunity.id}
-                        className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                        className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 text-xs sm:text-sm h-9"
                       >
                         {isUpdating === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                         ) : (
                           <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
+                            <CheckCircle className="h-3.5 w-3.5 mr-1" />
                             Participar
                           </>
                         )}
                       </Button>
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
                         disabled={isUpdating === selectedOpportunity.id}
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm h-9"
                       >
-                        <X className="h-4 w-4 mr-2" />
+                        <X className="h-3.5 w-3.5 mr-1" />
                         Rejeitar
                       </Button>
                     </div>
@@ -1312,30 +1338,32 @@ const JornalAuditado = ({
 
                 {/* Action buttons for Review_Required status */}
                 {selectedOpportunity.go_no_go === "Review_Required" && !canRequestParecer(selectedOpportunity) && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
+                  <div className="flex flex-col gap-1.5 sm:gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <Button
                         variant="default"
+                        size="sm"
                         onClick={() => handleSolicitarRelatorio(selectedOpportunity)}
                         disabled={isUpdating === selectedOpportunity.id}
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm h-9"
                       >
                         {isUpdating === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                         ) : (
                           <>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Solicitar Relatório
+                            <FileText className="h-3.5 w-3.5 mr-1" />
+                            Relatório
                           </>
                         )}
                       </Button>
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
                         disabled={isUpdating === selectedOpportunity.id}
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm h-9"
                       >
-                        <X className="h-4 w-4 mr-2" />
+                        <X className="h-3.5 w-3.5 mr-1" />
                         Rejeitar
                       </Button>
                     </div>
@@ -1346,21 +1374,25 @@ const JornalAuditado = ({
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Novo Ticket
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Novo Ticket
                       </Button>
                     )}
                     {onShowTickets && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => {
                           onShowTickets(selectedOpportunity.id);
                           handleCloseOpportunity();
                         }}
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Ver Tickets desta Oportunidade
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Tickets
                       </Button>
                     )}
                   </div>
@@ -1368,9 +1400,9 @@ const JornalAuditado = ({
 
                 {/* Status info for Solicitada */}
                 {selectedOpportunity.go_no_go === "Solicitada" && (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm text-muted-foreground text-center py-2">
-                      Aguardando análise da equipe técnica...
+                  <div className="flex flex-col gap-1.5 sm:gap-2">
+                    <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5 sm:py-2">
+                      Aguardando análise...
                     </p>
                     {onRequestParecer && (
                       <Button
@@ -1379,21 +1411,25 @@ const JornalAuditado = ({
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Novo Ticket
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Novo Ticket
                       </Button>
                     )}
                     {onShowTickets && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => {
                           onShowTickets(selectedOpportunity.id);
                           handleCloseOpportunity();
                         }}
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Ver Tickets desta Oportunidade
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Tickets
                       </Button>
                     )}
                   </div>
@@ -1401,9 +1437,9 @@ const JornalAuditado = ({
 
                 {/* Status info for Rejeitada */}
                 {selectedOpportunity.go_no_go === "Rejeitada" && (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm text-muted-foreground text-center py-2">
-                      Oportunidade rejeitada pelo cliente.
+                  <div className="flex flex-col gap-1.5 sm:gap-2">
+                    <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5 sm:py-2">
+                      Oportunidade rejeitada.
                     </p>
                     {onRequestParecer && (
                       <Button
@@ -1412,21 +1448,25 @@ const JornalAuditado = ({
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Novo Ticket
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Novo Ticket
                       </Button>
                     )}
                     {onShowTickets && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => {
                           onShowTickets(selectedOpportunity.id);
                           handleCloseOpportunity();
                         }}
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Ver Tickets desta Oportunidade
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Tickets
                       </Button>
                     )}
                   </div>
@@ -1434,37 +1474,39 @@ const JornalAuditado = ({
 
                 {/* Action buttons for Participando - Vitória/Derrota */}
                 {selectedOpportunity.go_no_go === "Participando" && (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5 sm:gap-2">
                     {isAfterClosingDate(selectedOpportunity) ? (
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2">
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => handleVitoria(selectedOpportunity)}
                           disabled={isUpdating === selectedOpportunity.id}
-                          className="flex-1 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                          className="flex-1 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700 text-xs sm:text-sm h-9"
                         >
                           {isUpdating === selectedOpportunity.id ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                           ) : (
                             <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
                               Vitória
                             </>
                           )}
                         </Button>
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => handleDerrota(selectedOpportunity)}
                           disabled={isUpdating === selectedOpportunity.id}
-                          className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                          className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-xs sm:text-sm h-9"
                         >
-                          <X className="h-4 w-4 mr-2" />
+                          <X className="h-3.5 w-3.5 mr-1" />
                           Derrota
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-2">
-                        Os botões de resultado estarão disponíveis após a data limite.
+                      <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5">
+                        Resultado disponível após data limite.
                       </p>
                     )}
                     {onRequestParecer && (
@@ -1474,21 +1516,25 @@ const JornalAuditado = ({
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Novo Ticket
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Novo Ticket
                       </Button>
                     )}
                     {onShowTickets && (
                       <Button
                         variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
                         onClick={() => {
                           onShowTickets(selectedOpportunity.id);
                           handleCloseOpportunity();
                         }}
                       >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Ver Tickets desta Oportunidade
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Tickets
                       </Button>
                     )}
                   </div>
