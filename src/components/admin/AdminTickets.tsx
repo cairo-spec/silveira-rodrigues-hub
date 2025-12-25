@@ -49,7 +49,12 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   closed: { label: "Cancelado", color: "bg-gray-500" }
 };
 
-const AdminTickets = () => {
+interface AdminTicketsProps {
+  filterOpportunityId?: string | null;
+  onClearFilter?: () => void;
+}
+
+const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps) => {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -367,7 +372,17 @@ const AdminTickets = () => {
   const currentTickets = tickets.filter(t => !t.is_archived);
   const archivedTickets = tickets.filter(t => t.is_archived);
   const displayTickets = viewMode === "current" ? currentTickets : archivedTickets;
-  const filteredTickets = displayTickets.filter(t => statusFilter === "all" || t.status === statusFilter);
+  
+  // Apply opportunity filter if set
+  const opportunityFilteredTickets = filterOpportunityId 
+    ? displayTickets.filter(t => t.opportunity_id === filterOpportunityId)
+    : displayTickets;
+  const filteredTickets = opportunityFilteredTickets.filter(t => statusFilter === "all" || t.status === statusFilter);
+  
+  // Get the opportunity name for the filter badge
+  const filteredOpportunityName = filterOpportunityId 
+    ? tickets.find(t => t.opportunity_id === filterOpportunityId)?.opportunity?.title 
+    : null;
 
   if (selectedTicket) {
     const category = selectedTicket.service_category ? getCategoryById(selectedTicket.service_category.replace('+upgrade', '')) : null;
@@ -565,24 +580,37 @@ const AdminTickets = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold">Tickets de Suporte</h2>
           <p className="text-muted-foreground">Gerencie todos os tickets</p>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Filtrar" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="open">Abertos</SelectItem>
-            <SelectItem value="in_progress">Em andamento</SelectItem>
-            <SelectItem value="under_review">Em revisão</SelectItem>
-            <SelectItem value="resolved">Concluídos</SelectItem>
-            <SelectItem value="closed">Cancelados</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          {filterOpportunityId && (
+            <Badge 
+              variant="secondary" 
+              className="gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+              onClick={() => onClearFilter?.()}
+            >
+              <ExternalLink className="h-3 w-3" />
+              {filteredOpportunityName || "Oportunidade"}
+              <X className="h-3 w-3" />
+            </Badge>
+          )}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filtrar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="open">Abertos</SelectItem>
+              <SelectItem value="in_progress">Em andamento</SelectItem>
+              <SelectItem value="under_review">Em revisão</SelectItem>
+              <SelectItem value="resolved">Concluídos</SelectItem>
+              <SelectItem value="closed">Cancelados</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "current" | "archive")}>

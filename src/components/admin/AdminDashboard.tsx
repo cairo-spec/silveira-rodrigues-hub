@@ -19,6 +19,7 @@ import NotificationBell from "../members/NotificationBell";
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("tickets");
+  const [filterOpportunityId, setFilterOpportunityId] = useState<string | null>(null);
   const lastActivity = useRef(Date.now());
 
   const handleSignOut = async () => {
@@ -29,6 +30,11 @@ const AdminDashboard = () => {
   const handleMentionClick = (opportunityId: string) => {
     // Navigate to jornal tab - the admin can find the opportunity there
     setActiveTab("jornal");
+  };
+
+  const handleShowTicketsForOpportunity = (opportunityId: string) => {
+    setFilterOpportunityId(opportunityId);
+    setActiveTab("tickets");
   };
 
   // Activity tracking for session timeout
@@ -152,9 +158,16 @@ const AdminDashboard = () => {
             </TabsList>
           </div>
 
-          <TabsContent value="tickets"><AdminTickets /></TabsContent>
+          <TabsContent value="tickets">
+            <AdminTickets 
+              filterOpportunityId={filterOpportunityId} 
+              onClearFilter={() => setFilterOpportunityId(null)} 
+            />
+          </TabsContent>
           <TabsContent value="chats"><AdminChats onMentionClick={handleMentionClick} /></TabsContent>
-          <TabsContent value="jornal"><AdminJornal /></TabsContent>
+          <TabsContent value="jornal">
+            <AdminJornal onShowTickets={handleShowTicketsForOpportunity} />
+          </TabsContent>
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
           <TabsContent value="users"><AdminUsers /></TabsContent>
