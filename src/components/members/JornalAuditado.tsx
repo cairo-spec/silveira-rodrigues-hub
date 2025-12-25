@@ -294,18 +294,13 @@ const JornalAuditado = ({
 
     setIsUpdating(opportunity.id);
     
-    // Delete the audit report when advancing to Vencida
-    if (opportunity.audit_report_path) {
-      await supabase.storage
-        .from("audit-reports")
-        .remove([opportunity.audit_report_path]);
-    }
+    // Note: Audit report file cleanup is handled by admins only via storage policies
+    // Regular users can only update the database record
     
     const { error } = await supabase
       .from("audited_opportunities")
       .update({ 
-        go_no_go: "Vencida" as GoNoGoStatus,
-        audit_report_path: null  // Clear the path since we deleted the file
+        go_no_go: "Vencida" as GoNoGoStatus
       })
       .eq("id", opportunity.id);
 
@@ -335,18 +330,13 @@ const JornalAuditado = ({
 
     setIsUpdating(opportunity.id);
     
-    // Delete the audit report when advancing to Perdida
-    if (opportunity.audit_report_path) {
-      await supabase.storage
-        .from("audit-reports")
-        .remove([opportunity.audit_report_path]);
-    }
+    // Note: Audit report file cleanup is handled by admins only via storage policies
+    // Regular users can only update the database record
     
     const { error } = await supabase
       .from("audited_opportunities")
       .update({ 
-        go_no_go: "Perdida" as GoNoGoStatus,
-        audit_report_path: null  // Clear the path since we deleted the file
+        go_no_go: "Perdida" as GoNoGoStatus
       })
       .eq("id", opportunity.id);
 

@@ -14,6 +14,25 @@ Deno.serve(async (req) => {
   try {
     console.log('Starting cleanup of old lobby messages...')
 
+    // Verify authorization - only allow calls from Supabase scheduler or with valid service key
+    const authHeader = req.headers.get('Authorization')
+    const expectedKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    
+    // Allow calls with service role key (cron job) or anon key (scheduled via pg_cron)
+    const isAuthorized = authHeader && (
+      authHeader === `Bearer ${expectedKey}` || 
+      authHeader === `Bearer ${anonKey}`
+    )
+    
+    if (!isAuthorized) {
+      console.error('Unauthorized cleanup attempt')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
