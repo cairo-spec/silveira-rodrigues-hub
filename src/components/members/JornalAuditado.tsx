@@ -70,11 +70,12 @@ const JornalAuditado = ({
   const fetchActiveTickets = async (opportunityIds: string[]) => {
     if (opportunityIds.length === 0) return;
 
+    // Fetch tickets that are NOT resolved or closed (active tickets)
     const { data: tickets } = await supabase
       .from("tickets")
       .select("opportunity_id, status")
       .in("opportunity_id", opportunityIds)
-      .not("status", "in", '("canceled","concluded")');
+      .not("status", "in", "(resolved,closed)");
 
     const countMap = new Map<string, number>();
     tickets?.forEach((ticket) => {
