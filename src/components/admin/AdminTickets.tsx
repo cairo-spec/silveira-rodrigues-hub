@@ -174,6 +174,29 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     const ticket = tickets.find(t => t.id === ticketId);
     const oldStatus = ticket?.status;
     
+    // Categories that require petition_path before concluding
+    const categoriesRequiringPetition = ['impugnacao-edital', 'recurso-administrativo', 'contrarrazoes'];
+    
+    // Check if trying to resolve a ticket that requires petition
+    if (newStatus === 'resolved' && ticket?.opportunity_id && 
+        categoriesRequiringPetition.includes(ticket?.service_category || '')) {
+      // Fetch the opportunity to check petition_path
+      const { data: opportunity } = await supabase
+        .from('audited_opportunities')
+        .select('petition_path')
+        .eq('id', ticket.opportunity_id)
+        .single();
+      
+      if (!opportunity?.petition_path) {
+        toast({ 
+          title: "Petição obrigatória", 
+          description: "É necessário anexar o link da petição à oportunidade antes de concluir este ticket.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+    }
+    
     // Check if this is a parecer-go-no-go ticket being resolved
     if (!skipGoNoGoCheck && newStatus === 'resolved' && ticket?.service_category === 'parecer-go-no-go' && ticket?.opportunity_id) {
       setGoNoGoModal({
