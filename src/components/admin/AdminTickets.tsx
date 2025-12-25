@@ -155,6 +155,9 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     const ticket = tickets.find(t => t.id === ticketId);
+    const oldStatus = ticket?.status;
+    
+    const { data: { user } } = await supabase.auth.getUser();
     
     const { error } = await supabase
       .from('tickets')
@@ -164,10 +167,22 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     if (error) {
       toast({ title: "Erro", description: "Não foi possível atualizar status", variant: "destructive" });
     } else {
+      // Record status change event in ticket_events
+      if (user && oldStatus !== newStatus) {
+        await supabase.from('ticket_events').insert({
+          ticket_id: ticketId,
+          user_id: user.id,
+          event_type: 'status_changed',
+          old_value: oldStatus,
+          new_value: newStatus
+        });
+      }
+
       if (ticket) {
         const statusLabels: Record<string, string> = {
           open: "Aberto",
           in_progress: "Em andamento", 
+          under_review: "Em revisão",
           resolved: "Concluído",
           closed: "Cancelado"
         };
