@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Search, Key, MapPin } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Loader2, Search, Key, MapPin, ChevronDown, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserCriteria {
@@ -12,6 +13,7 @@ interface UserCriteria {
   user_id: string;
   keywords: string[];
   states: string[];
+  company_presentation: string | null;
   updated_at: string;
   profile?: {
     nome: string;
@@ -24,6 +26,7 @@ export function AdminSearchCriteria() {
   const [criteria, setCriteria] = useState<UserCriteria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadCriteria();
@@ -66,6 +69,16 @@ export function AdminSearchCriteria() {
     }
   };
 
+  const toggleRow = (id: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
   const filteredCriteria = criteria.filter((c) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
@@ -74,7 +87,8 @@ export function AdminSearchCriteria() {
       c.profile?.email?.toLowerCase().includes(term) ||
       c.profile?.empresa?.toLowerCase().includes(term) ||
       c.keywords.some((k) => k.toLowerCase().includes(term)) ||
-      c.states.some((s) => s.toLowerCase().includes(term))
+      c.states.some((s) => s.toLowerCase().includes(term)) ||
+      c.company_presentation?.toLowerCase().includes(term)
     );
   });
 
@@ -115,6 +129,7 @@ export function AdminSearchCriteria() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]"></TableHead>
                     <TableHead>Usuário</TableHead>
                     <TableHead>Palavras-chave</TableHead>
                     <TableHead>Estados</TableHead>
@@ -123,49 +138,81 @@ export function AdminSearchCriteria() {
                 </TableHeader>
                 <TableBody>
                   {filteredCriteria.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.profile?.nome || "N/A"}</div>
-                          <div className="text-sm text-muted-foreground">{item.profile?.email}</div>
-                          {item.profile?.empresa && (
-                            <div className="text-xs text-muted-foreground">{item.profile.empresa}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <ScrollArea className="h-24">
-                          <div className="flex flex-wrap gap-1">
-                            {item.keywords.length === 0 ? (
-                              <span className="text-muted-foreground text-sm">Nenhuma</span>
-                            ) : (
-                              item.keywords.map((keyword) => (
-                                <Badge key={keyword} variant="secondary" className="text-xs">
-                                  {keyword}
-                                </Badge>
-                              ))
-                            )}
-                          </div>
-                        </ScrollArea>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {item.states.length === 0 ? (
-                            <span className="text-muted-foreground text-sm">Nenhum</span>
-                          ) : (
-                            item.states.map((state) => (
-                              <Badge key={state} variant="outline" className="text-xs">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {state}
-                              </Badge>
-                            ))
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(item.updated_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                    </TableRow>
+                    <Collapsible key={item.id} asChild open={expandedRows.has(item.id)}>
+                      <>
+                        <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(item.id)}>
+                          <TableCell>
+                            <CollapsibleTrigger asChild>
+                              <ChevronDown 
+                                className={`h-4 w-4 transition-transform ${expandedRows.has(item.id) ? 'rotate-180' : ''}`} 
+                              />
+                            </CollapsibleTrigger>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{item.profile?.nome || "N/A"}</div>
+                              <div className="text-sm text-muted-foreground">{item.profile?.email}</div>
+                              {item.profile?.empresa && (
+                                <div className="text-xs text-muted-foreground">{item.profile.empresa}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <ScrollArea className="h-24">
+                              <div className="flex flex-wrap gap-1">
+                                {item.keywords.length === 0 ? (
+                                  <span className="text-muted-foreground text-sm">Nenhuma</span>
+                                ) : (
+                                  item.keywords.map((keyword) => (
+                                    <Badge key={keyword} variant="secondary" className="text-xs">
+                                      {keyword}
+                                    </Badge>
+                                  ))
+                                )}
+                              </div>
+                            </ScrollArea>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {item.states.length === 0 ? (
+                                <span className="text-muted-foreground text-sm">Nenhum</span>
+                              ) : (
+                                item.states.map((state) => (
+                                  <Badge key={state} variant="outline" className="text-xs">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {state}
+                                  </Badge>
+                                ))
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(item.updated_at).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                        </TableRow>
+                        <CollapsibleContent asChild>
+                          <TableRow className="bg-muted/30">
+                            <TableCell colSpan={5}>
+                              <div className="py-3 px-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium text-sm">Apresentação da Empresa</span>
+                                </div>
+                                {item.company_presentation ? (
+                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">
+                                    {item.company_presentation}
+                                  </p>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground italic pl-6">
+                                    Nenhuma apresentação cadastrada
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </CollapsibleContent>
+                      </>
+                    </Collapsible>
                   ))}
                 </TableBody>
               </Table>
