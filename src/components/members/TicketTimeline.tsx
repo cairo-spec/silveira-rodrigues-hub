@@ -119,6 +119,9 @@ const TicketTimeline = ({ ticketId, ticketCreatedAt }: TicketTimelineProps) => {
     setIsLoading(false);
   };
 
+  // Filter out any "created" events from database since we add a synthetic one
+  const filteredEvents = events.filter(e => e.event_type !== 'created');
+  
   // Add creation event at the start
   const allEvents = [
     {
@@ -131,7 +134,7 @@ const TicketTimeline = ({ ticketId, ticketCreatedAt }: TicketTimelineProps) => {
       metadata: null,
       created_at: ticketCreatedAt,
     },
-    ...events,
+    ...filteredEvents,
   ];
 
   if (isLoading) {
