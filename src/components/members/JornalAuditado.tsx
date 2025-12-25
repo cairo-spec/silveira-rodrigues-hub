@@ -323,40 +323,20 @@ const JornalAuditado = ({
     setIsUpdating(null);
   };
 
-  const downloadReport = async (opportunity: Opportunity) => {
+  const downloadReport = (opportunity: Opportunity) => {
     if (!opportunity.audit_report_path) {
       return;
     }
-
-    setIsDownloading(opportunity.id);
-
-    const { data, error } = await supabase.storage
-      .from("audit-reports")
-      .createSignedUrl(opportunity.audit_report_path, 60);
-
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank");
-    }
-
-    setIsDownloading(null);
+    // audit_report_path is now a Google Drive URL
+    window.open(opportunity.audit_report_path, "_blank");
   };
 
-  const downloadPetition = async (opportunity: Opportunity) => {
+  const downloadPetition = (opportunity: Opportunity) => {
     if (!opportunity.petition_path) {
       return;
     }
-
-    setIsDownloadingPetition(opportunity.id);
-
-    const { data, error } = await supabase.storage
-      .from("audit-reports")
-      .createSignedUrl(opportunity.petition_path, 60);
-
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank");
-    }
-
-    setIsDownloadingPetition(null);
+    // petition_path is now a Google Drive URL
+    window.open(opportunity.petition_path, "_blank");
   };
 
   const handleRequestPetition = (opportunity: Opportunity) => {
@@ -1165,13 +1145,13 @@ const JornalAuditado = ({
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
-                          onRequestParecer(selectedOpportunity.title);
+                          onRequestParecer(selectedOpportunity.title, selectedOpportunity.go_no_go === "Perdida" ? "recurso" : "defesa");
                           setSelectedOpportunity(null);
                         }}
                         className="bg-primary"
                       >
                         <ClipboardList className="h-4 w-4 mr-2" />
-                        Abrir Novo Ticket
+                        {selectedOpportunity.go_no_go === "Perdida" ? "Solicitar Recurso" : "Solicitar Defesa"}
                       </Button>
                     )}
                     {onShowTickets && (

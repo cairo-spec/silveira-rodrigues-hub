@@ -152,7 +152,7 @@ const MemberDashboard = () => {
               O acesso à área de membros é liberado automaticamente após a confirmação do seu pagamento.
             </p>
             <p className="text-sm text-muted-foreground">
-              Se você já realizou o pagamento e ainda não teve o acesso liberado, entre em contato com nosso suporte.
+              Você também pode solicitar 30 dias de acesso grátis falando com nosso suporte.
             </p>
             <div className="flex flex-col gap-2 pt-4">
               <Button variant="outline" onClick={() => navigate("/")}>
