@@ -90,7 +90,11 @@ interface Organization {
   name: string;
 }
 
-const AdminJornal = () => {
+interface AdminJornalProps {
+  onShowTickets?: (opportunityId: string) => void;
+}
+
+const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
   const { toast } = useToast();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -838,7 +842,11 @@ const AdminJornal = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredOpportunities.map((opp) => (
-                      <TableRow key={opp.id}>
+                      <TableRow 
+                        key={opp.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => onShowTickets?.(opp.id)}
+                      >
                         <TableCell className="font-medium max-w-[200px] truncate">{opp.title}</TableCell>
                         <TableCell>{opp.agency_name}</TableCell>
                         <TableCell>{getOrgName(opp.client_organization_id)}</TableCell>
@@ -871,13 +879,13 @@ const AdminJornal = () => {
                             )}
                           </TableCell>
                         )}
-                        <TableCell className="text-center">
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                           <Switch
                             checked={opp.is_published}
                             onCheckedChange={() => togglePublish(opp)}
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
                             {(opp.go_no_go === "Rejeitada" || opp.go_no_go === "Participando" || opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida") && (
                               <Button 
