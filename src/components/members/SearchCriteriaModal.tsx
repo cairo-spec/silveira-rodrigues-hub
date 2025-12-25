@@ -230,7 +230,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="min-h-[80px] rounded-md border p-3">
+                <ScrollArea className="h-[100px] rounded-md border p-3">
                   {keywords.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Nenhuma palavra-chave adicionada
@@ -255,7 +255,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
                       ))}
                     </div>
                   )}
-                </div>
+                </ScrollArea>
               </div>
 
               {/* States Section */}
@@ -288,7 +288,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="min-h-[80px] rounded-md border p-3">
+                <ScrollArea className="h-[100px] rounded-md border p-3">
                   {states.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Nenhum estado selecionado
@@ -313,7 +313,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
                       ))}
                     </div>
                   )}
-                </div>
+                </ScrollArea>
               </div>
 
               {/* Actions */}
