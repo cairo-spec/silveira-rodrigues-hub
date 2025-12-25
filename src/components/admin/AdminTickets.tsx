@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2, Archive, FolderOpen } from "lucide-react";
+import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2, Archive, FolderOpen, ExternalLink } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
@@ -25,11 +25,13 @@ interface Ticket {
   service_category: string | null;
   service_price: string | null;
   attachment_url: string | null;
+  opportunity_id: string | null;
   created_at: string;
   updated_at: string;
   user_id: string;
   is_archived: boolean;
   profiles?: { nome: string; email: string } | null;
+  opportunity?: { id: string; title: string } | null;
 }
 
 interface TicketMessage {
@@ -113,10 +115,24 @@ const AdminTickets = () => {
       .select('user_id, nome, email')
       .in('user_id', userIds);
 
+    // Fetch opportunities for tickets that have opportunity_id
+    const opportunityIds = [...new Set(ticketsData?.filter(t => t.opportunity_id).map(t => t.opportunity_id) || [])];
+    let opportunitiesMap = new Map<string, { id: string; title: string }>();
+    
+    if (opportunityIds.length > 0) {
+      const { data: opportunitiesData } = await supabase
+        .from('audited_opportunities')
+        .select('id, title')
+        .in('id', opportunityIds);
+      
+      opportunitiesMap = new Map(opportunitiesData?.map(o => [o.id, o]) || []);
+    }
+
     const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
     const ticketsWithProfiles = ticketsData?.map(ticket => ({
       ...ticket,
-      profiles: profilesMap.get(ticket.user_id) || null
+      profiles: profilesMap.get(ticket.user_id) || null,
+      opportunity: ticket.opportunity_id ? opportunitiesMap.get(ticket.opportunity_id) || null : null
     })) || [];
 
     setTickets(ticketsWithProfiles);
@@ -456,6 +472,12 @@ const AdminTickets = () => {
                   Prazo: {format(new Date(selectedTicket.deadline), "dd/MM/yyyy")}
                 </Badge>
               )}
+              {selectedTicket.opportunity && (
+                <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
+                  <ExternalLink className="h-3 w-3" />
+                  Oportunidade: {selectedTicket.opportunity.title}
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -618,6 +640,12 @@ const AdminTickets = () => {
                             {ticket.service_price && (
                               <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
                                 {ticket.service_price}
+                              </Badge>
+                            )}
+                            {ticket.opportunity && (
+                              <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
+                                <ExternalLink className="h-3 w-3" />
+                                {ticket.opportunity.title}
                               </Badge>
                             )}
                           </div>
