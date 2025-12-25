@@ -102,8 +102,8 @@ const MemberDashboard = () => {
       const hasFullAccess = profile?.subscription_active || trialValid;
       setIsSubscriber(hasFullAccess);
       
-      // Paid subscriber only (for pricing display) - only those with Asaas webhook confirmed
-      setIsPaidSubscriber(profile?.subscription_active || false);
+      // Subscriber pricing display - for paid subscribers AND trial users
+      setIsPaidSubscriber(hasFullAccess);
       
       // Free user authorization check
       const isFree = !profile?.subscription_active && !trialValid;
