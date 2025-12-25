@@ -39,7 +39,7 @@ const HeroSection = () => {
               Segurança
               <span className="absolute -bottom-1 left-0 w-full h-1 bg-gold/60 rounded-full" />
             </span>
-            {" "}de Quem Fiscaliza.
+            {" "}de um Especialista
           </h1>
 
           {/* Subtitle */}
