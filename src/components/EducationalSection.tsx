@@ -1,6 +1,15 @@
-import { AlertTriangle, ShieldAlert, TrendingDown } from "lucide-react";
+import { AlertTriangle, ShieldAlert, TrendingDown, FileWarning, Scale, Users, ClipboardCheck } from "lucide-react";
+
 const EducationalSection = () => {
-  return <section className="section-padding bg-secondary">
+  const riskItems = [
+    { icon: FileWarning, label: "Matriz de Riscos", delay: "0" },
+    { icon: ClipboardCheck, label: "Estudo Técnico Preliminar", delay: "100" },
+    { icon: Scale, label: "Governança Rigorosa", delay: "200" },
+    { icon: Users, label: "Segregação de Funções", delay: "300" },
+  ];
+
+  return (
+    <section className="section-padding bg-secondary">
       <div className="container-custom">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Text Content */}
@@ -52,51 +61,77 @@ const EducationalSection = () => {
             </div>
           </div>
 
-          {/* Visual Element */}
+          {/* Visual Element - Redesigned */}
           <div className="order-1 lg:order-2 flex justify-center">
             <div className="relative w-full max-w-md">
-              {/* Background decoration */}
-              <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-primary/5 rounded-3xl transform rotate-3" />
+              {/* Animated background glow */}
+              <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 via-transparent to-destructive/20 rounded-[2rem] blur-2xl opacity-60" />
               
-              {/* Main card */}
-              <div className="relative bg-background rounded-2xl shadow-xl p-8 border border-border">
-                <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-2xl bg-destructive/10">
-                  <AlertTriangle className="w-10 h-10 text-destructive" />
-                </div>
-                
-                <h3 className="text-xl font-bold text-center text-foreground mb-4">
-                  Lei 14.133/2021
-                </h3>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-2 h-2 rounded-full bg-destructive" />
-                    <span className="text-muted-foreground">Matriz de Riscos </span>
+              {/* Main container */}
+              <div className="relative">
+                {/* Header card */}
+                <div className="bg-primary rounded-t-2xl p-6 relative overflow-hidden">
+                  {/* Decorative pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-0 right-0 w-32 h-32 border-8 border-white rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute bottom-0 left-0 w-24 h-24 border-4 border-white rounded-full translate-y-1/2 -translate-x-1/2" />
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-2 h-2 rounded-full bg-destructive" />
-                    <span className="text-muted-foreground">Estudo Técnico Preliminar</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-2 h-2 rounded-full bg-destructive" />
-                    <span className="text-muted-foreground">Governança Rigorosa</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-2 h-2 rounded-full bg-destructive" />
-                    <span className="text-muted-foreground">Segregação de Funções</span>
+                  
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                      <AlertTriangle className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-xs font-medium tracking-wider uppercase">Nova Lei de Licitações</p>
+                      <h3 className="text-2xl font-bold text-white">Lei 14.133/2021</h3>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-border text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Complexidade que exige expertise especializada
-                  </p>
+                {/* Content card */}
+                <div className="bg-background rounded-b-2xl shadow-2xl border border-border border-t-0">
+                  {/* Risk items grid */}
+                  <div className="p-6 grid grid-cols-2 gap-3">
+                    {riskItems.map((item, index) => (
+                      <div 
+                        key={index}
+                        className="group relative p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                      >
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-primary/5 to-transparent rounded-bl-[3rem] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                            <item.icon className="w-5 h-5 text-primary" />
+                          </div>
+                          <p className="text-sm font-medium text-foreground leading-tight">
+                            {item.label}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-6 pb-6">
+                    <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-destructive/5 via-destructive/10 to-destructive/5 p-4 border border-destructive/10">
+                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgwLDAsMCwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50" />
+                      <div className="relative flex items-center gap-3">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
+                          <span className="text-destructive text-lg">⚠</span>
+                        </div>
+                        <p className="text-sm font-medium text-foreground">
+                          Complexidade que exige <span className="text-destructive font-bold">expertise especializada</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default EducationalSection;
