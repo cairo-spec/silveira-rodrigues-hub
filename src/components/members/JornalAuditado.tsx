@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones, RefreshCw } from "lucide-react";
 import { SearchCriteriaModal } from "./SearchCriteriaModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -65,6 +65,7 @@ const JornalAuditado = ({
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
+  const [concludedRecursoByOpportunity, setConcludedRecursoByOpportunity] = useState<Set<string>>(new Set());
 
   // Fetch active tickets count for opportunities
   const fetchActiveTickets = async (opportunityIds: string[]) => {
@@ -84,6 +85,30 @@ const JornalAuditado = ({
       }
     });
     setActiveTicketsByOpportunity(countMap);
+  };
+
+  // Fetch concluded recurso-administrativo tickets for opportunities
+  const fetchConcludedRecursoTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    // Fetch tickets that are resolved/closed AND have recurso-administrativo category
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, service_category, status")
+      .in("opportunity_id", opportunityIds)
+      .in("status", ["resolved", "closed"]);
+
+    const recursoSet = new Set<string>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id && ticket.service_category) {
+        // Check if service_category contains recurso-administrativo (with or without +upgrade)
+        const baseCategory = ticket.service_category.replace('+upgrade', '');
+        if (baseCategory === 'recurso-administrativo') {
+          recursoSet.add(ticket.opportunity_id);
+        }
+      }
+    });
+    setConcludedRecursoByOpportunity(recursoSet);
   };
 
   useEffect(() => {
@@ -160,6 +185,7 @@ const JornalAuditado = ({
       // Fetch active tickets for all opportunities
       const allOpportunityIds = (data as Opportunity[]).map(o => o.id);
       fetchActiveTickets(allOpportunityIds);
+      fetchConcludedRecursoTickets(allOpportunityIds);
       
       // Update selected opportunity if it exists (for realtime updates)
       if (selectedOpportunity) {
@@ -352,6 +378,39 @@ const JornalAuditado = ({
       );
       
       toast({ title: "Derrota registrada" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
+  const handleDisputaRevertida = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ 
+        go_no_go: "Vencida" as GoNoGoStatus
+      })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível reverter a disputa", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Disputa revertida!',
+        `Cliente reverteu a disputa para VITÓRIA na oportunidade: "${opportunity.title}"`,
+        opportunity.id,
+        user?.id
+      );
+      
+      toast({ title: "Disputa revertida! 🎉", description: "Oportunidade marcada como Vencida" });
       fetchOpportunities();
       setSelectedOpportunity(null);
     }
@@ -1229,6 +1288,23 @@ const JornalAuditado = ({
                 {/* Action buttons for Vencida/Perdida (concluded) */}
                 {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && (
                   <div className="flex flex-col gap-2">
+                    {/* Disputa Revertida button - only for Perdida with concluded recurso ticket */}
+                    {selectedOpportunity.go_no_go === "Perdida" && concludedRecursoByOpportunity.has(selectedOpportunity.id) && (
+                      <Button
+                        onClick={() => handleDisputaRevertida(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {isUpdating === selectedOpportunity.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Disputa Revertida
+                          </>
+                        )}
+                      </Button>
+                    )}
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
