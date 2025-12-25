@@ -157,11 +157,9 @@ const JornalAuditado = ({
     if (data) {
       setOpportunities(data as Opportunity[]);
       
-      // Fetch active tickets for "Participando" opportunities
-      const participandoIds = (data as Opportunity[])
-        .filter(o => o.go_no_go === "Participando")
-        .map(o => o.id);
-      fetchActiveTickets(participandoIds);
+      // Fetch active tickets for all opportunities
+      const allOpportunityIds = (data as Opportunity[]).map(o => o.id);
+      fetchActiveTickets(allOpportunityIds);
       
       // Update selected opportunity if it exists (for realtime updates)
       if (selectedOpportunity) {
@@ -572,9 +570,7 @@ const JornalAuditado = ({
                         <TableHead className="text-center">Valor Estimado</TableHead>
                         <TableHead className="text-center">Data Limite</TableHead>
                         <TableHead className="text-center">Parecer</TableHead>
-                        {activeTab === "andamento" && (
-                          <TableHead className="text-center">Atendimento</TableHead>
-                        )}
+                        <TableHead className="text-center">Atendimento</TableHead>
                         <TableHead className="text-center">Relatório</TableHead>
                         <TableHead className="text-center">Petição</TableHead>
                       </TableRow>
@@ -608,18 +604,16 @@ const JornalAuditado = ({
                           <TableCell className="text-center">
                             {getGoNoGoBadge(opp.go_no_go)}
                           </TableCell>
-                          {activeTab === "andamento" && (
-                            <TableCell className="text-center">
-                              {activeTicketsByOpportunity.get(opp.id) ? (
-                                <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
-                                  <Headphones className="h-3 w-3 mr-1" />
-                                  Atendimento
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
-                              )}
-                            </TableCell>
-                          )}
+                          <TableCell className="text-center">
+                            {activeTicketsByOpportunity.get(opp.id) ? (
+                              <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
+                                <Headphones className="h-3 w-3 mr-1" />
+                                Atendimento
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-center">
                             <Button
                               size="sm"
@@ -690,7 +684,7 @@ const JornalAuditado = ({
                         </div>
                         <div className="flex flex-col gap-1 items-end">
                           {getGoNoGoBadge(opp.go_no_go)}
-                          {activeTab === "andamento" && activeTicketsByOpportunity.get(opp.id) && (
+                          {activeTicketsByOpportunity.get(opp.id) && (
                             <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50 text-xs">
                               <Headphones className="h-3 w-3 mr-1" />
                               Atendimento
@@ -775,7 +769,7 @@ const JornalAuditado = ({
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-2 py-4">
                 {getGoNoGoBadge(selectedOpportunity.go_no_go)}
-                {selectedOpportunity.go_no_go === "Participando" && activeTicketsByOpportunity.get(selectedOpportunity.id) && (
+                {activeTicketsByOpportunity.get(selectedOpportunity.id) && (
                   <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
                     <Headphones className="h-3 w-3 mr-1" />
                     Atendimento
