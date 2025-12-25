@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, Underline } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DOMPurify from "dompurify";
 
 interface RichTextEditorProps {
   value: string;
@@ -21,26 +22,50 @@ const RichTextEditor = ({
   className
 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const isInternalChange = useRef(false);
+
+  // Sanitize and set initial value
+  useEffect(() => {
+    if (editorRef.current && !isInternalChange.current) {
+      const sanitized = DOMPurify.sanitize(value, {
+        ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'br'],
+        ALLOWED_ATTR: []
+      });
+      if (editorRef.current.innerHTML !== sanitized) {
+        editorRef.current.innerHTML = sanitized;
+      }
+    }
+    isInternalChange.current = false;
+  }, [value]);
 
   const execCommand = useCallback((command: string) => {
     document.execCommand(command, false);
     editorRef.current?.focus();
-    // Update parent with new HTML content
+    // Update parent with sanitized HTML content
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      isInternalChange.current = true;
+      const sanitized = DOMPurify.sanitize(editorRef.current.innerHTML, {
+        ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'br'],
+        ALLOWED_ATTR: []
+      });
+      onChange(sanitized);
     }
   }, [onChange]);
 
   const handleInput = useCallback(() => {
     if (editorRef.current) {
-      let content = editorRef.current.innerHTML;
       // Check max length (text content only)
       const textLength = editorRef.current.textContent?.length || 0;
       if (maxLength && textLength > maxLength) {
         // Truncate if needed
         return;
       }
-      onChange(content);
+      isInternalChange.current = true;
+      const sanitized = DOMPurify.sanitize(editorRef.current.innerHTML, {
+        ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'br'],
+        ALLOWED_ATTR: []
+      });
+      onChange(sanitized);
     }
   }, [onChange, maxLength]);
 
@@ -57,7 +82,7 @@ const RichTextEditor = ({
     }
     // Estimate from HTML
     const temp = document.createElement('div');
-    temp.innerHTML = value;
+    temp.innerHTML = DOMPurify.sanitize(value);
     return temp.textContent?.length || 0;
   };
 
@@ -105,7 +130,6 @@ const RichTextEditor = ({
         style={{ minHeight: `${rows * 24}px` }}
         onInput={handleInput}
         onPaste={handlePaste}
-        dangerouslySetInnerHTML={{ __html: value }}
         data-placeholder={placeholder}
       />
       {maxLength && (
