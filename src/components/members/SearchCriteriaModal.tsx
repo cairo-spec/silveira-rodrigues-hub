@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Loader2 } from "lucide-react";
+import { X, Plus, Loader2, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -50,6 +50,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
   const [keywords, setKeywords] = useState<string[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [companyPresentation, setCompanyPresentation] = useState("");
+  const [minimumValue, setMinimumValue] = useState<string>("");
   const [newKeyword, setNewKeyword] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +70,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
 
       const { data, error } = await supabase
         .from("user_search_criteria")
-        .select("keywords, states, company_presentation")
+        .select("keywords, states, company_presentation, minimum_value")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -79,10 +80,12 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
         setKeywords(data.keywords || []);
         setStates(data.states || []);
         setCompanyPresentation(data.company_presentation || "");
+        setMinimumValue(data.minimum_value ? String(data.minimum_value) : "");
       } else {
         setKeywords([]);
         setStates([]);
         setCompanyPresentation("");
+        setMinimumValue("");
       }
     } catch (error) {
       console.error("Error loading criteria:", error);
@@ -142,6 +145,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
           keywords,
           states,
           company_presentation: companyPresentation,
+          minimum_value: minimumValue ? parseFloat(minimumValue) : null,
         }, { onConflict: "user_id" });
 
       if (error) throw error;
@@ -204,7 +208,36 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
                 </p>
               </div>
 
-              {/* Keywords Section */}
+              {/* Minimum Value Section */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Valor Mínimo da Oportunidade
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Defina o valor mínimo das oportunidades que deseja receber.
+                </p>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                    R$
+                  </span>
+                  <Input
+                    type="number"
+                    placeholder="0,00"
+                    value={minimumValue}
+                    onChange={(e) => setMinimumValue(e.target.value)}
+                    className="pl-10"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                {minimumValue && parseFloat(minimumValue) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Mínimo: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parseFloat(minimumValue))}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-3">
                 <Label className="text-base font-semibold">
                   Palavras-chave ({keywords.length}/50)

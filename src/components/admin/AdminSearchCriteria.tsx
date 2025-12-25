@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader2, Search, Key, MapPin, ChevronDown, Building2 } from "lucide-react";
+import { Loader2, Search, Key, MapPin, ChevronDown, Building2, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserCriteria {
@@ -14,6 +14,7 @@ interface UserCriteria {
   keywords: string[];
   states: string[];
   company_presentation: string | null;
+  minimum_value: number | null;
   updated_at: string;
   profile?: {
     nome: string;
@@ -131,6 +132,7 @@ export function AdminSearchCriteria() {
                   <TableRow>
                     <TableHead className="w-[40px]"></TableHead>
                     <TableHead>Usuário</TableHead>
+                    <TableHead>Valor Mínimo</TableHead>
                     <TableHead>Palavras-chave</TableHead>
                     <TableHead>Estados</TableHead>
                     <TableHead className="w-[140px]">Atualizado</TableHead>
@@ -156,6 +158,16 @@ export function AdminSearchCriteria() {
                                 <div className="text-xs text-muted-foreground">{item.profile.empresa}</div>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {item.minimum_value ? (
+                              <div className="flex items-center gap-1 text-sm font-medium text-primary">
+                                <DollarSign className="h-3 w-3" />
+                                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.minimum_value)}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Não definido</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <ScrollArea className="h-24">
@@ -192,7 +204,7 @@ export function AdminSearchCriteria() {
                         </TableRow>
                         <CollapsibleContent asChild>
                           <TableRow className="bg-muted/30">
-                            <TableCell colSpan={5}>
+                            <TableCell colSpan={6}>
                               <div className="py-3 px-2">
                                 <div className="flex items-center gap-2 mb-2">
                                   <Building2 className="h-4 w-4 text-muted-foreground" />
