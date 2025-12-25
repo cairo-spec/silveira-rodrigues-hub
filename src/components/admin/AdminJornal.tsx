@@ -280,6 +280,16 @@ const AdminJornal = () => {
     // Parse estimated value
     const estimatedValue = parseCurrencyValue(formData.estimated_value);
 
+    // Automatically change status from Solicitada to Review_Required when report is attached
+    let finalStatus = formData.go_no_go;
+    if (
+      editingOpportunity?.go_no_go === "Solicitada" &&
+      formData.audit_report_path &&
+      !editingOpportunity.audit_report_path
+    ) {
+      finalStatus = "Review_Required";
+    }
+
     const opportunityData = {
       title: formData.title,
       opportunity_url: formData.opportunity_url || null,
@@ -288,9 +298,9 @@ const AdminJornal = () => {
       closing_date: format(formData.closing_date, "yyyy-MM-dd"),
       client_organization_id: formData.client_organization_id,
       agency_name: formData.agency_name,
-      go_no_go: formData.go_no_go,
-      audit_report_path: formData.audit_report_path || null,  // Now stores Google Drive link
-      petition_path: formData.petition_path || null,  // Now stores Google Drive link
+      go_no_go: finalStatus,
+      audit_report_path: formData.audit_report_path || null,
+      petition_path: formData.petition_path || null,
       estimated_value: estimatedValue,
       is_published: formData.is_published,
     };
