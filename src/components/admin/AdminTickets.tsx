@@ -247,21 +247,25 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
           closed: "Cancelado"
         };
         
+        // Notify admins about status change (exclude the admin who made the change)
         await supabase.rpc('notify_admins', {
           _type: 'ticket_status',
           _title: 'Status do ticket atualizado',
           _message: `O ticket "${ticket.title}" foi alterado para ${statusLabels[newStatus] || newStatus}`,
-          _reference_id: ticketId
-        }).then(() => {
-          // Also notify the user
-          supabase.from('notifications').insert({
+          _reference_id: ticketId,
+          _exclude_user_id: user?.id || null
+        });
+
+        // Notify the ticket owner when their ticket is concluded (resolved)
+        if (newStatus === 'resolved') {
+          await supabase.from('notifications').insert({
             user_id: ticket.user_id,
             type: 'ticket_status',
-            title: 'Status do ticket atualizado',
-            message: `O ticket "${ticket.title}" foi alterado para ${statusLabels[newStatus] || newStatus}`,
+            title: 'Ticket concluído',
+            message: `Seu ticket "${ticket.title}" foi concluído. Confira o resultado na área de tickets.`,
             reference_id: ticketId
           });
-        });
+        }
       }
       
       toast({ title: "Status atualizado" });
