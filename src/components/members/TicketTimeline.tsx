@@ -72,8 +72,9 @@ const eventConfig: Record<string, { icon: React.ReactNode; label: string; color:
 const statusLabels: Record<string, string> = {
   open: "Aberto",
   in_progress: "Em andamento",
-  resolved: "Resolvido",
-  closed: "Fechado",
+  under_review: "Em revisão",
+  resolved: "Concluído",
+  closed: "Cancelado",
 };
 
 const TicketTimeline = ({ ticketId, ticketCreatedAt }: TicketTimelineProps) => {
