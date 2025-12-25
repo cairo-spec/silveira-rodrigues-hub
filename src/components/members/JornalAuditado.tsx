@@ -343,7 +343,10 @@ const JornalAuditado = ({
     setIsUpdating(opportunity.id);
     const { error } = await supabase
       .from("audited_opportunities")
-      .update({ go_no_go: "Participando" as GoNoGoStatus })
+      .update({ 
+        go_no_go: "Participando" as GoNoGoStatus,
+        petition_path: null // Clear petition link when participating
+      })
       .eq("id", opportunity.id);
 
     if (error) {
