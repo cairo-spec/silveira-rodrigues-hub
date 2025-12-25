@@ -134,7 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
     const customerEmail = payload.payment?.customerEmail;
     if (!customerEmail) {
       console.error("No customer email in payload");
-      return new Response(JSON.stringify({ error: "No customer email" }), {
+      return new Response(JSON.stringify({ error: "Request processing failed" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -199,7 +199,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (profileError || !profile) {
       console.error("Profile not found for provided email");
-      return new Response(JSON.stringify({ error: "User not found" }), {
+      return new Response(JSON.stringify({ error: "Request processing failed" }), {
         status: 404,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -220,7 +220,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Error updating profile:", updateError);
-      return new Response(JSON.stringify({ error: "Failed to update profile" }), {
+      return new Response(JSON.stringify({ error: "Request processing failed" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -239,7 +239,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (magicLinkError) {
       console.error("Error generating magic link:", magicLinkError);
-      return new Response(JSON.stringify({ error: "Failed to generate magic link" }), {
+      return new Response(JSON.stringify({ error: "Request processing failed" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -314,7 +314,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (emailError) {
       console.error("Error sending email:", emailError);
-      return new Response(JSON.stringify({ error: "Failed to send email" }), {
+      return new Response(JSON.stringify({ error: "Request processing failed" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -335,7 +335,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Webhook error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Request processing failed" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
