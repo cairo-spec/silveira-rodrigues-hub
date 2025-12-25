@@ -15,6 +15,7 @@ import { clearNotificationsByReference } from "@/lib/notifications";
 import { getCategoryById } from "@/lib/pricing-categories";
 import { cn } from "@/lib/utils";
 import LinkifiedText from "@/components/ui/linkified-text";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 interface Ticket {
   id: string;
@@ -80,6 +81,8 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     opportunityId: null,
     opportunityTitle: null
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -444,6 +447,18 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     : displayTickets;
   const filteredTickets = opportunityFilteredTickets.filter(t => statusFilter === "all" || t.status === statusFilter);
   
+  // Pagination logic
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+  const paginatedTickets = filteredTickets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, viewMode, filterOpportunityId]);
+  
   // Get the opportunity name for the filter badge
   const filteredOpportunityName = filterOpportunityId 
     ? tickets.find(t => t.opportunity_id === filterOpportunityId)?.opportunity?.title 
@@ -703,89 +718,146 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {filteredTickets.map((ticket) => {
-                const category = ticket.service_category ? getCategoryById(ticket.service_category.replace('+upgrade', '')) : null;
-                const showArchiveButton = canArchiveTicket(ticket);
-                const hasUpgrade = ticket.service_category?.includes('+upgrade');
-                return (
-                  <Card 
-                    key={ticket.id} 
-                    className={cn(
-                      "cursor-pointer hover:shadow-md",
-                      hasUpgrade && "border-2 border-amber-400 bg-amber-50/30 dark:bg-amber-950/10"
-                    )} 
-                    onClick={() => setSelectedTicket(ticket)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                          <CardDescription>{ticket.profiles?.nome} • {ticket.profiles?.email}</CardDescription>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {category && (
-                              <Badge variant="outline" className="gap-1 bg-primary/5">
-                                <Tag className="h-3 w-3" />
-                                {category.service}
-                                {hasUpgrade && " + Upgrade"}
+            <div className="space-y-4">
+              <div className="grid gap-4">
+                {paginatedTickets.map((ticket) => {
+                  const category = ticket.service_category ? getCategoryById(ticket.service_category.replace('+upgrade', '')) : null;
+                  const showArchiveButton = canArchiveTicket(ticket);
+                  const hasUpgrade = ticket.service_category?.includes('+upgrade');
+                  return (
+                    <Card 
+                      key={ticket.id} 
+                      className={cn(
+                        "cursor-pointer hover:shadow-md",
+                        hasUpgrade && "border-2 border-amber-400 bg-amber-50/30 dark:bg-amber-950/10"
+                      )} 
+                      onClick={() => setSelectedTicket(ticket)}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                            <CardDescription>{ticket.profiles?.nome} • {ticket.profiles?.email}</CardDescription>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {category && (
+                                <Badge variant="outline" className="gap-1 bg-primary/5">
+                                  <Tag className="h-3 w-3" />
+                                  {category.service}
+                                  {hasUpgrade && " + Upgrade"}
+                                </Badge>
+                              )}
+                              {ticket.service_price && (
+                                <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                                  {ticket.service_price}
+                                </Badge>
+                              )}
+                              {ticket.opportunity && (
+                                <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
+                                  <ExternalLink className="h-3 w-3" />
+                                  {ticket.opportunity.title}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2 items-end">
+                            <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
+                              {statusConfig[ticket.status]?.label}
+                            </Badge>
+                            {ticket.deadline && (
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                {format(new Date(ticket.deadline), "dd/MM/yyyy")}
                               </Badge>
                             )}
-                            {ticket.service_price && (
-                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
-                                {ticket.service_price}
-                              </Badge>
+                            {showArchiveButton && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="gap-1"
+                                onClick={(e) => handleArchiveTicket(ticket.id, e)}
+                              >
+                                <Archive className="h-3 w-3" />
+                                Arquivar
+                              </Button>
                             )}
-                            {ticket.opportunity && (
-                              <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
-                                <ExternalLink className="h-3 w-3" />
-                                {ticket.opportunity.title}
-                              </Badge>
+                            {ticket.is_archived && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="gap-1"
+                                onClick={(e) => handleUnarchiveTicket(ticket.id, e)}
+                              >
+                                <FolderOpen className="h-3 w-3" />
+                                Restaurar
+                              </Button>
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-col gap-2 items-end">
-                          <Badge className={`${statusConfig[ticket.status]?.color} text-white`}>
-                            {statusConfig[ticket.status]?.label}
-                          </Badge>
-                          {ticket.deadline && (
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                              <CalendarIcon className="h-3 w-3 mr-1" />
-                              {format(new Date(ticket.deadline), "dd/MM/yyyy")}
-                            </Badge>
-                          )}
-                          {showArchiveButton && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="gap-1"
-                              onClick={(e) => handleArchiveTicket(ticket.id, e)}
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
                             >
-                              <Archive className="h-3 w-3" />
-                              Arquivar
-                            </Button>
-                          )}
-                          {ticket.is_archived && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="gap-1"
-                              onClick={(e) => handleUnarchiveTicket(ticket.id, e)}
-                            >
-                              <FolderOpen className="h-3 w-3" />
-                              Restaurar
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              
+              <p className="text-sm text-muted-foreground text-center">
+                Mostrando {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredTickets.length)} de {filteredTickets.length} tickets
+              </p>
             </div>
           )}
         </TabsContent>
