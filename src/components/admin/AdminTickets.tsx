@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2, Archive, FolderOpen, ExternalLink } from "lucide-react";
+import { Loader2, MessageSquare, ArrowLeft, Send, User, ShieldCheck, CalendarIcon, Tag, RefreshCw, FileText, Download, Paperclip, X, Trash2, Archive, FolderOpen, ExternalLink, CheckCircle, XCircle } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { clearNotificationsByReference } from "@/lib/notifications";
@@ -54,6 +55,13 @@ interface AdminTicketsProps {
   onClearFilter?: () => void;
 }
 
+interface GoNoGoModalState {
+  isOpen: boolean;
+  ticketId: string | null;
+  opportunityId: string | null;
+  opportunityTitle: string | null;
+}
+
 const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps) => {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -66,6 +74,12 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [viewMode, setViewMode] = useState<"current" | "archive">("current");
+  const [goNoGoModal, setGoNoGoModal] = useState<GoNoGoModalState>({
+    isOpen: false,
+    ticketId: null,
+    opportunityId: null,
+    opportunityTitle: null
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -153,9 +167,20 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
     setMessages(data || []);
   };
 
-  const handleStatusChange = async (ticketId: string, newStatus: string) => {
+  const handleStatusChange = async (ticketId: string, newStatus: string, skipGoNoGoCheck = false) => {
     const ticket = tickets.find(t => t.id === ticketId);
     const oldStatus = ticket?.status;
+    
+    // Check if this is a parecer-go-no-go ticket being resolved
+    if (!skipGoNoGoCheck && newStatus === 'resolved' && ticket?.service_category === 'parecer-go-no-go' && ticket?.opportunity_id) {
+      setGoNoGoModal({
+        isOpen: true,
+        ticketId: ticketId,
+        opportunityId: ticket.opportunity_id,
+        opportunityTitle: ticket.opportunity?.title || null
+      });
+      return;
+    }
     
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -210,6 +235,31 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
         setSelectedTicket(prev => prev ? { ...prev, status: newStatus } : null);
       }
     }
+  };
+
+  const handleGoNoGoSelection = async (decision: 'Go' | 'No_Go') => {
+    if (!goNoGoModal.ticketId || !goNoGoModal.opportunityId) return;
+
+    // Update the opportunity status
+    const { error: opportunityError } = await supabase
+      .from('audited_opportunities')
+      .update({ go_no_go: decision })
+      .eq('id', goNoGoModal.opportunityId);
+
+    if (opportunityError) {
+      toast({ title: "Erro", description: "Não foi possível atualizar o status da oportunidade", variant: "destructive" });
+      return;
+    }
+
+    // Now proceed with the ticket status change
+    await handleStatusChange(goNoGoModal.ticketId, 'resolved', true);
+
+    toast({ 
+      title: "Parecer registrado", 
+      description: `A oportunidade foi marcada como ${decision === 'Go' ? 'Go' : 'No Go'}` 
+    });
+
+    setGoNoGoModal({ isOpen: false, ticketId: null, opportunityId: null, opportunityTitle: null });
   };
 
   const handleReopenTicket = async (ticketId: string) => {
@@ -740,6 +790,39 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Go/No Go Decision Modal */}
+      <Dialog open={goNoGoModal.isOpen} onOpenChange={(open) => {
+        if (!open) {
+          setGoNoGoModal({ isOpen: false, ticketId: null, opportunityId: null, opportunityTitle: null });
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Parecer Go/No Go</DialogTitle>
+            <DialogDescription>
+              Qual é o parecer para a oportunidade{goNoGoModal.opportunityTitle ? ` "${goNoGoModal.opportunityTitle}"` : ''}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={() => handleGoNoGoSelection('No_Go')}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              No Go
+            </Button>
+            <Button 
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              onClick={() => handleGoNoGoSelection('Go')}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Go
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
