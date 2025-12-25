@@ -196,6 +196,14 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
         });
         return;
       }
+      
+      // If it's an impugnacao-edital ticket being resolved, reset opportunity to Review_Required
+      if (baseCategory === 'impugnacao-edital') {
+        await supabase
+          .from('audited_opportunities')
+          .update({ go_no_go: 'Review_Required' })
+          .eq('id', ticket.opportunity_id);
+      }
     }
     
     // Check if this is a parecer-go-no-go ticket being resolved
