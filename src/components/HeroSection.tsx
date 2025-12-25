@@ -14,9 +14,10 @@ const HeroSection = () => {
     <section className="relative min-h-screen flex items-center bg-primary overflow-hidden">
       {/* Team background image with transparency */}
       <div 
-        className="absolute inset-0 bg-no-repeat bg-center bg-contain opacity-10 pointer-events-none"
+        className="absolute inset-0 bg-no-repeat bg-contain opacity-10 pointer-events-none"
         style={{
           backgroundImage: `url(${heroBackgroundTeam})`,
+          backgroundPosition: 'center 45%',
         }}
       />
 
