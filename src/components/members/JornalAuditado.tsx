@@ -115,11 +115,8 @@ const JornalAuditado = ({
           table: 'tickets'
         },
         () => {
-          // Refresh tickets for "Participando" opportunities
-          const participandoIds = opportunities
-            .filter(o => o.go_no_go === "Participando")
-            .map(o => o.id);
-          fetchActiveTickets(participandoIds);
+          // Refetch opportunities to get updated ticket counts
+          fetchOpportunities();
         }
       )
       .subscribe();
@@ -128,7 +125,7 @@ const JornalAuditado = ({
       supabase.removeChannel(channel);
       supabase.removeChannel(ticketChannel);
     };
-  }, [user, opportunities]);
+  }, [user]);
 
   // Auto-open opportunity from mention click
   useEffect(() => {

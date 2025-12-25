@@ -207,10 +207,8 @@ const AdminJornal = () => {
           table: 'tickets'
         },
         () => {
-          const participandoIds = opportunities
-            .filter(o => o.go_no_go === "Participando")
-            .map(o => o.id);
-          fetchActiveTickets(participandoIds);
+          // Refetch all data to get updated ticket counts
+          fetchData();
         }
       )
       .subscribe();
@@ -219,7 +217,7 @@ const AdminJornal = () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(ticketChannel);
     };
-  }, [opportunities]);
+  }, []);
 
   const fetchData = async () => {
     setIsLoading(true);
