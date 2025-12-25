@@ -223,8 +223,10 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    // If opportunityId is provided, filter by it; otherwise show all tickets
-    // No filter means show all tickets (including those without opportunity)
+    // If opportunityId is provided, filter by it
+    if (opportunityId) {
+      query = query.eq('opportunity_id', opportunityId);
+    }
 
     const { data, error } = await query;
 
