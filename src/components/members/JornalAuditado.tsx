@@ -70,6 +70,7 @@ const JornalAuditado = ({
   const [concludedImpugnacaoByOpportunity, setConcludedImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
+  const [adjudicatedOpportunities, setAdjudicatedOpportunities] = useState<Set<string>>(new Set());
 
   // Fetch active tickets count for opportunities
   const fetchActiveTickets = async (opportunityIds: string[]) => {
@@ -571,8 +572,8 @@ const JornalAuditado = ({
       user?.id
     );
     
-    toast({ title: "Adjudicação confirmada! 🎉", description: "Oportunidade mantida como Vencida" });
-    setSelectedOpportunity(null);
+    // Add to adjudicated set to show congratulations message
+    setAdjudicatedOpportunities(prev => new Set(prev).add(opportunity.id));
   };
 
   const downloadReport = (opportunity: Opportunity) => {
@@ -1514,31 +1515,39 @@ const JornalAuditado = ({
                       </Button>
                     )}
                     
-                    {/* For Vencida with concluded contrarrazões: show Adjudicado/Inabilitado buttons */}
+                    {/* For Vencida with concluded contrarrazões: show Adjudicado/Inabilitado buttons or congratulations */}
                     {selectedOpportunity.go_no_go === "Vencida" && concludedContrarrazoesOpportunity.has(selectedOpportunity.id) ? (
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleAdjudicado(selectedOpportunity)}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Adjudicado
-                        </Button>
-                        <Button
-                          onClick={() => handleInabilitado(selectedOpportunity)}
-                          disabled={isUpdating === selectedOpportunity.id}
-                          className="flex-1 bg-red-600 hover:bg-red-700"
-                        >
-                          {isUpdating === selectedOpportunity.id ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <>
-                              <X className="h-4 w-4 mr-2" />
-                              Inabilitado
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                      adjudicatedOpportunities.has(selectedOpportunity.id) ? (
+                        <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-4 text-center">
+                          <div className="text-3xl mb-2">🎉</div>
+                          <p className="text-green-800 dark:text-green-200 font-semibold text-lg">Parabéns!</p>
+                          <p className="text-green-700 dark:text-green-300 text-sm">Você venceu a licitação!</p>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleAdjudicado(selectedOpportunity)}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Adjudicado
+                          </Button>
+                          <Button
+                            onClick={() => handleInabilitado(selectedOpportunity)}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="flex-1 bg-red-600 hover:bg-red-700"
+                          >
+                            {isUpdating === selectedOpportunity.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <>
+                                <X className="h-4 w-4 mr-2" />
+                                Inabilitado
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )
                     ) : (
                       /* Default: show Solicitar Defesa/Recurso button */
                       onRequestParecer && (
