@@ -550,6 +550,7 @@ export type Database = {
       }
       user_search_criteria: {
         Row: {
+          company_presentation: string | null
           created_at: string
           id: string
           keywords: string[]
@@ -558,6 +559,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_presentation?: string | null
           created_at?: string
           id?: string
           keywords?: string[]
@@ -566,6 +568,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_presentation?: string | null
           created_at?: string
           id?: string
           keywords?: string[]
