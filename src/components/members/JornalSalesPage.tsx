@@ -65,7 +65,7 @@ const JornalSalesPage = () => {
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          <span className="font-semibold text-foreground">Empresas perdem até R$ 50.000</span> por licitação mal escolhida. 
+          <span className="font-semibold text-foreground">Empresas perdem milhões</span> por licitação mal escolhida. 
           Nossas oportunidades auditadas eliminam esse risco.
         </p>
         
