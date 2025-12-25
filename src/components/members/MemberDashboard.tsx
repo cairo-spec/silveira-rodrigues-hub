@@ -41,9 +41,10 @@ const MemberDashboard = () => {
   const [showTicketsInJornal, setShowTicketsInJornal] = useState(false);
   const [ticketOpportunityId, setTicketOpportunityId] = useState<string | undefined>(undefined);
 
-  const handleRequestParecer = (opportunityTitle: string, category?: string) => {
+  const handleRequestParecer = (opportunityId: string, opportunityTitle: string, category?: string) => {
     setPreSelectedCategory(category || undefined);
     setPreSelectedTitle(opportunityTitle);
+    setTicketOpportunityId(opportunityId);
     setOpenTicketModal(true);
     setShowTicketsInJornal(true);
   };

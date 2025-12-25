@@ -39,7 +39,7 @@ interface Opportunity {
 
 interface JornalAuditadoProps {
   isSubscriber: boolean;
-  onRequestParecer?: (opportunityTitle: string, category?: string) => void;
+  onRequestParecer?: (opportunityId: string, opportunityTitle: string, category?: string) => void;
   selectedOpportunityId?: string;
   onOpportunityClose?: () => void;
   onShowTickets?: (opportunityId?: string) => void;
@@ -208,7 +208,7 @@ const JornalAuditado = ({
 
   const handleSolicitarParecer = (opportunity: Opportunity) => {
     if (onRequestParecer) {
-      onRequestParecer(opportunity.title);
+      onRequestParecer(opportunity.id, opportunity.title);
     }
     setSelectedOpportunity(null);
   };
@@ -866,7 +866,7 @@ const JornalAuditado = ({
                         {onRequestParecer && (
                           <Button
                             onClick={() => {
-                              onRequestParecer(selectedOpportunity.title);
+                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                               setSelectedOpportunity(null);
                             }}
                             variant="outline"
@@ -897,7 +897,7 @@ const JornalAuditado = ({
                           {onRequestParecer && (
                             <Button
                               onClick={() => {
-                                onRequestParecer(selectedOpportunity.title, "impugnacao");
+                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "impugnacao");
                                 setSelectedOpportunity(null);
                               }}
                               className="flex-1 bg-amber-500 hover:bg-amber-600"
@@ -919,7 +919,7 @@ const JornalAuditado = ({
                         {onRequestParecer && (
                           <Button
                             onClick={() => {
-                              onRequestParecer(selectedOpportunity.title);
+                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                               setSelectedOpportunity(null);
                             }}
                             variant="outline"
@@ -1016,7 +1016,7 @@ const JornalAuditado = ({
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
-                          onRequestParecer(selectedOpportunity.title);
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
@@ -1049,7 +1049,7 @@ const JornalAuditado = ({
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
-                          onRequestParecer(selectedOpportunity.title);
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
@@ -1082,7 +1082,7 @@ const JornalAuditado = ({
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
-                          onRequestParecer(selectedOpportunity.title);
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
@@ -1144,7 +1144,7 @@ const JornalAuditado = ({
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
-                          onRequestParecer(selectedOpportunity.title);
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                           setSelectedOpportunity(null);
                         }}
                         variant="outline"
@@ -1174,7 +1174,7 @@ const JornalAuditado = ({
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
-                          onRequestParecer(selectedOpportunity.title, selectedOpportunity.go_no_go === "Perdida" ? "recurso" : "defesa");
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, selectedOpportunity.go_no_go === "Perdida" ? "recurso" : "defesa");
                           setSelectedOpportunity(null);
                         }}
                         className="bg-primary"
