@@ -66,6 +66,7 @@ const JornalAuditado = ({
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
   const [concludedRecursoByOpportunity, setConcludedRecursoByOpportunity] = useState<Set<string>>(new Set());
+  const [concludedContrarrazoesOpportunity, setConcludedContrarrazoesOpportunity] = useState<Set<string>>(new Set());
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
 
@@ -113,7 +114,30 @@ const JornalAuditado = ({
     setConcludedRecursoByOpportunity(recursoSet);
   };
 
-  // Fetch active parecer-go-no-go tickets for opportunities
+  // Fetch concluded contrarrazões tickets for opportunities
+  const fetchConcludedContrarrazoesTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    // Fetch tickets that are resolved/closed AND have contrarrazoes category
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, service_category, status")
+      .in("opportunity_id", opportunityIds)
+      .in("status", ["resolved", "closed"]);
+
+    const contrarrazoesSet = new Set<string>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id && ticket.service_category) {
+        // Check if service_category contains contrarrazoes (with or without +upgrade)
+        const baseCategory = ticket.service_category.replace('+upgrade', '');
+        if (baseCategory === 'contrarrazoes') {
+          contrarrazoesSet.add(ticket.opportunity_id);
+        }
+      }
+    });
+    setConcludedContrarrazoesOpportunity(contrarrazoesSet);
+  };
+
   const fetchActiveParecerTickets = async (opportunityIds: string[]) => {
     if (opportunityIds.length === 0) return;
 
@@ -236,6 +260,7 @@ const JornalAuditado = ({
       const allOpportunityIds = (data as Opportunity[]).map(o => o.id);
       fetchActiveTickets(allOpportunityIds);
       fetchConcludedRecursoTickets(allOpportunityIds);
+      fetchConcludedContrarrazoesTickets(allOpportunityIds);
       fetchActiveParecerTickets(allOpportunityIds);
       fetchActiveImpugnacaoTickets(allOpportunityIds);
       
@@ -470,6 +495,58 @@ const JornalAuditado = ({
       setSelectedOpportunity(null);
     }
     setIsUpdating(null);
+  };
+
+  const handleInabilitado = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ 
+        go_no_go: "Perdida" as GoNoGoStatus
+      })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível registrar inabilitação", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Inabilitação registrada',
+        `Cliente registrou INABILITAÇÃO na oportunidade: "${opportunity.title}"`,
+        opportunity.id,
+        user?.id
+      );
+      
+      toast({ title: "Inabilitação registrada", description: "Oportunidade marcada como Perdida" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
+  const handleAdjudicado = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    // Just notify admins, status stays as Vencida
+    notifyAdmins(
+      'ticket_status',
+      'Adjudicação confirmada!',
+      `Cliente confirmou ADJUDICAÇÃO na oportunidade: "${opportunity.title}"`,
+      opportunity.id,
+      user?.id
+    );
+    
+    toast({ title: "Adjudicação confirmada! 🎉", description: "Oportunidade mantida como Vencida" });
+    setSelectedOpportunity(null);
   };
 
   const downloadReport = (opportunity: Opportunity) => {
@@ -1397,18 +1474,48 @@ const JornalAuditado = ({
                         )}
                       </Button>
                     )}
-                    {onRequestParecer && (
-                      <Button
-                        onClick={() => {
-                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, selectedOpportunity.go_no_go === "Perdida" ? "recurso" : "defesa");
-                          setSelectedOpportunity(null);
-                        }}
-                        className="bg-primary"
-                      >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        {selectedOpportunity.go_no_go === "Perdida" ? "Solicitar Recurso" : "Solicitar Defesa"}
-                      </Button>
+                    
+                    {/* For Vencida with concluded contrarrazões: show Adjudicado/Inabilitado buttons */}
+                    {selectedOpportunity.go_no_go === "Vencida" && concludedContrarrazoesOpportunity.has(selectedOpportunity.id) ? (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleAdjudicado(selectedOpportunity)}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Adjudicado
+                        </Button>
+                        <Button
+                          onClick={() => handleInabilitado(selectedOpportunity)}
+                          disabled={isUpdating === selectedOpportunity.id}
+                          className="flex-1 bg-red-600 hover:bg-red-700"
+                        >
+                          {isUpdating === selectedOpportunity.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <>
+                              <X className="h-4 w-4 mr-2" />
+                              Inabilitado
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Default: show Solicitar Defesa/Recurso button */
+                      onRequestParecer && (
+                        <Button
+                          onClick={() => {
+                            onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, selectedOpportunity.go_no_go === "Perdida" ? "recurso" : "defesa");
+                            setSelectedOpportunity(null);
+                          }}
+                          className="bg-primary"
+                        >
+                          <ClipboardList className="h-4 w-4 mr-2" />
+                          {selectedOpportunity.go_no_go === "Perdida" ? "Solicitar Recurso" : "Solicitar Defesa"}
+                        </Button>
+                      )
                     )}
+                    
                     {onShowTickets && (
                       <Button
                         variant="outline"
