@@ -73,6 +73,7 @@ serve(async (req) => {
       .update({
         trial_active: true,
         trial_expires_at: trialExpiresAt.toISOString(),
+        access_authorized: true,
       })
       .eq("user_id", user.id);
 
