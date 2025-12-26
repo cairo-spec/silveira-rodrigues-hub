@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const ROISection = () => {
+interface ROISectionProps {
+  showTrialButton?: boolean;
+}
+
+const ROISection = ({ showTrialButton = true }: ROISectionProps) => {
   const scrollToJornal = () => {
     const element = document.getElementById("jornal");
     if (element) {
@@ -204,19 +208,21 @@ const ROISection = () => {
         </div>
 
         {/* Final CTA */}
-        <div className="text-center">
-          <p className="text-white/80 mb-6 max-w-2xl mx-auto">
-            Não deixe que a falta de gestão de risco consuma seus lucros. 
-            Experimente nossa plataforma gratuitamente por 30 dias.
-          </p>
-          <a 
-            href="/experimente"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-amber-400 text-primary rounded-xl font-bold hover:bg-amber-300 transition-colors shadow-lg hover:shadow-xl"
-          >
-            <TrendingUp className="h-5 w-5" />
-            Teste Grátis por 30 Dias
-          </a>
-        </div>
+        {showTrialButton && (
+          <div className="text-center">
+            <p className="text-white/80 mb-6 max-w-2xl mx-auto">
+              Não deixe que a falta de gestão de risco consuma seus lucros. 
+              Experimente nossa plataforma gratuitamente por 30 dias.
+            </p>
+            <a 
+              href="/experimente"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-amber-400 text-primary rounded-xl font-bold hover:bg-amber-300 transition-colors shadow-lg hover:shadow-xl"
+            >
+              <TrendingUp className="h-5 w-5" />
+              Teste Grátis por 30 Dias
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );
