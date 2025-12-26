@@ -9,6 +9,7 @@ import EducationalSection from "@/components/EducationalSection";
 import SolutionsSection from "@/components/SolutionsSection";
 import AuthoritySection from "@/components/AuthoritySection";
 import Footer from "@/components/Footer";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 const Index = () => {
   return (
@@ -24,6 +25,7 @@ const Index = () => {
       <SolutionsSection />
       <AuthoritySection />
       <Footer />
+      <FloatingWhatsApp />
     </main>
   );
 };
