@@ -47,7 +47,11 @@ const journeySteps = [
   },
 ];
 
-const JourneySection = () => {
+interface JourneySectionProps {
+  ctaLink?: string;
+}
+
+const JourneySection = ({ ctaLink = "/experimente" }: JourneySectionProps) => {
   return (
     <section className="py-20 bg-secondary">
       <div className="container-custom">
@@ -126,7 +130,7 @@ const JourneySection = () => {
         {/* CTA */}
         <div className="text-center mt-12">
           <a 
-            href="/experimente"
+            href={ctaLink}
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             Começar Minha Jornada
