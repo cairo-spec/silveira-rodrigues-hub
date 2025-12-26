@@ -93,7 +93,14 @@ const Experimente = () => {
             title: "Bem-vindo de volta! 🎉",
             description: "Seu acesso já está ativo.",
           });
-        } else {
+        } else if (trialResult?.alreadyUsed || trialResult?.accountTooOld) {
+          // User already had trial or is trying to game the system
+          toast({
+            title: "Trial não disponível",
+            description: "O período de teste gratuito só está disponível para novas contas.",
+            variant: "destructive",
+          });
+        } else if (trialResult?.success) {
           toast({
             title: "Trial ativado! 🎉",
             description: "Você tem 30 dias grátis para explorar todos os recursos.",
