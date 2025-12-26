@@ -19,7 +19,7 @@ const Index = () => {
       <PricingSection />
       <HowItWorksSection />
       <FeaturesShowcaseSection />
-      <JourneySection ctaLink="https://www.asaas.com/c/g8pj49zuijh6swzc" />
+      <JourneySection ctaLink="#jornal" />
       <ROISection showTrialButton={false} />
       <EducationalSection />
       <SolutionsSection />
