@@ -17,11 +17,11 @@ const Index = () => {
       <Header />
       <HeroSection />
       <PricingSection />
+      <EducationalSection />
       <HowItWorksSection />
       <FeaturesShowcaseSection />
       <JourneySection ctaLink="#jornal" />
       <ROISection showTrialButton={false} />
-      <EducationalSection />
       <SolutionsSection />
       <AuthoritySection />
       <Footer />
