@@ -229,7 +229,7 @@ const FeaturesShowcaseSection = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">Parecer Go/No-Go</p>
-                        <p className="text-xs text-muted-foreground">CC 12/2024 - Pref. BH</p>
+                        <p className="text-xs text-muted-foreground">CC 12/2024 - PMMG</p>
                       </div>
                     </div>
                     <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">
