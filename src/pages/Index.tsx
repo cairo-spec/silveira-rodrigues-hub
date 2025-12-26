@@ -18,11 +18,11 @@ const Index = () => {
       <HeroSection />
       <PricingSection />
       <EducationalSection />
+      <SolutionsSection />
       <HowItWorksSection />
       <FeaturesShowcaseSection />
       <JourneySection ctaLink="#jornal" />
       <ROISection showTrialButton={false} />
-      <SolutionsSection />
       <AuthoritySection />
       <Footer />
       <FloatingWhatsApp />
