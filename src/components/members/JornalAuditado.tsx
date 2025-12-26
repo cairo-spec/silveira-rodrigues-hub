@@ -1630,12 +1630,26 @@ const JornalAuditado = ({
                       )
                     )}
                     
-                    {/* For Confirmada: show congratulations message */}
+                    {/* For Confirmada: show congratulations message and new ticket button */}
                     {selectedOpportunity.go_no_go === "Confirmada" && (
-                      <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-4 text-center">
-                        <div className="text-3xl mb-2">🎉</div>
-                        <p className="text-green-800 dark:text-green-200 font-semibold text-lg">Parabéns!</p>
-                        <p className="text-green-700 dark:text-green-300 text-sm">Você venceu a licitação!</p>
+                      <div className="space-y-3">
+                        <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-4 text-center">
+                          <div className="text-3xl mb-2">🎉</div>
+                          <p className="text-green-800 dark:text-green-200 font-semibold text-lg">Parabéns!</p>
+                          <p className="text-green-700 dark:text-green-300 text-sm">Você venceu a licitação!</p>
+                        </div>
+                        {onRequestParecer && (
+                          <Button
+                            onClick={() => {
+                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
+                              setSelectedOpportunity(null);
+                            }}
+                            className="w-full bg-primary"
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Abrir Novo Ticket
+                          </Button>
+                        )}
                       </div>
                     )}
                     
