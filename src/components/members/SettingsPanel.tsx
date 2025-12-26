@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Bell, Shield, Loader2, Clock, Timer } from "lucide-react";
+import { Lock, Bell, Shield, Loader2, Clock, Timer, Trash2, AlertTriangle, FileText } from "lucide-react";
 import { differenceInDays, differenceInHours } from "date-fns";
 
 const SESSION_TIMEOUT_OPTIONS = [
@@ -21,6 +23,7 @@ const SESSION_TIMEOUT_OPTIONS = [
 ];
 
 const SettingsPanel = () => {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -30,6 +33,11 @@ const SettingsPanel = () => {
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState("30");
   const [trialInfo, setTrialInfo] = useState<{ active: boolean; expiresAt: string | null } | null>(null);
+  
+  // Account deletion state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load settings from localStorage and fetch trial info
   useEffect(() => {
@@ -161,6 +169,58 @@ const SettingsPanel = () => {
     const hours = differenceInHours(new Date(trialInfo.expiresAt), new Date()) % 24;
     if (days < 0) return "Expirado";
     return `${days} dias e ${hours} horas`;
+  };
+
+  // Handle account deletion (LGPD Art. 18 - Right to deletion)
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== "EXCLUIR MINHA CONTA") {
+      toast({
+        title: "Confirmação incorreta",
+        description: "Digite exatamente: EXCLUIR MINHA CONTA",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-own-account', {
+        body: { confirmationCode: deleteConfirmation }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        toast({
+          title: "Erro",
+          description: data.error,
+          variant: "destructive"
+        });
+        setIsDeleting(false);
+        return;
+      }
+
+      toast({
+        title: "Conta excluída",
+        description: "Sua conta foi excluída com sucesso. Você será redirecionado."
+      });
+
+      // Wait a bit then redirect
+      setTimeout(() => {
+        signOut();
+        navigate("/");
+      }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível excluir a conta",
+        variant: "destructive"
+      });
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -340,6 +400,126 @@ const SettingsPanel = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Seus Direitos LGPD */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Seus Direitos (LGPD)
+          </CardTitle>
+          <CardDescription>
+            Direitos garantidos pela Lei Geral de Proteção de Dados
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>Conforme a LGPD (Lei nº 13.709/2018), você tem direito a:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Acessar seus dados pessoais</li>
+              <li>Corrigir dados incompletos ou desatualizados</li>
+              <li>Solicitar a exclusão de seus dados</li>
+              <li>Revogar o consentimento a qualquer momento</li>
+            </ul>
+          </div>
+          <Separator />
+          <a 
+            href="/politica-dados" 
+            target="_blank"
+            className="text-sm text-primary underline hover:text-primary/80"
+          >
+            Ver Política de Privacidade completa
+          </a>
+        </CardContent>
+      </Card>
+
+      {/* Zona de Perigo - Exclusão de Conta */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" />
+            Excluir Minha Conta
+          </CardTitle>
+          <CardDescription>
+            Ação permanente e irreversível
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-destructive mb-1">Atenção!</p>
+                <p className="text-muted-foreground">
+                  Ao excluir sua conta, todos os seus dados serão permanentemente removidos, 
+                  incluindo tickets, mensagens e histórico. Esta ação não pode ser desfeita.
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button 
+            variant="destructive" 
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Solicitar Exclusão da Conta
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Confirmar Exclusão de Conta
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                Esta ação é <strong>permanente e irreversível</strong>. Todos os seus dados serão excluídos:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>Perfil e informações pessoais</li>
+                <li>Tickets e mensagens</li>
+                <li>Histórico de chat</li>
+                <li>Preferências e configurações</li>
+              </ul>
+              <div className="pt-4">
+                <Label htmlFor="delete-confirmation" className="text-foreground">
+                  Para confirmar, digite: <strong>EXCLUIR MINHA CONTA</strong>
+                </Label>
+                <Input
+                  id="delete-confirmation"
+                  className="mt-2"
+                  placeholder="Digite aqui..."
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting || deleteConfirmation !== "EXCLUIR MINHA CONTA"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir Permanentemente"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
