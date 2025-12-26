@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Users, ShieldCheck, User, Clock, CreditCard, UserCheck, UserX, Building2, Pencil } from "lucide-react";
+import { Loader2, Users, ShieldCheck, User, Clock, CreditCard, UserCheck, UserX, Building2, Trash2 } from "lucide-react";
 import { format, differenceInDays, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -48,6 +49,8 @@ const AdminUsers = () => {
   const [existingOrgs, setExistingOrgs] = useState<Organization[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<Profile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -221,6 +224,40 @@ const AdminUsers = () => {
     return org?.name || `Org ${orgId.slice(0, 8)}...`;
   };
 
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { userId: deletingUser.user_id }
+      });
+
+      if (response.error) {
+        toast({ 
+          title: "Erro", 
+          description: response.error.message || "Não foi possível excluir o usuário", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Usuário excluído com sucesso" });
+        setDeletingUser(null);
+        fetchData();
+      }
+    } catch (error) {
+      toast({ 
+        title: "Erro", 
+        description: "Erro ao excluir usuário", 
+        variant: "destructive" 
+      });
+    }
+    
+    setIsDeleting(false);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -367,6 +404,14 @@ const AdminUsers = () => {
                                 )}
                               </Button>
                             )}
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeletingUser(profile)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </>
                         )}
                       </div>
@@ -473,6 +518,29 @@ const AdminUsers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete User Confirmation */}
+      <AlertDialog open={!!deletingUser} onOpenChange={() => setDeletingUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O usuário <strong>{deletingUser?.nome}</strong> ({deletingUser?.email}) será permanentemente removido do sistema, incluindo todos os seus dados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
