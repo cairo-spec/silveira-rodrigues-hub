@@ -7,6 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import HowItWorksSection from '@/components/HowItWorksSection';
+import FeaturesShowcaseSection from '@/components/FeaturesShowcaseSection';
+import JourneySection from '@/components/JourneySection';
+import ROISection from '@/components/ROISection';
 import { 
   Shield, 
   Clock, 
@@ -447,6 +451,12 @@ const Experimente = () => {
           </div>
         </div>
       </div>
+
+      {/* Feature Sections */}
+      <HowItWorksSection />
+      <FeaturesShowcaseSection />
+      <JourneySection />
+      <ROISection />
 
       {/* Footer */}
       <div className="container mx-auto px-4 py-8 text-center">
