@@ -1560,8 +1560,8 @@ const JornalAuditado = ({
                   </div>
                 )}
 
-                {/* Action buttons for Vencida/Perdida (concluded) */}
-                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida") && (
+                {/* Action buttons for Vencida/Perdida/Confirmada (concluded) */}
+                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada") && (
                   <div className="flex flex-col gap-2">
                     {/* Disputa Revertida button - only for Perdida with concluded recurso ticket */}
                     {selectedOpportunity.go_no_go === "Perdida" && concludedRecursoByOpportunity.has(selectedOpportunity.id) && (
@@ -1628,6 +1628,15 @@ const JornalAuditado = ({
                           )}
                         </div>
                       )
+                    )}
+                    
+                    {/* For Confirmada: show congratulations message */}
+                    {selectedOpportunity.go_no_go === "Confirmada" && (
+                      <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-4 text-center">
+                        <div className="text-3xl mb-2">🎉</div>
+                        <p className="text-green-800 dark:text-green-200 font-semibold text-lg">Parabéns!</p>
+                        <p className="text-green-700 dark:text-green-300 text-sm">Você venceu a licitação!</p>
+                      </div>
                     )}
                     
                     {/* For Perdida: show Solicitar Recurso button */}
