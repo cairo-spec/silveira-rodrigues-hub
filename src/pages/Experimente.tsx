@@ -78,8 +78,26 @@ const Experimente = () => {
           return;
         }
 
-        // Activate trial via edge function (secure server-side activation)
-        const { data: trialResult, error: trialError } = await supabase.functions.invoke('activate-trial');
+        // Activate trial via backend function (secure server-side activation)
+        // NOTE: We pass the access token explicitly to avoid intermittent missing-auth issues right after OAuth redirects.
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        if (!accessToken) {
+          toast({
+            title: "Sessão não encontrada",
+            description: "Faça login novamente para ativar o trial.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
+
+        const { data: trialResult, error: trialError } = await supabase.functions.invoke('activate-trial', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
         if (trialError) {
           console.error("Error activating trial:", trialError);
