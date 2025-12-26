@@ -1581,8 +1581,8 @@ const JornalAuditado = ({
                       </Button>
                     )}
                     
-                    {/* For Vencida with concluded contrarrazões: show Adjudicado/Inabilitado buttons or congratulations */}
-                    {selectedOpportunity.go_no_go === "Vencida" && concludedContrarrazoesOpportunity.has(selectedOpportunity.id) ? (
+                    {/* For Vencida: show Adjudicado/Inabilitado buttons and Solicitar Defesa */}
+                    {selectedOpportunity.go_no_go === "Vencida" && (
                       adjudicatedOpportunities.has(selectedOpportunity.id) ? (
                         <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-4 text-center">
                           <div className="text-3xl mb-2">🎉</div>
@@ -1590,44 +1590,58 @@ const JornalAuditado = ({
                           <p className="text-green-700 dark:text-green-300 text-sm">Você venceu a licitação!</p>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => handleAdjudicado(selectedOpportunity)}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Adjudicado
-                          </Button>
-                          <Button
-                            onClick={() => handleInabilitado(selectedOpportunity)}
-                            disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1 bg-red-600 hover:bg-red-700"
-                          >
-                            {isUpdating === selectedOpportunity.id ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <>
-                                <X className="h-4 w-4 mr-2" />
-                                Inabilitado
-                              </>
-                            )}
-                          </Button>
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleAdjudicado(selectedOpportunity)}
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Adjudicado
+                            </Button>
+                            <Button
+                              onClick={() => handleInabilitado(selectedOpportunity)}
+                              disabled={isUpdating === selectedOpportunity.id}
+                              className="flex-1 bg-red-600 hover:bg-red-700"
+                            >
+                              {isUpdating === selectedOpportunity.id ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Inabilitado
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                          {onRequestParecer && (
+                            <Button
+                              onClick={() => {
+                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "defesa");
+                                setSelectedOpportunity(null);
+                              }}
+                              className="w-full bg-primary"
+                            >
+                              <ClipboardList className="h-4 w-4 mr-2" />
+                              Solicitar Defesa
+                            </Button>
+                          )}
                         </div>
                       )
-                    ) : (
-                      /* Default: show Solicitar Defesa/Recurso button */
-                      onRequestParecer && (
-                        <Button
-                          onClick={() => {
-                            onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, selectedOpportunity.go_no_go === "Perdida" ? "recurso" : "defesa");
-                            setSelectedOpportunity(null);
-                          }}
-                          className="bg-primary"
-                        >
-                          <ClipboardList className="h-4 w-4 mr-2" />
-                          {selectedOpportunity.go_no_go === "Perdida" ? "Solicitar Recurso" : "Solicitar Defesa"}
-                        </Button>
-                      )
+                    )}
+                    
+                    {/* For Perdida: show Solicitar Recurso button */}
+                    {selectedOpportunity.go_no_go === "Perdida" && onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "recurso");
+                          setSelectedOpportunity(null);
+                        }}
+                        className="bg-primary"
+                      >
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Solicitar Recurso
+                      </Button>
                     )}
                     
                     {onShowTickets && (
