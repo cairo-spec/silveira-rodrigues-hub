@@ -77,25 +77,20 @@ const Experimente = () => {
           return;
         }
 
-        // Activate trial directly via database update (RLS allows users to update their own profile)
-        const trialExpiresAt = new Date();
-        trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
+        // Activate trial via edge function (secure server-side activation)
+        const { data: trialResult, error: trialError } = await supabase.functions.invoke('activate-trial');
 
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({
-            trial_active: true,
-            trial_expires_at: trialExpiresAt.toISOString(),
-            access_authorized: true,
-          })
-          .eq("user_id", user.id);
-
-        if (updateError) {
-          console.error("Error activating trial:", updateError);
+        if (trialError) {
+          console.error("Error activating trial:", trialError);
           toast({
             title: "Erro ao ativar trial",
             description: "Entre em contato com o suporte.",
             variant: "destructive",
+          });
+        } else if (trialResult?.alreadyActive) {
+          toast({
+            title: "Bem-vindo de volta! 🎉",
+            description: "Seu acesso já está ativo.",
           });
         } else {
           toast({
