@@ -187,7 +187,7 @@ const ROISection = () => {
             </div>
             
             <div className="text-center lg:text-right">
-              <p className="text-3xl font-bold text-amber-300 mb-2">ROI de 10x</p>
+              <p className="text-3xl font-bold text-amber-300 mb-2">ROI Exponencial</p>
               <p className="text-white/70 text-sm mb-4">
                 Para cada R$ 1 investido em gestão de risco, 
                 nossos clientes recuperam até R$ 10
