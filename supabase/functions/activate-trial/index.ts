@@ -44,7 +44,7 @@ serve(async (req) => {
     // Check if user already has trial or subscription active
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("trial_active, subscription_active, trial_expires_at")
+      .select("trial_active, subscription_active, trial_expires_at, created_at")
       .eq("user_id", user.id)
       .single();
 
@@ -52,13 +52,54 @@ serve(async (req) => {
       throw new Error("Profile not found");
     }
 
-    // If already has active trial or subscription, don't re-activate
-    if (profile.subscription_active || profile.trial_active) {
+    // If already has active subscription, don't re-activate
+    if (profile.subscription_active) {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "User already has access",
+          message: "User already has active subscription",
           alreadyActive: true 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // If already has active trial, don't re-activate
+    if (profile.trial_active) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "User already has active trial",
+          alreadyActive: true 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: If user already had a trial before (trial_expires_at is set), don't allow re-activation
+    // This prevents existing users from getting a new trial by visiting /experimente
+    if (profile.trial_expires_at) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "Trial already used",
+          alreadyUsed: true 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Only allow trial activation for accounts created in the last 5 minutes
+    // This prevents existing users from gaming the system by visiting /experimente
+    const accountCreatedAt = new Date(profile.created_at);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    
+    if (accountCreatedAt < fiveMinutesAgo) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "Trial only available for new accounts",
+          accountTooOld: true 
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
