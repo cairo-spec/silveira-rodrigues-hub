@@ -45,7 +45,7 @@ const Experimente = () => {
       // Check if user profile exists (handles deleted accounts with stale sessions)
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("id, trial_active, access_authorized")
+        .select("id, trial_active, access_authorized, subscription_active, trial_expires_at")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -57,41 +57,47 @@ const Experimente = () => {
         return;
       }
 
-      // If this is a trial signup callback (from Google OAuth)
+      // If this is a trial signup callback (from Google OAuth or returning user)
       if (pendingTrial === "true") {
         localStorage.removeItem(TRIAL_SIGNUP_KEY);
 
-        // Check if trial is already active
-        if (profile.trial_active && profile.access_authorized) {
+        // Check if user already has full access
+        if (profile.subscription_active || (profile.trial_active && profile.access_authorized)) {
           toast({
-            title: "Trial já ativo! 🎉",
-            description: "Você já tem acesso ao período de teste.",
+            title: "Bem-vindo de volta! 🎉",
+            description: profile.subscription_active 
+              ? "Você já é um assinante ativo." 
+              : "Seu período de teste ainda está ativo.",
           });
           navigate("/membros");
           return;
         }
 
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
+        // Activate trial directly via database update (RLS allows users to update their own profile)
+        const trialExpiresAt = new Date();
+        trialExpiresAt.setDate(trialExpiresAt.getDate() + 30);
 
-          if (session) {
-            const response = await supabase.functions.invoke("activate-trial", {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            });
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            trial_active: true,
+            trial_expires_at: trialExpiresAt.toISOString(),
+            access_authorized: true,
+          })
+          .eq("user_id", user.id);
 
-            if (response.error) {
-              console.error("Error activating trial:", response.error);
-            } else if (!response.data?.alreadyActive) {
-              toast({
-                title: "Trial ativado! 🎉",
-                description: "Você tem 30 dias grátis para explorar todos os recursos.",
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Error activating trial:", error);
+        if (updateError) {
+          console.error("Error activating trial:", updateError);
+          toast({
+            title: "Erro ao ativar trial",
+            description: "Entre em contato com o suporte.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Trial ativado! 🎉",
+            description: "Você tem 30 dias grátis para explorar todos os recursos.",
+          });
         }
 
         navigate("/membros");
