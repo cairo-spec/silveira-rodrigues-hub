@@ -150,63 +150,6 @@ const ROISection = ({ showTrialButton = true }: ROISectionProps) => {
           </div>
         </div>
 
-        {/* ROI Calculator Preview */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 mb-12">
-          <div className="grid lg:grid-cols-3 gap-8 items-center">
-            <div className="text-center lg:text-left">
-              <div className="flex items-center gap-2 justify-center lg:justify-start mb-2">
-                <Calculator className="h-5 w-5 text-amber-300" />
-                <span className="text-sm font-medium text-amber-300">Cálculo Simplificado</span>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Quanto você pode ganhar?
-              </h3>
-              <p className="text-white/70">
-                Com base em levantamento, uma empresa que participa de 
-                10 licitações por ano pode ter resultados como:
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-xl p-4 text-center">
-                <Target className="h-6 w-6 text-amber-300 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">+4</p>
-                <p className="text-xs text-white/60">Vitórias a mais por ano</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 text-center">
-                <DollarSign className="h-6 w-6 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">R$ 500k</p>
-                <p className="text-xs text-white/60">Em contratos adicionais</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 text-center">
-                <Shield className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">-80%</p>
-                <p className="text-xs text-white/60">Redução de perdas</p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 text-center">
-                <BarChart3 className="h-6 w-6 text-violet-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">67%</p>
-                <p className="text-xs text-white/60">Taxa de sucesso</p>
-              </div>
-            </div>
-            
-            <div className="text-center lg:text-right">
-              <p className="text-3xl font-bold text-amber-300 mb-2">ROI Exponencial</p>
-              <p className="text-white/70 text-sm mb-4">
-                Cada vitória gera capacidade técnica — <span className="text-white font-semibold">novas conquistas</span>
-              </p>
-              <Button 
-                size="lg"
-                className="bg-white text-primary hover:bg-white/90 font-semibold"
-                onClick={scrollToJornal}
-              >
-                Começar Agora
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Final CTA */}
         {showTrialButton && (
           <div className="text-center">
