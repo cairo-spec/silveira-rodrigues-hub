@@ -615,6 +615,7 @@ export type Database = {
         | "Participando"
         | "Vencida"
         | "Perdida"
+        | "Confirmada"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status:
         | "open"
@@ -759,6 +760,7 @@ export const Constants = {
         "Participando",
         "Vencida",
         "Perdida",
+        "Confirmada",
       ],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: [

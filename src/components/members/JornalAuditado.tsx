@@ -18,7 +18,7 @@ import { notifyAdmins } from "@/lib/notifications";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida" | "Confirmada";
 
 interface Opportunity {
   id: string;
@@ -563,17 +563,31 @@ const JornalAuditado = ({
       return;
     }
 
-    // Just notify admins, status stays as Vencida
-    notifyAdmins(
-      'ticket_status',
-      'Adjudicação confirmada!',
-      `Cliente confirmou ADJUDICAÇÃO na oportunidade: "${opportunity.title}"`,
-      opportunity.id,
-      user?.id
-    );
+    setIsUpdating(opportunity.id);
     
-    // Add to adjudicated set to show congratulations message
-    setAdjudicatedOpportunities(prev => new Set(prev).add(opportunity.id));
+    // Update status to Confirmada when client confirms adjudication
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ go_no_go: "Confirmada" as GoNoGoStatus })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível confirmar adjudicação", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Adjudicação confirmada!',
+        `Cliente confirmou ADJUDICAÇÃO na oportunidade: "${opportunity.title}"`,
+        opportunity.id,
+        user?.id
+      );
+      
+      // Add to adjudicated set to show congratulations message
+      setAdjudicatedOpportunities(prev => new Set(prev).add(opportunity.id));
+      toast({ title: "Adjudicação confirmada! 🎉" });
+      fetchOpportunities();
+    }
+    setIsUpdating(null);
   };
 
   const downloadReport = (opportunity: Opportunity) => {
@@ -653,6 +667,12 @@ const JornalAuditado = ({
             VENCIDA
           </Badge>
         );
+      case "Confirmada":
+        return (
+          <Badge variant="outline" className="border-emerald-600 text-emerald-700 text-xs bg-emerald-100">
+            CONFIRMADA
+          </Badge>
+        );
       case "Perdida":
         return (
           <Badge variant="outline" className="border-orange-600 text-orange-700 text-xs bg-orange-50">
@@ -680,10 +700,10 @@ const JornalAuditado = ({
       case "andamento":
         return searchFiltered.filter(opp => opp.go_no_go === "Participando");
       case "concluidas":
-        return searchFiltered.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida");
+        return searchFiltered.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida" || opp.go_no_go === "Confirmada");
       default: // noticias
         return searchFiltered.filter(opp => 
-          !["Participando", "Vencida", "Perdida"].includes(opp.go_no_go)
+          !["Participando", "Vencida", "Perdida", "Confirmada"].includes(opp.go_no_go)
         );
     }
   };
@@ -742,13 +762,13 @@ const JornalAuditado = ({
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="noticias">
-            Notícias ({searchFiltered.filter(o => !["Participando", "Vencida", "Perdida"].includes(o.go_no_go)).length})
+            Notícias ({searchFiltered.filter(o => !["Participando", "Vencida", "Perdida", "Confirmada"].includes(o.go_no_go)).length})
           </TabsTrigger>
           <TabsTrigger value="andamento">
             Em Andamento ({searchFiltered.filter(o => o.go_no_go === "Participando").length})
           </TabsTrigger>
           <TabsTrigger value="concluidas">
-            Concluídas ({searchFiltered.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida").length})
+            Concluídas ({searchFiltered.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida" || o.go_no_go === "Confirmada").length})
           </TabsTrigger>
         </TabsList>
 

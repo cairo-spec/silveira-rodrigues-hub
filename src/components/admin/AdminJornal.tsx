@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida" | "Confirmada";
 
 type FormData = {
   title: string;
@@ -503,6 +503,8 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
         return <Badge variant="outline" className="border-emerald-500 text-emerald-600 text-xs">PARTICIPANDO</Badge>;
       case "Vencida":
         return <Badge variant="outline" className="border-purple-600 text-purple-700 text-xs bg-purple-50">VENCIDA</Badge>;
+      case "Confirmada":
+        return <Badge variant="outline" className="border-emerald-600 text-emerald-700 text-xs bg-emerald-100">CONFIRMADA</Badge>;
       case "Perdida":
         return <Badge variant="outline" className="border-orange-600 text-orange-700 text-xs bg-orange-50">PERDIDA</Badge>;
       default:
@@ -521,10 +523,10 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
       case "andamento":
         return opportunities.filter(opp => opp.go_no_go === "Participando");
       case "concluidas":
-        return opportunities.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida");
+        return opportunities.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida" || opp.go_no_go === "Confirmada");
       default: // noticias
         return opportunities.filter(opp => 
-          !["Participando", "Vencida", "Perdida"].includes(opp.go_no_go)
+          !["Participando", "Vencida", "Perdida", "Confirmada"].includes(opp.go_no_go)
         );
     }
   };
