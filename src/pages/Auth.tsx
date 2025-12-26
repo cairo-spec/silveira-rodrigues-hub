@@ -191,13 +191,13 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle("/membros");
     if (error) {
       setIsLoading(false);
       toast({
         title: "Erro",
         description: "Não foi possível conectar com o Google",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };

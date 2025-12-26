@@ -77,18 +77,19 @@ const Experimente = () => {
 
   const handleGoogleSignup = async () => {
     setIsGoogleLoading(true);
-    
+
     // Mark this as a trial signup before redirecting
-    localStorage.setItem(TRIAL_SIGNUP_KEY, 'true');
-    
-    const { error } = await signInWithGoogle();
-    
+    localStorage.setItem(TRIAL_SIGNUP_KEY, "true");
+
+    // IMPORTANT: Redirect back to /experimente so we can activate trial + access after OAuth
+    const { error } = await signInWithGoogle("/experimente");
+
     if (error) {
       localStorage.removeItem(TRIAL_SIGNUP_KEY);
       toast({
         title: "Erro",
         description: "Não foi possível conectar com o Google. Tente novamente.",
-        variant: "destructive"
+        variant: "destructive",
       });
       setIsGoogleLoading(false);
     }
@@ -121,8 +122,8 @@ const Experimente = () => {
       const { error } = await signUp(email, password, {
         nome,
         telefone,
-        trial_signup: true
-      } as { nome?: string; telefone?: string });
+        trial_signup: true,
+      });
 
       if (error) {
         let errorMessage = "Ocorreu um erro ao criar sua conta.";
