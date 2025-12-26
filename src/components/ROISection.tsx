@@ -139,8 +139,7 @@ const ROISection = () => {
             
             <div className="mt-8 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
               <p className="text-sm text-emerald-300">
-                <strong>Retorno típico:</strong> Empresas aumentam taxa de vitória em <span className="text-white font-bold">até 67%</span> e 
-                reduzem perdas em <span className="text-white font-bold">80%</span>
+                <strong>Retorno típico:</strong> Faturamento aumenta em mais de <span className="text-white font-bold">R$ 200 mil</span>
               </p>
             </div>
           </div>
