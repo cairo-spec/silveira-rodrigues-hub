@@ -19,7 +19,7 @@ const Index = () => {
       <HowItWorksSection />
       <FeaturesShowcaseSection />
       <JourneySection />
-      <ROISection />
+      <ROISection showTrialButton={false} />
       <EducationalSection />
       <SolutionsSection />
       <AuthoritySection />
