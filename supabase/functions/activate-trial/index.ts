@@ -21,19 +21,29 @@ serve(async (req) => {
       throw new Error("Missing authorization header");
     }
 
-    // Create a client with the user's token to get their ID
-    const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
+    // In edge/runtime contexts, supabase-js does NOT reliably pick up the JWT from global headers.
+    // Always pass the JWT explicitly to auth.getUser(token).
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) {
+      throw new Error("Missing bearer token");
+    }
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    
+    const supabaseClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser(token);
+
     if (userError || !user) {
       throw new Error("User not found");
     }
