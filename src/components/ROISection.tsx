@@ -158,7 +158,7 @@ const ROISection = () => {
                 Quanto você pode ganhar?
               </h3>
               <p className="text-white/70">
-                Com base nos dados de nossos clientes, uma empresa que participa de 
+                Com base em levantamento, uma empresa que participa de 
                 10 licitações por ano pode ter resultados como:
               </p>
             </div>
