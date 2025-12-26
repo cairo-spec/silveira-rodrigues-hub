@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, metadata?: { nome?: string; telefone?: string }) => {
+  const signUp = async (email: string, password: string, metadata?: { nome?: string; telefone?: string; trial_signup?: boolean }) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
