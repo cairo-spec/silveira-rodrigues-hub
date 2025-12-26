@@ -189,8 +189,8 @@ const ROISection = () => {
             <div className="text-center lg:text-right">
               <p className="text-3xl font-bold text-amber-300 mb-2">ROI Exponencial</p>
               <p className="text-white/70 text-sm mb-4">
-                Cada vitória gera atestado de capacidade técnica, 
-                criando um efeito bola de neve que facilita novas conquistas
+                Cada vitória gera capacidade técnica, 
+                criando um efeito bola de neve
               </p>
               <Button 
                 size="lg"
