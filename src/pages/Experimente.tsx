@@ -11,6 +11,7 @@ import HowItWorksSection from '@/components/HowItWorksSection';
 import FeaturesShowcaseSection from '@/components/FeaturesShowcaseSection';
 import JourneySection from '@/components/JourneySection';
 import ROISection from '@/components/ROISection';
+import FloatingWhatsApp from '@/components/FloatingWhatsApp';
 import { 
   Shield, 
   Clock, 
@@ -462,6 +463,7 @@ const Experimente = () => {
           </a>
         </p>
       </div>
+      <FloatingWhatsApp />
     </div>
   );
 };
