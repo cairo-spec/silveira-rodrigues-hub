@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { href: "#jornal", label: "Jornal" },
+  { href: "#plataforma", label: "Plataforma" },
   { href: "#solucoes", label: "Soluções" },
   { href: "#quem-somos", label: "Quem Somos" },
 ];

@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 
 const FeaturesShowcaseSection = () => {
   return (
-    <section className="py-20 bg-background overflow-hidden">
+    <section id="plataforma" className="py-20 bg-background overflow-hidden">
       <div className="container-custom">
         {/* Header */}
         <div className="text-center mb-16">
