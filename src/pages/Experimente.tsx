@@ -35,26 +35,54 @@ const Experimente = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check if we need to activate trial after OAuth redirect
+  // Check if we need to activate trial after OAuth redirect OR if user has stale session
   useEffect(() => {
-    const activateTrialIfNeeded = async () => {
+    const handleUserSession = async () => {
+      if (!user) return;
+
       const pendingTrial = localStorage.getItem(TRIAL_SIGNUP_KEY);
-      
-      if (user && pendingTrial === 'true') {
+
+      // Check if user profile exists (handles deleted accounts with stale sessions)
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, trial_active, access_authorized")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // If profile doesn't exist, the account was deleted - sign out so they can create fresh
+      if (!profile || profileError) {
+        console.log("Profile not found for user, signing out stale session");
         localStorage.removeItem(TRIAL_SIGNUP_KEY);
-        
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // If this is a trial signup callback (from Google OAuth)
+      if (pendingTrial === "true") {
+        localStorage.removeItem(TRIAL_SIGNUP_KEY);
+
+        // Check if trial is already active
+        if (profile.trial_active && profile.access_authorized) {
+          toast({
+            title: "Trial já ativo! 🎉",
+            description: "Você já tem acesso ao período de teste.",
+          });
+          navigate("/membros");
+          return;
+        }
+
         try {
           const { data: { session } } = await supabase.auth.getSession();
-          
+
           if (session) {
-            const response = await supabase.functions.invoke('activate-trial', {
+            const response = await supabase.functions.invoke("activate-trial", {
               headers: {
-                Authorization: `Bearer ${session.access_token}`
-              }
+                Authorization: `Bearer ${session.access_token}`,
+              },
             });
-            
+
             if (response.error) {
-              console.error('Error activating trial:', response.error);
+              console.error("Error activating trial:", response.error);
             } else if (!response.data?.alreadyActive) {
               toast({
                 title: "Trial ativado! 🎉",
@@ -63,16 +91,17 @@ const Experimente = () => {
             }
           }
         } catch (error) {
-          console.error('Error activating trial:', error);
+          console.error("Error activating trial:", error);
         }
-        
-        navigate('/membros');
-      } else if (user) {
-        navigate('/membros');
+
+        navigate("/membros");
+      } else {
+        // User is logged in but not from trial signup - redirect to membros
+        navigate("/membros");
       }
     };
 
-    activateTrialIfNeeded();
+    handleUserSession();
   }, [user, navigate, toast]);
 
   const handleGoogleSignup = async () => {
