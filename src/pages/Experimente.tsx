@@ -141,10 +141,12 @@ const Experimente = () => {
               </div>
               
               <div className="space-y-4">
-                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight">
-                  <span className="text-primary">30 dias grátis</span>
+                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight animate-fade-in">
+                  <span className="bg-gradient-to-r from-primary via-emerald-500 to-primary bg-[length:200%_auto] animate-[gradient_3s_ease-in-out_infinite] bg-clip-text text-transparent">
+                    30 dias grátis
+                  </span>
                   <br />
-                  para testar
+                  <span className="text-foreground">para testar</span>
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-lg">
                   Experimente todos os recursos do Escritório de Partido sem compromisso. 
