@@ -83,7 +83,7 @@ const FeaturesShowcaseSection = () => {
                   </div>
                   <div className="col-span-3 flex items-center gap-1">
                     <Building2 className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground truncate">Pref. BH</span>
+                    <span className="text-xs text-muted-foreground truncate">PMMG</span>
                   </div>
                   <div className="col-span-2 flex items-center gap-1">
                     <Calendar className="h-3 w-3 text-muted-foreground" />
