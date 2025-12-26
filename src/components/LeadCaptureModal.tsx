@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import ContractModal from "./ContractModal";
 import PricingTableModal from "./PricingTableModal";
 
@@ -51,6 +52,7 @@ const FORMSPREE_ENDPOINT = "https://formspree.io/f/xpwrwqkz";
 const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
@@ -86,34 +88,67 @@ const LeadCaptureModal = ({ open, onOpenChange, checkoutUrl }: LeadCaptureModalP
       return;
     }
 
-    setIsSubmitting(true);
-    
+    // Validate checkout URL before redirecting
     try {
-      const response = await fetch(FORMSPREE_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          nome: data.nome,
-          email: data.email,
-          telefone: data.telefone,
-          lgpdConsent: data.lgpdConsent,
-          userId: user.id,
-          _subject: "Novo Lead - Jornal de Licitações",
-        }),
+      // eslint-disable-next-line no-new
+      new URL(checkoutUrl);
+    } catch {
+      toast({
+        title: "Link de pagamento inválido",
+        description: "Não foi possível abrir o checkout. Tente novamente em alguns instantes.",
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (response.ok) {
-        window.location.href = checkoutUrl;
+    setIsSubmitting(true);
+
+    // Não bloqueie o checkout por falha no envio do lead (adblock/CORS etc.)
+    try {
+      if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
+        const payload = new Blob([
+          JSON.stringify({
+            nome: data.nome,
+            email: data.email,
+            telefone: data.telefone,
+            lgpdConsent: data.lgpdConsent,
+            userId: user.id,
+            _subject: "Novo Lead - Jornal de Licitações",
+          }),
+        ], { type: "application/json" });
+
+        navigator.sendBeacon(FORMSPREE_ENDPOINT, payload);
       } else {
-        console.error("Form submission failed");
-        setIsSubmitting(false);
+        const response = await fetch(FORMSPREE_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            nome: data.nome,
+            email: data.email,
+            telefone: data.telefone,
+            lgpdConsent: data.lgpdConsent,
+            userId: user.id,
+            _subject: "Novo Lead - Jornal de Licitações",
+          }),
+        });
+
+        if (!response.ok) {
+          toast({
+            title: "Aviso",
+            description: "Não foi possível registrar o lead, mas vamos continuar para o pagamento.",
+          });
+        }
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      setIsSubmitting(false);
+    } catch {
+      toast({
+        title: "Aviso",
+        description: "Não foi possível registrar o lead, mas vamos continuar para o pagamento.",
+      });
+    } finally {
+      window.location.assign(checkoutUrl);
     }
   };
 
