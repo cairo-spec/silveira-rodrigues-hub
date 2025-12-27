@@ -1074,68 +1074,49 @@ const JornalAuditado = ({
                   )
                 )}
 
-                {/* Download documents */}
-                {selectedOpportunity.go_no_go === "Participando" ? (
+                {/* Download documents - always show petition if available */}
+                {selectedOpportunity.petition_path && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs sm:text-sm h-9"
+                    onClick={() => handleRequestPetition(selectedOpportunity)}
+                    disabled={isDownloadingPetition === selectedOpportunity.id}
+                  >
+                    {isDownloadingPetition === selectedOpportunity.id ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="h-3.5 w-3.5 mr-1.5" />
+                        Baixar Petição
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Download report if available */}
+                {selectedOpportunity.audit_report_path && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs sm:text-sm h-9"
+                    onClick={() => handleRequestReport(selectedOpportunity)}
+                    disabled={isDownloading === selectedOpportunity.id}
+                  >
+                    {isDownloading === selectedOpportunity.id ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="h-3.5 w-3.5 mr-1.5" />
+                        Baixar Relatório
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {/* Status-specific actions */}
+                {selectedOpportunity.go_no_go !== "Participando" && (
                   <>
-                    {/* For Participando: show both Petição and Relatório separately */}
-                    {selectedOpportunity.petition_path && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs sm:text-sm h-9"
-                        onClick={() => handleRequestPetition(selectedOpportunity)}
-                        disabled={isDownloadingPetition === selectedOpportunity.id}
-                      >
-                        {isDownloadingPetition === selectedOpportunity.id ? (
-                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        ) : (
-                          <>
-                            <Download className="h-3.5 w-3.5 mr-1.5" />
-                            Baixar Petição
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    {selectedOpportunity.audit_report_path && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs sm:text-sm h-9"
-                        onClick={() => handleRequestReport(selectedOpportunity)}
-                        disabled={isDownloading === selectedOpportunity.id}
-                      >
-                        {isDownloading === selectedOpportunity.id ? (
-                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        ) : (
-                          <>
-                            <Download className="h-3.5 w-3.5 mr-1.5" />
-                            Baixar Relatório
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  /* For other statuses: show only Relatório */
-                  <>
-                    {selectedOpportunity.audit_report_path && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs sm:text-sm h-9"
-                        onClick={() => handleRequestReport(selectedOpportunity)}
-                        disabled={isDownloading === selectedOpportunity.id}
-                      >
-                        {isDownloading === selectedOpportunity.id ? (
-                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        ) : (
-                          <>
-                            <Download className="h-3.5 w-3.5 mr-1.5" />
-                            Baixar Relatório
-                          </>
-                        )}
-                      </Button>
-                    )}
                     {/* Actions for Go - Participar or Rejeitar */}
                     {selectedOpportunity.go_no_go === "Go" && (
                       <div className="flex flex-col gap-1.5 sm:gap-2">
