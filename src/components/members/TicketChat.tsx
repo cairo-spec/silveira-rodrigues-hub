@@ -234,7 +234,7 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
     }
   };
 
-  const isTicketClosed = ticket.status === "closed" || ticket.status === "resolved";
+  const isTicketClosed = ticket.status === "resolved";
 
   return (
     <div className="space-y-4">
