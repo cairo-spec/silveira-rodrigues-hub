@@ -13,6 +13,7 @@ interface KBCategory {
   description: string | null;
   icon: string | null;
   is_premium: boolean | null;
+  image_url: string | null;
 }
 
 interface KBArticle {
@@ -222,13 +223,29 @@ const KnowledgeBase = ({ isSubscriber = false }: KnowledgeBaseProps) => {
                 className="hover:shadow-md transition-shadow hover:border-primary/30"
               >
                 <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-semibold">{article.title}</CardTitle>
-                    {category && (
-                      <Badge variant="secondary" className="shrink-0">
-                        {category.name}
-                      </Badge>
+                  <div className="flex items-start gap-3">
+                    {/* Category circular image */}
+                    {category?.image_url ? (
+                      <img 
+                        src={category.image_url} 
+                        alt={category.name} 
+                        className="w-12 h-12 rounded-full object-cover shrink-0 border-2 border-primary/20"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center shrink-0 border-2 border-primary/20">
+                        <BookOpen className="h-5 w-5 text-muted-foreground" />
+                      </div>
                     )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base font-semibold">{article.title}</CardTitle>
+                        {category && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {category.name}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
