@@ -164,7 +164,7 @@ const AdminDashboard = () => {
           </div>
 
           <TabsContent value="dashboard">
-            <AdminDashboardHome />
+            <AdminDashboardHome onNavigate={setActiveTab} />
           </TabsContent>
           <TabsContent value="tickets">
             <AdminTickets 

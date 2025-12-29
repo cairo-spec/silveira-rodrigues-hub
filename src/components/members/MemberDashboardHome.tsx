@@ -11,7 +11,11 @@ interface DashboardStats {
   notificacoesNaoLidas: number;
 }
 
-const MemberDashboardHome = () => {
+interface MemberDashboardHomeProps {
+  onNavigate: (tab: string) => void;
+}
+
+const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     ticketsAbertos: 0,
@@ -133,7 +137,10 @@ const MemberDashboardHome = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card 
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onNavigate("jornal")}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="p-3 rounded-full bg-primary/10">
                   <FileText className="h-6 w-6 text-primary" />
@@ -146,7 +153,10 @@ const MemberDashboardHome = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card 
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onNavigate("tickets")}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="p-3 rounded-full bg-primary/10">
                   <Ticket className="h-6 w-6 text-primary" />
@@ -159,7 +169,10 @@ const MemberDashboardHome = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card 
+              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onNavigate("suporte")}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="p-3 rounded-full bg-primary/10">
                   <MessageCircle className="h-6 w-6 text-primary" />

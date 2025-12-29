@@ -13,7 +13,11 @@ interface AdminStats {
   oportunidadesPublicadas: number;
 }
 
-const AdminDashboardHome = () => {
+interface AdminDashboardHomeProps {
+  onNavigate: (tab: string) => void;
+}
+
+const AdminDashboardHome = ({ onNavigate }: AdminDashboardHomeProps) => {
   const [stats, setStats] = useState<AdminStats>({
     ticketsNovos: 0,
     ticketsEmAndamento: 0,
@@ -175,7 +179,10 @@ const AdminDashboardHome = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+            <div 
+              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => onNavigate("tickets")}
+            >
               <Ticket className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Gerenciar Tickets</p>
@@ -184,7 +191,10 @@ const AdminDashboardHome = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+            <div 
+              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => onNavigate("chats")}
+            >
               <MessageCircle className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Chat de Suporte</p>
@@ -193,7 +203,10 @@ const AdminDashboardHome = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+            <div 
+              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => onNavigate("jornal")}
+            >
               <FileText className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Publicar Oportunidade</p>
