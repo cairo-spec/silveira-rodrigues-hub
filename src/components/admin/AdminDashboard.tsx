@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User, PenTool, Key } from "lucide-react";
+import { Ticket, BookOpen, MessageCircle, LogOut, Users, Settings, DollarSign, User, PenTool, Key, LayoutDashboard } from "lucide-react";
 import AdminTickets from "./AdminTickets";
 import AdminKnowledgeBase from "./AdminKnowledgeBase";
 import AdminChats from "./AdminChats";
@@ -15,10 +15,11 @@ import { AdminSearchCriteria } from "./AdminSearchCriteria";
 import SettingsPanel from "../members/SettingsPanel";
 import MemberProfile from "../members/MemberProfile";
 import NotificationBell from "../members/NotificationBell";
+import AdminDashboardHome from "./AdminDashboardHome";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("tickets");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [filterOpportunityId, setFilterOpportunityId] = useState<string | null>(null);
   const lastActivity = useRef(Date.now());
 
@@ -127,6 +128,10 @@ const AdminDashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-2 px-2">
             <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 sm:w-auto gap-1">
+              <TabsTrigger value="dashboard" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Dashboard</span>
+              </TabsTrigger>
               <TabsTrigger value="tickets" className="gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm">
                 <Ticket className="h-4 w-4" />
                 <span className="hidden xs:inline sm:inline">Tickets</span>
@@ -158,6 +163,9 @@ const AdminDashboard = () => {
             </TabsList>
           </div>
 
+          <TabsContent value="dashboard">
+            <AdminDashboardHome />
+          </TabsContent>
           <TabsContent value="tickets">
             <AdminTickets 
               filterOpportunityId={filterOpportunityId} 

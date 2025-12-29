@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Ticket, BookOpen, LogOut, User, Settings, Headphones, DollarSign, Lock, FileText } from "lucide-react";
+import { Ticket, BookOpen, LogOut, User, Settings, Headphones, DollarSign, Lock, FileText, LayoutDashboard } from "lucide-react";
 import TicketList from "./TicketList";
 import KnowledgeBase from "./KnowledgeBase";
 import LiveChat from "./LiveChat";
@@ -17,11 +17,12 @@ import NotificationBell from "./NotificationBell";
 import PricingTable from "./PricingTable";
 import JornalAuditado from "./JornalAuditado";
 import JornalSalesPage from "./JornalSalesPage";
+import MemberDashboardHome from "./MemberDashboardHome";
 
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("jornal");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [isPaidSubscriber, setIsPaidSubscriber] = useState(false);
   const [isFreeAuthorized, setIsFreeAuthorized] = useState(false);
@@ -273,7 +274,11 @@ const MemberDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full lg:w-auto lg:inline-grid ${isFreeUser ? 'grid-cols-6' : 'grid-cols-4'}`}>
+          <TabsList className={`grid w-full lg:w-auto lg:inline-grid ${isFreeUser ? 'grid-cols-7' : 'grid-cols-5'}`}>
+            <TabsTrigger value="dashboard" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
             <TabsTrigger value="jornal" className="gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Jornal</span>
@@ -309,6 +314,10 @@ const MemberDashboard = () => {
               </TabsTrigger>
             )}
           </TabsList>
+
+          <TabsContent value="dashboard" className="mt-6">
+            <MemberDashboardHome />
+          </TabsContent>
 
           <TabsContent value="jornal" className="mt-6">
             {isFreeUser ? (
