@@ -316,7 +316,7 @@ const MemberDashboard = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="mt-6">
-            <MemberDashboardHome />
+            <MemberDashboardHome onNavigate={setActiveTab} />
           </TabsContent>
 
           <TabsContent value="jornal" className="mt-6">
