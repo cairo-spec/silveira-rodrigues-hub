@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Ticket, FileText, MessageCircle, Trophy } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Ticket, FileText, MessageCircle, Trophy, AlertTriangle, Settings } from "lucide-react";
+import { SearchCriteriaModal } from "./SearchCriteriaModal";
 
 interface DashboardStats {
   ticketsAbertos: number;
@@ -26,6 +29,8 @@ const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
     derrotas: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [hasCriteria, setHasCriteria] = useState<boolean | null>(null);
+  const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -59,6 +64,20 @@ const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
         
         const vitorias = allOpportunities?.filter(o => o.go_no_go === "Vencida").length || 0;
         const derrotas = allOpportunities?.filter(o => o.go_no_go === "Perdida").length || 0;
+
+        // Check if user has search criteria
+        const { data: criteria } = await supabase
+          .from("user_search_criteria")
+          .select("id, keywords, states")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        // User has criteria if they have at least one keyword or state
+        const hasValidCriteria = criteria && (
+          (criteria.keywords && criteria.keywords.length > 0) || 
+          (criteria.states && criteria.states.length > 0)
+        );
+        setHasCriteria(!!hasValidCriteria);
 
         setStats({
           ticketsAbertos,
@@ -106,6 +125,47 @@ const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
 
   return (
     <div className="space-y-6">
+      {hasCriteria === false && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Critérios de busca não configurados</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <span>Configure seus critérios de busca para receber oportunidades personalizadas.</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-fit border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              onClick={() => setIsCriteriaModalOpen(true)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configurar Critérios
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <SearchCriteriaModal 
+        open={isCriteriaModalOpen} 
+        onOpenChange={(open) => {
+          setIsCriteriaModalOpen(open);
+          // Refresh criteria status when modal closes
+          if (!open && user) {
+            supabase
+              .from("user_search_criteria")
+              .select("id, keywords, states")
+              .eq("user_id", user.id)
+              .maybeSingle()
+              .then(({ data }) => {
+                const hasValidCriteria = data && (
+                  (data.keywords && data.keywords.length > 0) || 
+                  (data.states && data.states.length > 0)
+                );
+                setHasCriteria(!!hasValidCriteria);
+              });
+          }
+        }} 
+      />
+
       <div>
         <h2 className="text-2xl font-bold">Bem-vindo!</h2>
         <p className="text-muted-foreground">
