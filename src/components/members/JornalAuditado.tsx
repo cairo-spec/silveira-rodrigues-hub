@@ -569,7 +569,8 @@ const JornalAuditado = ({
     const { error } = await supabase
       .from("audited_opportunities")
       .update({ 
-        go_no_go: "Vencida" as GoNoGoStatus
+        go_no_go: "Vencida" as GoNoGoStatus,
+        petition_path: null
       })
       .eq("id", opportunity.id);
 
