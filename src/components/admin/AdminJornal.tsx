@@ -625,6 +625,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
                       <SelectItem value="Go">GO - Recomendado</SelectItem>
                       <SelectItem value="No_Go">NO GO - Não Recomendado</SelectItem>
                       <SelectItem value="Review_Required">Análise Necessária</SelectItem>
+                      <SelectItem value="Participando">PARTICIPANDO - Em Disputa</SelectItem>
                       <SelectItem value="Vencida">VENCIDA - Licitação Ganha</SelectItem>
                       <SelectItem value="Perdida">PERDIDA - Licitação Perdida</SelectItem>
                     </SelectContent>
