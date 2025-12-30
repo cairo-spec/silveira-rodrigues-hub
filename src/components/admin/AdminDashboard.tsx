@@ -21,6 +21,7 @@ const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filterOpportunityId, setFilterOpportunityId] = useState<string | null>(null);
+  const [editOpportunityId, setEditOpportunityId] = useState<string | null>(null);
   const lastActivity = useRef(Date.now());
 
   const handleSignOut = async () => {
@@ -36,6 +37,11 @@ const AdminDashboard = () => {
   const handleShowTicketsForOpportunity = (opportunityId: string) => {
     setFilterOpportunityId(opportunityId);
     setActiveTab("tickets");
+  };
+
+  const handleViewOpportunity = (opportunityId: string) => {
+    setEditOpportunityId(opportunityId);
+    setActiveTab("jornal");
   };
 
   // Activity tracking for session timeout
@@ -169,12 +175,17 @@ const AdminDashboard = () => {
           <TabsContent value="tickets">
             <AdminTickets 
               filterOpportunityId={filterOpportunityId} 
-              onClearFilter={() => setFilterOpportunityId(null)} 
+              onClearFilter={() => setFilterOpportunityId(null)}
+              onViewOpportunity={handleViewOpportunity}
             />
           </TabsContent>
           <TabsContent value="chats"><AdminChats onMentionClick={handleMentionClick} /></TabsContent>
           <TabsContent value="jornal">
-            <AdminJornal onShowTickets={handleShowTicketsForOpportunity} />
+            <AdminJornal 
+              onShowTickets={handleShowTicketsForOpportunity} 
+              editOpportunityId={editOpportunityId}
+              onClearEditOpportunity={() => setEditOpportunityId(null)}
+            />
           </TabsContent>
           <TabsContent value="knowledge"><AdminKnowledgeBase /></TabsContent>
           <TabsContent value="pricing"><AdminPricingTable /></TabsContent>
