@@ -526,6 +526,8 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
         return <Badge variant="outline" className="border-purple-600 text-purple-700 text-xs bg-purple-50">VENCIDA</Badge>;
       case "Confirmada":
         return <Badge variant="outline" className="border-emerald-600 text-emerald-700 text-xs bg-emerald-100">CONFIRMADA</Badge>;
+      case "Em_Execucao":
+        return <Badge variant="outline" className="border-cyan-600 text-cyan-700 text-xs bg-cyan-50">EM EXECUÇÃO</Badge>;
       case "Perdida":
         return <Badge variant="outline" className="border-orange-600 text-orange-700 text-xs bg-orange-50">PERDIDA</Badge>;
       default:
@@ -542,12 +544,12 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
   const getFilteredOpportunities = () => {
     switch (activeTab) {
       case "andamento":
-        return opportunities.filter(opp => opp.go_no_go === "Participando");
+        return opportunities.filter(opp => opp.go_no_go === "Participando" || opp.go_no_go === "Em_Execucao");
       case "concluidas":
         return opportunities.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida" || opp.go_no_go === "Confirmada");
       default: // noticias
         return opportunities.filter(opp => 
-          !["Participando", "Vencida", "Perdida", "Confirmada"].includes(opp.go_no_go)
+          !["Participando", "Vencida", "Perdida", "Confirmada", "Em_Execucao"].includes(opp.go_no_go)
         );
     }
   };
