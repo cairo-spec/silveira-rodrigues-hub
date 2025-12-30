@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Ticket, FileText, MessageCircle, Bell } from "lucide-react";
+import { Ticket, FileText, MessageCircle, Trophy } from "lucide-react";
 
 interface DashboardStats {
   ticketsAbertos: number;
   ticketsTotal: number;
   oportunidadesRecentes: number;
-  notificacoesNaoLidas: number;
+  vitorias: number;
+  derrotas: number;
 }
 
 interface MemberDashboardHomeProps {
@@ -21,7 +22,8 @@ const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
     ticketsAbertos: 0,
     ticketsTotal: 0,
     oportunidadesRecentes: 0,
-    notificacoesNaoLidas: 0,
+    vitorias: 0,
+    derrotas: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,14 +52,20 @@ const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
           .gte("created_at", sevenDaysAgo.toISOString());
         const oportunidadesRecentes = opportunities?.length || 0;
 
-        // Skip notifications count - it's shown in NotificationBell
-        const notificacoesNaoLidas = 0;
+        // Fetch victories and defeats
+        const { data: allOpportunities } = await supabase
+          .from("audited_opportunities")
+          .select("id, go_no_go");
+        
+        const vitorias = allOpportunities?.filter(o => o.go_no_go === "Vencida").length || 0;
+        const derrotas = allOpportunities?.filter(o => o.go_no_go === "Perdida").length || 0;
 
         setStats({
           ticketsAbertos,
           ticketsTotal,
           oportunidadesRecentes,
-          notificacoesNaoLidas,
+          vitorias,
+          derrotas,
         });
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
@@ -87,10 +95,10 @@ const MemberDashboardHome = ({ onNavigate }: MemberDashboardHomeProps) => {
       bgColor: "bg-green-500/10",
     },
     {
-      title: "Notificações",
-      value: stats.notificacoesNaoLidas,
-      description: "Não lidas",
-      icon: Bell,
+      title: "Vitórias/Derrotas",
+      value: `${stats.vitorias}/${stats.derrotas}`,
+      description: `${stats.vitorias} vitórias e ${stats.derrotas} derrotas`,
+      icon: Trophy,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
     },
