@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones, RefreshCw } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones, RefreshCw, Play } from "lucide-react";
 import { SearchCriteriaModal } from "./SearchCriteriaModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,7 +18,7 @@ import { notifyAdmins } from "@/lib/notifications";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida" | "Confirmada";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida" | "Confirmada" | "Em_Execucao";
 
 interface Opportunity {
   id: string;
@@ -63,7 +63,7 @@ const JornalAuditado = ({
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [isDownloadingPetition, setIsDownloadingPetition] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
+  const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas" | "execucao">("noticias");
   const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
   const [concludedRecursoByOpportunity, setConcludedRecursoByOpportunity] = useState<Set<string>>(new Set());
@@ -658,6 +658,37 @@ const JornalAuditado = ({
     setIsUpdating(null);
   };
 
+  const handleIniciarExecucao = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ go_no_go: "Em_Execucao" as GoNoGoStatus })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível iniciar execução", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Execução iniciada',
+        `Cliente iniciou EXECUÇÃO na oportunidade: "${opportunity.title}"`,
+        opportunity.id,
+        user?.id
+      );
+      
+      toast({ title: "Execução iniciada! 🚀" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
   const downloadReport = (opportunity: Opportunity) => {
     if (!opportunity.audit_report_path) {
       return;
@@ -741,6 +772,12 @@ const JornalAuditado = ({
             CONFIRMADA
           </Badge>
         );
+      case "Em_Execucao":
+        return (
+          <Badge variant="outline" className="border-indigo-600 text-indigo-700 text-xs bg-indigo-100">
+            EM EXECUÇÃO
+          </Badge>
+        );
       case "Perdida":
         return (
           <Badge variant="outline" className="border-orange-600 text-orange-700 text-xs bg-orange-50">
@@ -769,9 +806,11 @@ const JornalAuditado = ({
         return searchFiltered.filter(opp => opp.go_no_go === "Participando");
       case "concluidas":
         return searchFiltered.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida" || opp.go_no_go === "Confirmada");
+      case "execucao":
+        return searchFiltered.filter(opp => opp.go_no_go === "Em_Execucao");
       default: // noticias
         return searchFiltered.filter(opp => 
-          !["Participando", "Vencida", "Perdida", "Confirmada"].includes(opp.go_no_go)
+          !["Participando", "Vencida", "Perdida", "Confirmada", "Em_Execucao"].includes(opp.go_no_go)
         );
     }
   };
@@ -828,15 +867,18 @@ const JornalAuditado = ({
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="noticias">
-            Notícias ({searchFiltered.filter(o => !["Participando", "Vencida", "Perdida", "Confirmada"].includes(o.go_no_go)).length})
+            Notícias ({searchFiltered.filter(o => !["Participando", "Vencida", "Perdida", "Confirmada", "Em_Execucao"].includes(o.go_no_go)).length})
           </TabsTrigger>
           <TabsTrigger value="andamento">
             Em Andamento ({searchFiltered.filter(o => o.go_no_go === "Participando").length})
           </TabsTrigger>
           <TabsTrigger value="concluidas">
             Concluídas ({searchFiltered.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida" || o.go_no_go === "Confirmada").length})
+          </TabsTrigger>
+          <TabsTrigger value="execucao">
+            Execução ({searchFiltered.filter(o => o.go_no_go === "Em_Execucao").length})
           </TabsTrigger>
         </TabsList>
 
@@ -850,6 +892,7 @@ const JornalAuditado = ({
                   {activeTab === "noticias" && (searchTerm ? "Tente buscar com outros termos" : "Aguarde novas publicações")}
                   {activeTab === "andamento" && "Oportunidades com participação confirmada aparecerão aqui"}
                   {activeTab === "concluidas" && "Licitações vencidas ou perdidas aparecerão aqui"}
+                  {activeTab === "execucao" && "Licitações em execução aparecerão aqui"}
                 </p>
               </CardContent>
             </Card>
@@ -1645,8 +1688,8 @@ const JornalAuditado = ({
                   </div>
                 )}
 
-                {/* Action buttons for Vencida/Perdida/Confirmada (concluded) */}
-                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada") && (
+                {/* Action buttons for Vencida/Perdida/Confirmada/Em_Execucao (concluded) */}
+                {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada" || selectedOpportunity.go_no_go === "Em_Execucao") && (
                   <div className="flex flex-col gap-2">
                     {/* Disputa Revertida button - only for Perdida with concluded recurso ticket */}
                     {selectedOpportunity.go_no_go === "Perdida" && concludedRecursoByOpportunity.has(selectedOpportunity.id) && (
@@ -1715,7 +1758,7 @@ const JornalAuditado = ({
                       )
                     )}
                     
-                    {/* For Confirmada: show congratulations message and new ticket button */}
+                    {/* For Confirmada: show congratulations message, Iniciar Execução button, and new ticket button */}
                     {selectedOpportunity.go_no_go === "Confirmada" && (
                       <div className="space-y-3">
                         <div className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg p-4 text-center">
@@ -1723,13 +1766,52 @@ const JornalAuditado = ({
                           <p className="text-green-800 dark:text-green-200 font-semibold text-lg">Parabéns!</p>
                           <p className="text-green-700 dark:text-green-300 text-sm">Você venceu a licitação!</p>
                         </div>
+                        <Button
+                          onClick={() => handleIniciarExecucao(selectedOpportunity)}
+                          disabled={isUpdating === selectedOpportunity.id}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          {isUpdating === selectedOpportunity.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <>
+                              <Play className="h-4 w-4 mr-2" />
+                              Iniciar Execução
+                            </>
+                          )}
+                        </Button>
                         {onRequestParecer && (
                           <Button
                             onClick={() => {
                               onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
                               setSelectedOpportunity(null);
                             }}
-                            className="w-full bg-primary"
+                            variant="outline"
+                            className="w-full"
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Abrir Novo Ticket
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* For Em_Execucao: show execution status and ticket button */}
+                    {selectedOpportunity.go_no_go === "Em_Execucao" && (
+                      <div className="space-y-3">
+                        <div className="bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-700 rounded-lg p-4 text-center">
+                          <div className="text-3xl mb-2">🚀</div>
+                          <p className="text-indigo-800 dark:text-indigo-200 font-semibold text-lg">Em Execução</p>
+                          <p className="text-indigo-700 dark:text-indigo-300 text-sm">Contrato em andamento</p>
+                        </div>
+                        {onRequestParecer && (
+                          <Button
+                            onClick={() => {
+                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
+                              setSelectedOpportunity(null);
+                            }}
+                            variant="outline"
+                            className="w-full"
                           >
                             <ClipboardList className="h-4 w-4 mr-2" />
                             Abrir Novo Ticket
