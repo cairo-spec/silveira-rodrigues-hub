@@ -385,6 +385,36 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
+        // If petition_path was added, auto-resolve associated recurso/impugnacao tickets
+        if (formData.petition_path && !editingOpportunity.petition_path) {
+          const { data: relatedTickets } = await supabase
+            .from("tickets")
+            .select("id, service_category, user_id")
+            .eq("opportunity_id", editingOpportunity.id)
+            .in("service_category", ["recurso-administrativo", "impugnacao"])
+            .neq("status", "resolved");
+          
+          if (relatedTickets && relatedTickets.length > 0) {
+            for (const ticket of relatedTickets) {
+              await supabase
+                .from("tickets")
+                .update({ status: "resolved" })
+                .eq("id", ticket.id);
+              
+              // Record event for the ticket
+              await supabase
+                .from("ticket_events")
+                .insert({
+                  ticket_id: ticket.id,
+                  user_id: ticket.user_id,
+                  event_type: "status_change",
+                  old_value: "in_progress",
+                  new_value: "resolved"
+                });
+            }
+          }
+        }
+        
         // Notify users if report link was added to a Solicitada opportunity
         if (editingOpportunity.go_no_go === "Solicitada" && 
             formData.audit_report_path && 
