@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
 import { useToast } from "@/hooks/use-toast";
 import { notifyAdmins } from "@/lib/notifications";
+import { playParecerSound } from "@/lib/parecer-sounds";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
@@ -75,6 +76,9 @@ const JornalAuditado = ({
   const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useState<Set<string>>(new Set());
   const [winningBidInput, setWinningBidInput] = useState<string>("");
   const [criteriaChecked, setCriteriaChecked] = useState(false);
+  
+  // Track previous go_no_go status for each opportunity to detect changes
+  const previousStatusRef = useRef<Map<string, GoNoGoStatus>>(new Map());
 
   // Check if user has search criteria on mount
   useEffect(() => {
@@ -305,7 +309,27 @@ const JornalAuditado = ({
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'audited_opportunities'
+        },
+        (payload) => {
+          // Check if go_no_go status changed and play appropriate sound
+          const newData = payload.new as Opportunity;
+          const oldStatus = previousStatusRef.current.get(newData.id);
+          
+          if (oldStatus && oldStatus !== newData.go_no_go) {
+            // Status changed - play the sound for the new status
+            playParecerSound(newData.go_no_go);
+          }
+          
+          fetchOpportunities();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
           schema: 'public',
           table: 'audited_opportunities'
         },
@@ -366,10 +390,16 @@ const JornalAuditado = ({
       .order("closing_date", { ascending: true });
 
     if (data) {
-      setOpportunities(data as Opportunity[]);
+      const typedData = data as Opportunity[];
+      setOpportunities(typedData);
+      
+      // Update the status tracking ref for sound notifications
+      typedData.forEach(opp => {
+        previousStatusRef.current.set(opp.id, opp.go_no_go);
+      });
       
       // Fetch active tickets for all opportunities
-      const allOpportunityIds = (data as Opportunity[]).map(o => o.id);
+      const allOpportunityIds = typedData.map(o => o.id);
       fetchActiveTickets(allOpportunityIds);
       fetchConcludedRecursoTickets(allOpportunityIds);
       fetchConcludedContrarrazoesTickets(allOpportunityIds);
