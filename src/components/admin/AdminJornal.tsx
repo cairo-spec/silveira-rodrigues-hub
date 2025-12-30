@@ -672,18 +672,30 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
                 </p>
               </div>
 
-              {(formData.go_no_go === "Vencida" || formData.go_no_go === "Confirmada") && (
+              {(formData.go_no_go === "Vencida" || formData.go_no_go === "Confirmada" || formData.go_no_go === "Perdida") && (
                 <div className="grid gap-2">
-                  <Label htmlFor="winning_bid_value">Valor do Lance Vencedor</Label>
+                  <Label 
+                    htmlFor="winning_bid_value"
+                    className={formData.go_no_go === "Perdida" ? "text-red-600" : "text-green-600"}
+                  >
+                    {formData.go_no_go === "Perdida" ? "Valor do Lance Perdedor" : "Valor do Lance Vencedor"}
+                  </Label>
                   <Input
                     id="winning_bid_value"
                     type="text"
                     value={formData.winning_bid_value}
                     onChange={(e) => setFormData({ ...formData, winning_bid_value: e.target.value })}
                     placeholder="R$ 0,00"
+                    className={formData.go_no_go === "Perdida" 
+                      ? "border-red-300 focus-visible:ring-red-500" 
+                      : "border-green-300 focus-visible:ring-green-500"
+                    }
                   />
                   <p className="text-xs text-muted-foreground">
-                    Valor do lance que venceu a licitação
+                    {formData.go_no_go === "Perdida" 
+                      ? "Valor do lance que perdeu a licitação" 
+                      : "Valor do lance que venceu a licitação"
+                    }
                   </p>
                 </div>
               )}
