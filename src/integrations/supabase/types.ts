@@ -32,6 +32,7 @@ export type Database = {
           report_requested_at: string | null
           title: string
           updated_at: string
+          winning_bid_value: number | null
         }
         Insert: {
           agency_name: string
@@ -50,6 +51,7 @@ export type Database = {
           report_requested_at?: string | null
           title: string
           updated_at?: string
+          winning_bid_value?: number | null
         }
         Update: {
           agency_name?: string
@@ -68,6 +70,7 @@ export type Database = {
           report_requested_at?: string | null
           title?: string
           updated_at?: string
+          winning_bid_value?: number | null
         }
         Relationships: [
           {

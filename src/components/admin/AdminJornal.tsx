@@ -34,6 +34,7 @@ type FormData = {
   audit_report_path: string;
   petition_path: string;
   estimated_value: string;
+  winning_bid_value: string;
   is_published: boolean;
 };
 
@@ -119,6 +120,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
     audit_report_path: "",
     petition_path: "",
     estimated_value: "",
+    winning_bid_value: "",
     is_published: false,
   };
 
@@ -140,6 +142,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
       formData.audit_report_path !== originalFormData.audit_report_path ||
       formData.petition_path !== originalFormData.petition_path ||
       formData.estimated_value !== originalFormData.estimated_value ||
+      formData.winning_bid_value !== originalFormData.winning_bid_value ||
       formData.is_published !== originalFormData.is_published
     );
   }, [formData, originalFormData]);
@@ -275,6 +278,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
       audit_report_path: opportunity.audit_report_path || "",
       petition_path: opportunity.petition_path || "",
       estimated_value: (opportunity as any).estimated_value != null ? formatCurrencyValue((opportunity as any).estimated_value) : "",
+      winning_bid_value: (opportunity as any).winning_bid_value != null ? formatCurrencyValue((opportunity as any).winning_bid_value) : "",
       is_published: opportunity.is_published,
     };
     setFormData(editFormData);
@@ -329,6 +333,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
 
     // Parse estimated value
     const estimatedValue = parseCurrencyValue(formData.estimated_value);
+    const winningBidValue = parseCurrencyValue(formData.winning_bid_value);
 
     // Automatically change status from Solicitada to Review_Required when report is attached
     let finalStatus = formData.go_no_go;
@@ -352,6 +357,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
       audit_report_path: formData.audit_report_path || null,
       petition_path: formData.petition_path || null,
       estimated_value: estimatedValue,
+      winning_bid_value: winningBidValue,
       is_published: formData.is_published,
     };
 
@@ -665,6 +671,22 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
                   Digite o valor estimado da licitação (até R$ 10 bilhões)
                 </p>
               </div>
+
+              {(formData.go_no_go === "Vencida" || formData.go_no_go === "Confirmada") && (
+                <div className="grid gap-2">
+                  <Label htmlFor="winning_bid_value">Valor do Lance Vencedor</Label>
+                  <Input
+                    id="winning_bid_value"
+                    type="text"
+                    value={formData.winning_bid_value}
+                    onChange={(e) => setFormData({ ...formData, winning_bid_value: e.target.value })}
+                    placeholder="R$ 0,00"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Valor do lance que venceu a licitação
+                  </p>
+                </div>
+              )}
 
               <div className="grid gap-2">
                 <Label htmlFor="url">URL do Edital</Label>
