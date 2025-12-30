@@ -385,35 +385,34 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
-        // If petition_path was added, auto-resolve associated recurso/impugnacao tickets
+        // If petition_path was added, auto-close associated recurso/impugnacao tickets
+        // (these service_category values may include suffixes like "+upgrade")
         if (formData.petition_path && !editingOpportunity.petition_path) {
           const { data: relatedTickets } = await supabase
             .from("tickets")
-            .select("id, service_category, user_id")
+            .select("id, user_id, status, service_category")
             .eq("opportunity_id", editingOpportunity.id)
-            .in("service_category", ["recurso-administrativo", "impugnacao"])
-            .neq("status", "resolved");
-          
+            .or(
+              "service_category.ilike.recurso-administrativo%,service_category.ilike.impugnacao%"
+            )
+            .neq("status", "closed");
+
           if (relatedTickets && relatedTickets.length > 0) {
             for (const ticket of relatedTickets) {
-              await supabase
-                .from("tickets")
-                .update({ status: "resolved" })
-                .eq("id", ticket.id);
-              
+              await supabase.from("tickets").update({ status: "closed" }).eq("id", ticket.id);
+
               // Record event for the ticket
-              await supabase
-                .from("ticket_events")
-                .insert({
-                  ticket_id: ticket.id,
-                  user_id: ticket.user_id,
-                  event_type: "status_change",
-                  old_value: "in_progress",
-                  new_value: "resolved"
-                });
+              await supabase.from("ticket_events").insert({
+                ticket_id: ticket.id,
+                user_id: ticket.user_id,
+                event_type: "status_change",
+                old_value: ticket.status,
+                new_value: "closed",
+              });
             }
           }
         }
+
         
         // Notify users if report link was added to a Solicitada opportunity
         if (editingOpportunity.go_no_go === "Solicitada" && 
