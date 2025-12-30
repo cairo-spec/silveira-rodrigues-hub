@@ -32,6 +32,7 @@ interface Opportunity {
   petition_path: string | null;
   portal_url: string | null;
   estimated_value: number | null;
+  winning_bid_value: number | null;
   is_published: boolean;
   created_at: string;
   report_requested_at: string | null;
@@ -71,6 +72,25 @@ const JornalAuditado = ({
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
   const [adjudicatedOpportunities, setAdjudicatedOpportunities] = useState<Set<string>>(new Set());
+  const [winningBidInput, setWinningBidInput] = useState<string>("");
+
+  // Format currency for display
+  const formatCurrencyValue = (value: string): string => {
+    const numbers = value.replace(/\D/g, '');
+    if (!numbers) return '';
+    const numericValue = parseInt(numbers, 10) / 100;
+    return numericValue.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  };
+
+  // Parse currency string to number
+  const parseCurrencyValue = (value: string): number | null => {
+    const numbers = value.replace(/\D/g, '');
+    if (!numbers) return null;
+    return parseInt(numbers, 10) / 100;
+  };
 
   // Fetch active tickets count for opportunities
   const fetchActiveTickets = async (opportunityIds: string[]) => {
@@ -266,6 +286,7 @@ const JornalAuditado = ({
   // Notify parent when opportunity is closed
   const handleCloseOpportunity = () => {
     setSelectedOpportunity(null);
+    setWinningBidInput("");
     onOpportunityClose?.();
   };
 
@@ -419,7 +440,7 @@ const JornalAuditado = ({
     setIsUpdating(null);
   };
 
-  const handleVitoria = async (opportunity: Opportunity) => {
+  const handleVitoria = async (opportunity: Opportunity, bidValue?: number | null) => {
     if (!isSubscriber) {
       setShowLeadModal(true);
       return;
@@ -433,7 +454,8 @@ const JornalAuditado = ({
     const { error } = await supabase
       .from("audited_opportunities")
       .update({ 
-        go_no_go: "Vencida" as GoNoGoStatus
+        go_no_go: "Vencida" as GoNoGoStatus,
+        winning_bid_value: bidValue ?? null
       })
       .eq("id", opportunity.id);
 
@@ -443,19 +465,20 @@ const JornalAuditado = ({
       notifyAdmins(
         'ticket_status',
         'Vitória registrada!',
-        `Cliente registrou VITÓRIA na oportunidade: "${opportunity.title}"`,
+        `Cliente registrou VITÓRIA na oportunidade: "${opportunity.title}"${bidValue ? ` - Lance: R$ ${bidValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`,
         opportunity.id,
         user?.id
       );
       
       toast({ title: "Vitória registrada! 🎉" });
+      setWinningBidInput("");
       fetchOpportunities();
       setSelectedOpportunity(null);
     }
     setIsUpdating(null);
   };
 
-  const handleDerrota = async (opportunity: Opportunity) => {
+  const handleDerrota = async (opportunity: Opportunity, bidValue?: number | null) => {
     if (!isSubscriber) {
       setShowLeadModal(true);
       return;
@@ -469,7 +492,8 @@ const JornalAuditado = ({
     const { error } = await supabase
       .from("audited_opportunities")
       .update({ 
-        go_no_go: "Perdida" as GoNoGoStatus
+        go_no_go: "Perdida" as GoNoGoStatus,
+        winning_bid_value: bidValue ?? null
       })
       .eq("id", opportunity.id);
 
@@ -479,12 +503,13 @@ const JornalAuditado = ({
       notifyAdmins(
         'ticket_status',
         'Derrota registrada',
-        `Cliente registrou DERROTA na oportunidade: "${opportunity.title}"`,
+        `Cliente registrou DERROTA na oportunidade: "${opportunity.title}"${bidValue ? ` - Lance: R$ ${bidValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`,
         opportunity.id,
         user?.id
       );
       
       toast({ title: "Derrota registrada" });
+      setWinningBidInput("");
       fetchOpportunities();
       setSelectedOpportunity(null);
     }
@@ -1023,14 +1048,27 @@ const JornalAuditado = ({
                 </div>
               )}
 
-              {/* Valor Estimado */}
-              {selectedOpportunity.estimated_value && (
-                <div className="text-xs sm:text-sm">
-                  <p className="text-muted-foreground">Valor Estimado</p>
-                  <p className="font-medium text-base sm:text-lg text-gold">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOpportunity.estimated_value)}
-                  </p>
-                </div>
+              {/* Valor Estimado ou Valor do Lance (para concluídas) */}
+              {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada") ? (
+                selectedOpportunity.winning_bid_value && (
+                  <div className="text-xs sm:text-sm">
+                    <p className="text-muted-foreground">
+                      {selectedOpportunity.go_no_go === "Perdida" ? "Valor do Lance Perdedor" : "Valor do Lance Vencedor"}
+                    </p>
+                    <p className={`font-medium text-base sm:text-lg ${selectedOpportunity.go_no_go === "Perdida" ? "text-red-600" : "text-green-600"}`}>
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOpportunity.winning_bid_value)}
+                    </p>
+                  </div>
+                )
+              ) : (
+                selectedOpportunity.estimated_value && (
+                  <div className="text-xs sm:text-sm">
+                    <p className="text-muted-foreground">Valor Estimado</p>
+                    <p className="font-medium text-base sm:text-lg text-gold">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOpportunity.estimated_value)}
+                    </p>
+                  </div>
+                )
               )}
 
               {selectedOpportunity.opportunity_abstract && (
@@ -1477,34 +1515,49 @@ const JornalAuditado = ({
                 {selectedOpportunity.go_no_go === "Participando" && (
                   <div className="flex flex-col gap-1.5 sm:gap-2">
                     {isAfterClosingDate(selectedOpportunity) ? (
-                      <div className="flex gap-1.5 sm:gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleVitoria(selectedOpportunity)}
-                          disabled={isUpdating === selectedOpportunity.id}
-                          className="flex-1 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700 text-xs sm:text-sm h-9"
-                        >
-                          {isUpdating === selectedOpportunity.id ? (
-                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                          ) : (
-                            <>
-                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                              Vitória
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDerrota(selectedOpportunity)}
-                          disabled={isUpdating === selectedOpportunity.id}
-                          className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-xs sm:text-sm h-9"
-                        >
-                          <X className="h-3.5 w-3.5 mr-1" />
-                          Derrota
-                        </Button>
-                      </div>
+                      <>
+                        {/* Input para valor do lance */}
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">
+                            Valor do Lance (opcional)
+                          </label>
+                          <Input
+                            type="text"
+                            value={winningBidInput}
+                            onChange={(e) => setWinningBidInput(formatCurrencyValue(e.target.value))}
+                            placeholder="R$ 0,00"
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="flex gap-1.5 sm:gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVitoria(selectedOpportunity, parseCurrencyValue(winningBidInput))}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="flex-1 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 text-xs sm:text-sm h-9"
+                          >
+                            {isUpdating === selectedOpportunity.id ? (
+                              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                                Vitória
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDerrota(selectedOpportunity, parseCurrencyValue(winningBidInput))}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="flex-1 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 text-xs sm:text-sm h-9"
+                          >
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            Derrota
+                          </Button>
+                        </div>
+                      </>
                     ) : (
                       <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5">
                         Resultado disponível após data limite.
