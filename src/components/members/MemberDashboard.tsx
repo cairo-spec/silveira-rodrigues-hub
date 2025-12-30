@@ -22,7 +22,7 @@ import MemberDashboardHome from "./MemberDashboardHome";
 const MemberDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("jornal");
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [isPaidSubscriber, setIsPaidSubscriber] = useState(false);
   const [isFreeAuthorized, setIsFreeAuthorized] = useState(false);
@@ -275,13 +275,13 @@ const MemberDashboard = () => {
       <main className="container-custom py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={`grid w-full lg:w-auto lg:inline-grid ${isFreeUser ? 'grid-cols-7' : 'grid-cols-5'}`}>
-            <TabsTrigger value="dashboard" className="gap-2">
-              <LayoutDashboard className="h-4 w-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
             <TabsTrigger value="jornal" className="gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Jornal</span>
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
             </TabsTrigger>
             {/* Tickets tab only for free users */}
             {isFreeUser && (
@@ -315,10 +315,6 @@ const MemberDashboard = () => {
             )}
           </TabsList>
 
-          <TabsContent value="dashboard" className="mt-6">
-            <MemberDashboardHome onNavigate={setActiveTab} />
-          </TabsContent>
-
           <TabsContent value="jornal" className="mt-6">
             {isFreeUser ? (
               <JornalSalesPage />
@@ -345,6 +341,10 @@ const MemberDashboard = () => {
                 onShowTickets={handleShowTickets}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="dashboard" className="mt-6">
+            <MemberDashboardHome onNavigate={setActiveTab} />
           </TabsContent>
 
           {/* Tickets tab only for free users */}
