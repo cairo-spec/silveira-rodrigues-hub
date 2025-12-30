@@ -668,7 +668,10 @@ const JornalAuditado = ({
     
     const { error } = await supabase
       .from("audited_opportunities")
-      .update({ go_no_go: "Em_Execucao" as GoNoGoStatus })
+      .update({ 
+        go_no_go: "Em_Execucao" as GoNoGoStatus,
+        audit_report_path: null // Clear report so user must request a new one
+      })
       .eq("id", opportunity.id);
 
     if (error) {
