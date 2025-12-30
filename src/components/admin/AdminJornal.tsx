@@ -274,7 +274,7 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
       go_no_go: opportunity.go_no_go,
       audit_report_path: opportunity.audit_report_path || "",
       petition_path: opportunity.petition_path || "",
-      estimated_value: (opportunity as any).estimated_value?.toString() || "",
+      estimated_value: (opportunity as any).estimated_value != null ? formatCurrencyValue((opportunity as any).estimated_value) : "",
       is_published: opportunity.is_published,
     };
     setFormData(editFormData);
