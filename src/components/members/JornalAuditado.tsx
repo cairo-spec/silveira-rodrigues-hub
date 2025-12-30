@@ -503,9 +503,20 @@ const JornalAuditado = ({
     }
 
     setIsUpdating(opportunity.id);
+    
+    // If opportunity already has audit report, set report_requested_at so canRequestParecer works
+    const updateData: Record<string, unknown> = { 
+      go_no_go: "Review_Required" as GoNoGoStatus 
+    };
+    
+    // If there's already an audit report, mark report as requested so the flow shows "Participar"
+    if (opportunity.audit_report_path) {
+      updateData.report_requested_at = opportunity.report_requested_at || new Date().toISOString();
+    }
+    
     const { error } = await supabase
       .from("audited_opportunities")
-      .update({ go_no_go: "Review_Required" as GoNoGoStatus })
+      .update(updateData)
       .eq("id", opportunity.id);
 
     if (error) {
