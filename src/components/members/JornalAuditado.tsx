@@ -442,6 +442,36 @@ const JornalAuditado = ({
     setIsUpdating(null);
   };
 
+  const handleTenhoInteresse = async (opportunity: Opportunity) => {
+    if (!isSubscriber) {
+      setShowLeadModal(true);
+      return;
+    }
+
+    setIsUpdating(opportunity.id);
+    const { error } = await supabase
+      .from("audited_opportunities")
+      .update({ go_no_go: "Review_Required" as GoNoGoStatus })
+      .eq("id", opportunity.id);
+
+    if (error) {
+      toast({ title: "Erro", description: "Não foi possível reativar a oportunidade", variant: "destructive" });
+    } else {
+      notifyAdmins(
+        'ticket_status',
+        'Interesse reativado',
+        `Cliente demonstrou interesse novamente em: "${opportunity.title}"`,
+        opportunity.id,
+        user?.id
+      );
+      
+      toast({ title: "Oportunidade reativada para análise" });
+      fetchOpportunities();
+      setSelectedOpportunity(null);
+    }
+    setIsUpdating(null);
+  };
+
   const handleSolicitarParecer = (opportunity: Opportunity) => {
     if (onRequestParecer) {
       onRequestParecer(opportunity.id, opportunity.title);
@@ -1569,6 +1599,21 @@ const JornalAuditado = ({
                     <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5 sm:py-2">
                       Oportunidade rejeitada.
                     </p>
+                    <Button
+                      size="sm"
+                      onClick={() => handleTenhoInteresse(selectedOpportunity)}
+                      disabled={isUpdating === selectedOpportunity.id}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-xs sm:text-sm h-9"
+                    >
+                      {isUpdating === selectedOpportunity.id ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                          Tenho Interesse
+                        </>
+                      )}
+                    </Button>
                     {onRequestParecer && (
                       <Button
                         onClick={() => {
