@@ -197,14 +197,14 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
         });
         return;
       }
-      
-      // If it's any impugnacao ticket being resolved, reset opportunity to Review_Required
-      if (baseCategory.startsWith('impugnacao')) {
-        await supabase
-          .from('audited_opportunities')
-          .update({ go_no_go: 'Review_Required' })
-          .eq('id', ticket.opportunity_id);
-      }
+    }
+    
+    // If it's any impugnacao ticket being resolved, reset opportunity to Review_Required
+    if (newStatus === 'resolved' && ticket?.opportunity_id && baseCategory.startsWith('impugnacao')) {
+      await supabase
+        .from('audited_opportunities')
+        .update({ go_no_go: 'Review_Required' })
+        .eq('id', ticket.opportunity_id);
     }
     
     // Check if this is a parecer-go-no-go ticket being resolved
