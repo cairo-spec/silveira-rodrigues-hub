@@ -1,0 +1,33 @@
+-- Ensure opportunity returns to 'Review_Required' whenever an impugnacao ticket is concluded
+
+CREATE OR REPLACE FUNCTION public.handle_impugnacao_ticket_resolved()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  base_category text;
+BEGIN
+  -- Only act when status transitions to resolved
+  IF TG_OP = 'UPDATE' AND NEW.status = 'resolved' AND (OLD.status IS DISTINCT FROM NEW.status) THEN
+    base_category := replace(coalesce(NEW.service_category, ''), '+upgrade', '');
+
+    IF NEW.opportunity_id IS NOT NULL AND base_category ILIKE 'impugnacao%' THEN
+      UPDATE public.audited_opportunities
+      SET go_no_go = 'Review_Required',
+          updated_at = now()
+      WHERE id = NEW.opportunity_id;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_impugnacao_ticket_resolved ON public.tickets;
+
+CREATE TRIGGER trg_impugnacao_ticket_resolved
+AFTER UPDATE OF status ON public.tickets
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_impugnacao_ticket_resolved();
