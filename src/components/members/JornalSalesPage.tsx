@@ -49,9 +49,14 @@ const JornalSalesPage = () => {
           Nossas oportunidades auditadas mitigam esse risco.
         </p>
         
-        <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-400 font-medium">
-          <AlertTriangle className="h-4 w-4" />
-          <span>Apenas 15 empresas são aceitas por mês</span>
+        <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium">
+          <Clock className="h-4 w-4" />
+          <span>
+            Ainda não é assinante?{" "}
+            <a href="/experimente" className="underline hover:text-primary/80 transition-colors">
+              Teste grátis por 30 dias
+            </a>
+          </span>
         </div>
       </div>
 
