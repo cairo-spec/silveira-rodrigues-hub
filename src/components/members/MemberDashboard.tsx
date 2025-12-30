@@ -76,6 +76,11 @@ const MemberDashboard = () => {
     setOpenTicketModal(false);
   };
 
+  const handleViewOpportunityFromTicket = (opportunityId: string) => {
+    setShowTicketsInJornal(false);
+    setSelectedOpportunityId(opportunityId);
+  };
+
   useEffect(() => {
     const checkSubscription = async () => {
       if (!user) return;
@@ -330,6 +335,7 @@ const MemberDashboard = () => {
                   openCreateModal={openTicketModal}
                   onCreateModalChange={handleTicketModalChange}
                   opportunityId={ticketOpportunityId}
+                  onViewOpportunity={handleViewOpportunityFromTicket}
                 />
               </div>
             ) : (

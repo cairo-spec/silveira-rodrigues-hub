@@ -44,6 +44,7 @@ interface TicketListProps {
   openCreateModal?: boolean;
   onCreateModalChange?: (open: boolean) => void;
   opportunityId?: string; // Filter tickets by opportunity, or show all if undefined
+  onViewOpportunity?: (opportunityId: string) => void;
 }
 
 // Brazilian holidays calculation
@@ -127,7 +128,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   closed: { label: "Fechado", color: "bg-gray-500", icon: <CheckCircle className="h-3 w-3" /> }
 };
 
-const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreateModal, onCreateModalChange, opportunityId }: TicketListProps) => {
+const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreateModal, onCreateModalChange, opportunityId, onViewOpportunity }: TicketListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -381,7 +382,8 @@ const TicketList = ({ isPaidSubscriber, defaultCategory, defaultTitle, openCreat
     return (
       <TicketChat 
         ticket={selectedTicket} 
-        onBack={() => setSelectedTicket(null)} 
+        onBack={() => setSelectedTicket(null)}
+        onViewOpportunity={onViewOpportunity}
       />
     );
   }
