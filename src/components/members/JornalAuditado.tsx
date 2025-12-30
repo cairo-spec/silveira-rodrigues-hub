@@ -72,6 +72,7 @@ const JornalAuditado = ({
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
   const [adjudicatedOpportunities, setAdjudicatedOpportunities] = useState<Set<string>>(new Set());
+  const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useState<Set<string>>(new Set());
   const [winningBidInput, setWinningBidInput] = useState<string>("");
   const [criteriaChecked, setCriteriaChecked] = useState(false);
 
@@ -273,6 +274,28 @@ const JornalAuditado = ({
     setConcludedImpugnacaoByOpportunity(impugnacaoSet);
   };
 
+  // Fetch any recurso-administrativo tickets (any status) for opportunities
+  // This is used to show "Disputa Revertida" only after recurso was requested
+  const fetchRecursoTickets = async (opportunityIds: string[]) => {
+    if (opportunityIds.length === 0) return;
+
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("opportunity_id, service_category")
+      .in("opportunity_id", opportunityIds);
+
+    const recursoSet = new Set<string>();
+    tickets?.forEach((ticket) => {
+      if (ticket.opportunity_id && ticket.service_category) {
+        const baseCategory = ticket.service_category.replace('+upgrade', '');
+        if (baseCategory === 'recurso-administrativo') {
+          recursoSet.add(ticket.opportunity_id);
+        }
+      }
+    });
+    setHasRecursoTicketByOpportunity(recursoSet);
+  };
+
   useEffect(() => {
     fetchOpportunities();
 
@@ -353,6 +376,7 @@ const JornalAuditado = ({
       fetchConcludedImpugnacaoTickets(allOpportunityIds);
       fetchActiveParecerTickets(allOpportunityIds);
       fetchActiveImpugnacaoTickets(allOpportunityIds);
+      fetchRecursoTickets(allOpportunityIds);
       
       // Update selected opportunity if it exists (for realtime updates)
       if (selectedOpportunity) {
@@ -1739,8 +1763,8 @@ const JornalAuditado = ({
                 {/* Action buttons for Vencida/Perdida/Confirmada/Em_Execucao (concluded) */}
                 {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada" || selectedOpportunity.go_no_go === "Em_Execucao") && (
                   <div className="flex flex-col gap-2">
-                    {/* Disputa Revertida button - only for Perdida with concluded recurso ticket */}
-                    {selectedOpportunity.go_no_go === "Perdida" && concludedRecursoByOpportunity.has(selectedOpportunity.id) && (
+                    {/* Disputa Revertida button - only for Perdida after recurso ticket was requested */}
+                    {selectedOpportunity.go_no_go === "Perdida" && hasRecursoTicketByOpportunity.has(selectedOpportunity.id) && (
                       <Button
                         onClick={() => handleDisputaRevertida(selectedOpportunity)}
                         disabled={isUpdating === selectedOpportunity.id}
