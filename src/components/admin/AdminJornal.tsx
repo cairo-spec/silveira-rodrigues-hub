@@ -385,7 +385,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
-        // If petition_path was added, auto-close associated recurso/impugnacao tickets
+        // If petition_path was added, auto-conclude associated recurso/impugnacao tickets
         // (these service_category values may include suffixes like "+upgrade")
         if (formData.petition_path && !editingOpportunity.petition_path) {
           const { data: relatedTickets } = await supabase
@@ -395,11 +395,11 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
             .or(
               "service_category.ilike.recurso-administrativo%,service_category.ilike.impugnacao%"
             )
-            .neq("status", "closed");
+            .neq("status", "resolved");
 
           if (relatedTickets && relatedTickets.length > 0) {
             for (const ticket of relatedTickets) {
-              await supabase.from("tickets").update({ status: "closed" }).eq("id", ticket.id);
+              await supabase.from("tickets").update({ status: "resolved" }).eq("id", ticket.id);
 
               // Record event for the ticket
               await supabase.from("ticket_events").insert({
@@ -407,7 +407,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                 user_id: ticket.user_id,
                 event_type: "status_change",
                 old_value: ticket.status,
-                new_value: "closed",
+                new_value: "resolved",
               });
             }
           }
