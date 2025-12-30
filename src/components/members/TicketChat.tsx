@@ -267,9 +267,12 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
         <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
           <CardContent className="py-3 flex items-center gap-2">
             <Eye className="h-4 w-4 text-blue-600" />
-            <span className="text-sm">
+            <button
+              onClick={() => onViewOpportunity?.(ticket.opportunity_id!)}
+              className="text-sm text-left hover:underline text-blue-600 dark:text-blue-400"
+            >
               Vinculado à oportunidade: <strong>{opportunityTitle}</strong>
-            </span>
+            </button>
           </CardContent>
         </Card>
       )}
