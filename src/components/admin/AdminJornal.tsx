@@ -106,7 +106,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReopening, setIsReopening] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "concluidas">("noticias");
+  const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "execucao" | "concluidas">("noticias");
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
 
   // Form state
@@ -257,11 +257,11 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       const opps = opportunitiesRes.data as Opportunity[];
       setOpportunities(opps);
       
-      // Fetch active tickets for "Participando" opportunities
-      const participandoIds = opps
-        .filter(o => o.go_no_go === "Participando")
+      // Fetch active tickets for "Participando" and "Em_Execucao" opportunities
+      const activeIds = opps
+        .filter(o => o.go_no_go === "Participando" || o.go_no_go === "Em_Execucao")
         .map(o => o.id);
-      fetchActiveTickets(participandoIds);
+      fetchActiveTickets(activeIds);
     }
 
     if (orgsRes.data) {
@@ -544,7 +544,9 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
   const getFilteredOpportunities = () => {
     switch (activeTab) {
       case "andamento":
-        return opportunities.filter(opp => opp.go_no_go === "Participando" || opp.go_no_go === "Em_Execucao");
+        return opportunities.filter(opp => opp.go_no_go === "Participando");
+      case "execucao":
+        return opportunities.filter(opp => opp.go_no_go === "Em_Execucao");
       case "concluidas":
         return opportunities.filter(opp => opp.go_no_go === "Vencida" || opp.go_no_go === "Perdida" || opp.go_no_go === "Confirmada");
       default: // noticias
@@ -855,15 +857,18 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="noticias">
-            Notícias ({opportunities.filter(o => !["Participando", "Vencida", "Perdida"].includes(o.go_no_go)).length})
+            Notícias ({opportunities.filter(o => !["Participando", "Vencida", "Perdida", "Confirmada", "Em_Execucao"].includes(o.go_no_go)).length})
           </TabsTrigger>
           <TabsTrigger value="andamento">
             Em Andamento ({opportunities.filter(o => o.go_no_go === "Participando").length})
           </TabsTrigger>
+          <TabsTrigger value="execucao">
+            Execução ({opportunities.filter(o => o.go_no_go === "Em_Execucao").length})
+          </TabsTrigger>
           <TabsTrigger value="concluidas">
-            Concluídas ({opportunities.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida").length})
+            Concluídas ({opportunities.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida" || o.go_no_go === "Confirmada").length})
           </TabsTrigger>
         </TabsList>
 
@@ -876,6 +881,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                 <p className="text-muted-foreground text-sm">
                   {activeTab === "noticias" && "Clique em \"Nova Oportunidade\" para começar"}
                   {activeTab === "andamento" && "Oportunidades com status \"Participando\" aparecerão aqui"}
+                  {activeTab === "execucao" && "Contratos em execução aparecerão aqui"}
                   {activeTab === "concluidas" && "Oportunidades \"Vencidas\" ou \"Perdidas\" aparecerão aqui"}
                 </p>
               </CardContent>
@@ -891,7 +897,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                       <TableHead>Cliente</TableHead>
                       <TableHead className="text-center">Docs</TableHead>
                       <TableHead className="text-center">Parecer</TableHead>
-                      {activeTab === "andamento" && (
+                      {(activeTab === "andamento" || activeTab === "execucao") && (
                         <TableHead className="text-center">Atendimento</TableHead>
                       )}
                       <TableHead className="text-center">Publicado</TableHead>
@@ -925,7 +931,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                           </div>
                         </TableCell>
                         <TableCell className="text-center">{getGoNoGoBadge(opp.go_no_go)}</TableCell>
-                        {activeTab === "andamento" && (
+                        {(activeTab === "andamento" || activeTab === "execucao") && (
                           <TableCell className="text-center">
                             {activeTicketsByOpportunity.get(opp.id) ? (
                               <Badge variant="outline" className="border-cyan-500 text-cyan-600 bg-cyan-50">
