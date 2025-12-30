@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida" | "Confirmada";
+type GoNoGoStatus = "Go" | "No_Go" | "Review_Required" | "Solicitada" | "Rejeitada" | "Participando" | "Vencida" | "Perdida" | "Confirmada" | "Em_Execucao";
 
 type FormData = {
   title: string;
@@ -641,11 +641,15 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="Review_Required">Análise Necessária</SelectItem>
+                      <SelectItem value="Solicitada">SOLICITADA - Aguardando Relatório</SelectItem>
                       <SelectItem value="Go">GO - Recomendado</SelectItem>
                       <SelectItem value="No_Go">NO GO - Não Recomendado</SelectItem>
-                      <SelectItem value="Review_Required">Análise Necessária</SelectItem>
+                      <SelectItem value="Rejeitada">REJEITADA - Cliente Rejeitou</SelectItem>
                       <SelectItem value="Participando">PARTICIPANDO - Em Disputa</SelectItem>
                       <SelectItem value="Vencida">VENCIDA - Licitação Ganha</SelectItem>
+                      <SelectItem value="Confirmada">CONFIRMADA - Adjudicação</SelectItem>
+                      <SelectItem value="Em_Execucao">EM EXECUÇÃO - Contrato Ativo</SelectItem>
                       <SelectItem value="Perdida">PERDIDA - Licitação Perdida</SelectItem>
                     </SelectContent>
                   </Select>
@@ -685,7 +689,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                 </p>
               </div>
 
-              {(formData.go_no_go === "Vencida" || formData.go_no_go === "Confirmada" || formData.go_no_go === "Perdida") && (
+              {(formData.go_no_go === "Vencida" || formData.go_no_go === "Confirmada" || formData.go_no_go === "Em_Execucao" || formData.go_no_go === "Perdida") && (
                 <div className="grid gap-2">
                   <Label 
                     htmlFor="winning_bid_value"
