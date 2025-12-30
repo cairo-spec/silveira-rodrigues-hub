@@ -1339,9 +1339,37 @@ const JornalAuditado = ({
                 {/* Status-specific actions */}
                 {selectedOpportunity.go_no_go !== "Participando" && (
                   <>
-                    {/* Actions for Go - Participar or Rejeitar */}
+                    {/* Actions for Go - Participar, Parecer Go/No Go, Solicitar Recurso or Rejeitar */}
                     {selectedOpportunity.go_no_go === "Go" && (
                       <div className="flex flex-col gap-1.5 sm:gap-2">
+                        {/* Parecer Go/No Go and Solicitar Recurso buttons */}
+                        {onRequestParecer && (
+                          <div className="flex gap-1.5 sm:gap-2">
+                            <Button
+                              onClick={() => {
+                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, 'parecer-go-no-go');
+                                setSelectedOpportunity(null);
+                              }}
+                              size="sm"
+                              className="flex-1 bg-primary text-xs sm:text-sm h-9"
+                            >
+                              <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                              Parecer Go/No Go
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, 'recurso-administrativo');
+                                setSelectedOpportunity(null);
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700 text-xs sm:text-sm h-9"
+                            >
+                              <FileText className="h-3.5 w-3.5 mr-1.5" />
+                              Solicitar Recurso
+                            </Button>
+                          </div>
+                        )}
                         <div className="flex gap-1.5 sm:gap-2">
                           <Button
                             variant="outline"
@@ -1370,20 +1398,6 @@ const JornalAuditado = ({
                             Rejeitar
                           </Button>
                         </div>
-                        {onRequestParecer && (
-                          <Button
-                            onClick={() => {
-                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
-                              setSelectedOpportunity(null);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="text-xs sm:text-sm h-9"
-                          >
-                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                            Abrir Novo Ticket
-                          </Button>
-                        )}
                         {onShowTickets && (
                           <Button
                             variant="outline"
