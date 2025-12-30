@@ -98,9 +98,9 @@ const JornalAuditado = ({
           variant: "destructive",
           action: (
             <Button 
-              variant="outline" 
+              variant="secondary" 
               size="sm" 
-              className="border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
+              className="shrink-0"
               onClick={() => setShowCriteriaModal(true)}
             >
               <Settings2 className="h-4 w-4 mr-1" />
