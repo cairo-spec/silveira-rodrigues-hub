@@ -99,16 +99,16 @@ serve(async (req) => {
       );
     }
 
-    // SECURITY: Only allow trial activation for accounts created in the last 5 minutes
-    // This prevents existing users from gaming the system by visiting /experimente
+    // SECURITY: Only allow trial activation for accounts created in the last 30 days
+    // This allows recent users to activate their free trial
     const accountCreatedAt = new Date(profile.created_at);
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
-    if (accountCreatedAt < fiveMinutesAgo) {
+    if (accountCreatedAt < thirtyDaysAgo) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Trial only available for new accounts",
+          message: "Trial only available for accounts created in the last 30 days",
           accountTooOld: true 
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
