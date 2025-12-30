@@ -1516,10 +1516,10 @@ const JornalAuditado = ({
                   <div className="flex flex-col gap-1.5 sm:gap-2">
                     {isAfterClosingDate(selectedOpportunity) ? (
                       <>
-                        {/* Input para valor do lance */}
+                        {/* Input para valor do lance - obrigatório */}
                         <div className="space-y-1">
                           <label className="text-xs text-muted-foreground">
-                            Valor do Lance (opcional)
+                            Valor do Lance <span className="text-red-500">*</span>
                           </label>
                           <Input
                             type="text"
@@ -1528,35 +1528,43 @@ const JornalAuditado = ({
                             placeholder="R$ 0,00"
                             className="h-9 text-sm"
                           />
+                          {!parseCurrencyValue(winningBidInput) && (
+                            <p className="text-xs text-muted-foreground">
+                              Informe o valor do lance para registrar o resultado
+                            </p>
+                          )}
                         </div>
-                        <div className="flex gap-1.5 sm:gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVitoria(selectedOpportunity, parseCurrencyValue(winningBidInput))}
-                            disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 text-xs sm:text-sm h-9"
-                          >
-                            {isUpdating === selectedOpportunity.id ? (
-                              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                                Vitória
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDerrota(selectedOpportunity, parseCurrencyValue(winningBidInput))}
-                            disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 text-xs sm:text-sm h-9"
-                          >
-                            <X className="h-3.5 w-3.5 mr-1" />
-                            Derrota
-                          </Button>
-                        </div>
+                        {/* Botões só aparecem quando há valor preenchido */}
+                        {parseCurrencyValue(winningBidInput) && (
+                          <div className="flex gap-1.5 sm:gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleVitoria(selectedOpportunity, parseCurrencyValue(winningBidInput))}
+                              disabled={isUpdating === selectedOpportunity.id}
+                              className="flex-1 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 text-xs sm:text-sm h-9"
+                            >
+                              {isUpdating === selectedOpportunity.id ? (
+                                <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                                  Vitória
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDerrota(selectedOpportunity, parseCurrencyValue(winningBidInput))}
+                              disabled={isUpdating === selectedOpportunity.id}
+                              className="flex-1 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 text-xs sm:text-sm h-9"
+                            >
+                              <X className="h-3.5 w-3.5 mr-1" />
+                              Derrota
+                            </Button>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <p className="text-xs sm:text-sm text-muted-foreground text-center py-1.5">
