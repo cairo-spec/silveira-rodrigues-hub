@@ -1528,14 +1528,14 @@ const JornalAuditado = ({
                             placeholder="R$ 0,00"
                             className="h-9 text-sm"
                           />
-                          {!parseCurrencyValue(winningBidInput) && (
+                          {parseCurrencyValue(winningBidInput) === null && (
                             <p className="text-xs text-muted-foreground">
                               Informe o valor do lance para registrar o resultado
                             </p>
                           )}
                         </div>
                         {/* Botões só aparecem quando há valor preenchido */}
-                        {parseCurrencyValue(winningBidInput) && (
+                        {parseCurrencyValue(winningBidInput) !== null && parseCurrencyValue(winningBidInput) > 0 && (
                           <div className="flex gap-1.5 sm:gap-2">
                             <Button
                               variant="outline"
