@@ -93,9 +93,11 @@ interface Organization {
 
 interface AdminJornalProps {
   onShowTickets?: (opportunityId: string) => void;
+  editOpportunityId?: string | null;
+  onClearEditOpportunity?: () => void;
 }
 
-const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
+const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity }: AdminJornalProps) => {
   const { toast } = useToast();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -226,6 +228,17 @@ const AdminJornal = ({ onShowTickets }: AdminJornalProps) => {
       supabase.removeChannel(ticketChannel);
     };
   }, []);
+
+  // Open edit modal when editOpportunityId is provided
+  useEffect(() => {
+    if (editOpportunityId && opportunities.length > 0) {
+      const opportunity = opportunities.find(o => o.id === editOpportunityId);
+      if (opportunity) {
+        openEditModal(opportunity);
+        onClearEditOpportunity?.();
+      }
+    }
+  }, [editOpportunityId, opportunities]);
 
   const fetchData = async () => {
     setIsLoading(true);

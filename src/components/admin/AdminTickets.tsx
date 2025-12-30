@@ -54,6 +54,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 interface AdminTicketsProps {
   filterOpportunityId?: string | null;
   onClearFilter?: () => void;
+  onViewOpportunity?: (opportunityId: string) => void;
 }
 
 interface GoNoGoModalState {
@@ -63,7 +64,7 @@ interface GoNoGoModalState {
   opportunityTitle: string | null;
 }
 
-const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps) => {
+const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }: AdminTicketsProps) => {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -605,10 +606,15 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter }: AdminTicketsProps)
                 </Badge>
               )}
               {selectedTicket.opportunity && (
-                <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                  onClick={() => onViewOpportunity?.(selectedTicket.opportunity!.id)}
+                >
                   <ExternalLink className="h-3 w-3" />
-                  Oportunidade: {selectedTicket.opportunity.title}
-                </Badge>
+                  Ver oportunidade
+                </Button>
               )}
             </div>
           </CardContent>
