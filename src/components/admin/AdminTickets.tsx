@@ -198,8 +198,8 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
         return;
       }
       
-      // If it's an impugnacao-edital ticket being resolved, reset opportunity to Review_Required
-      if (baseCategory === 'impugnacao-edital') {
+      // If it's any impugnacao ticket being resolved, reset opportunity to Review_Required
+      if (baseCategory.startsWith('impugnacao')) {
         await supabase
           .from('audited_opportunities')
           .update({ go_no_go: 'Review_Required' })
