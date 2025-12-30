@@ -1095,7 +1095,7 @@ const JornalAuditado = ({
                 selectedOpportunity.winning_bid_value && (
                   <div className="text-xs sm:text-sm">
                     <p className="text-muted-foreground">
-                      {selectedOpportunity.go_no_go === "Perdida" ? "Valor do Lance Perdedor" : "Valor do Lance Vencedor"}
+                      Valor do Lance
                     </p>
                     <p className={`font-medium text-base sm:text-lg ${selectedOpportunity.go_no_go === "Perdida" ? "text-red-600" : "text-green-600"}`}>
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOpportunity.winning_bid_value)}
