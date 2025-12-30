@@ -1763,22 +1763,31 @@ const JornalAuditado = ({
                 {/* Action buttons for Vencida/Perdida/Confirmada/Em_Execucao (concluded) */}
                 {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada" || selectedOpportunity.go_no_go === "Em_Execucao") && (
                   <div className="flex flex-col gap-2">
-                    {/* Disputa Revertida button - only for Perdida after recurso ticket was requested */}
+                    {/* Disputa Revertida section - only for Perdida */}
                     {selectedOpportunity.go_no_go === "Perdida" && hasRecursoTicketByOpportunity.has(selectedOpportunity.id) && (
-                      <Button
-                        onClick={() => handleDisputaRevertida(selectedOpportunity)}
-                        disabled={isUpdating === selectedOpportunity.id}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {isUpdating === selectedOpportunity.id ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Disputa Revertida
-                          </>
-                        )}
-                      </Button>
+                      concludedRecursoByOpportunity.has(selectedOpportunity.id) ? (
+                        <Button
+                          onClick={() => handleDisputaRevertida(selectedOpportunity)}
+                          disabled={isUpdating === selectedOpportunity.id}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {isUpdating === selectedOpportunity.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Disputa Revertida
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-center">
+                          <p className="text-amber-800 dark:text-amber-200 text-sm font-medium flex items-center justify-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Aguardando a elaboração de Recurso
+                          </p>
+                        </div>
+                      )
                     )}
                     
                     {/* For Vencida: show Adjudicado/Inabilitado buttons and Solicitar Defesa */}
