@@ -1551,103 +1551,61 @@ const JornalAuditado = ({
                 {/* Action buttons for Review_Required status */}
                 {selectedOpportunity.go_no_go === "Review_Required" && !canRequestParecer(selectedOpportunity) && (
                   <div className="flex flex-col gap-1.5 sm:gap-2">
-                    {/* Show waiting message if impugnação concluded and dispute date not yet arrived */}
-                    {concludedImpugnacaoByOpportunity.has(selectedOpportunity.id) && !isAfterClosingDate(selectedOpportunity) ? (
-                      <>
-                        <div className="flex items-center justify-center gap-2 py-3 px-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md">
-                          <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 text-center">
-                            Aguardando data da disputa ({format(new Date(selectedOpportunity.closing_date), "dd/MM/yyyy")})
-                          </p>
-                        </div>
-                        {onRequestParecer && (
-                          <Button
-                            onClick={() => {
-                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
-                              setSelectedOpportunity(null);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="text-xs sm:text-sm h-9"
-                          >
-                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                            Novo Ticket
-                          </Button>
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleSolicitarRelatorio(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1 text-xs sm:text-sm h-9"
+                      >
+                        {isUpdating === selectedOpportunity.id ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <>
+                            <FileText className="h-3.5 w-3.5 mr-1" />
+                            Relatório
+                          </>
                         )}
-                        {onShowTickets && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs sm:text-sm h-9"
-                            onClick={() => {
-                              onShowTickets(selectedOpportunity.id);
-                              handleCloseOpportunity();
-                            }}
-                          >
-                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                            Ver Tickets
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex gap-1.5 sm:gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleParticipar(selectedOpportunity)}
-                            disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 text-xs sm:text-sm h-9"
-                          >
-                            {isUpdating === selectedOpportunity.id ? (
-                              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                                Participar
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
-                            disabled={isUpdating === selectedOpportunity.id}
-                            className="flex-1 text-xs sm:text-sm h-9"
-                          >
-                            <X className="h-3.5 w-3.5 mr-1" />
-                            Rejeitar
-                          </Button>
-                        </div>
-                        {onRequestParecer && (
-                          <Button
-                            onClick={() => {
-                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
-                              setSelectedOpportunity(null);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="text-xs sm:text-sm h-9"
-                          >
-                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                            Novo Ticket
-                          </Button>
-                        )}
-                        {onShowTickets && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs sm:text-sm h-9"
-                            onClick={() => {
-                              onShowTickets(selectedOpportunity.id);
-                              handleCloseOpportunity();
-                            }}
-                          >
-                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                            Ver Tickets
-                          </Button>
-                        )}
-                      </>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRejeitarOportunidade(selectedOpportunity)}
+                        disabled={isUpdating === selectedOpportunity.id}
+                        className="flex-1 text-xs sm:text-sm h-9"
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                    {onRequestParecer && (
+                      <Button
+                        onClick={() => {
+                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
+                          setSelectedOpportunity(null);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
+                      >
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Novo Ticket
+                      </Button>
+                    )}
+                    {onShowTickets && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs sm:text-sm h-9"
+                        onClick={() => {
+                          onShowTickets(selectedOpportunity.id);
+                          handleCloseOpportunity();
+                        }}
+                      >
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        Ver Tickets
+                      </Button>
                     )}
                   </div>
                 )}
