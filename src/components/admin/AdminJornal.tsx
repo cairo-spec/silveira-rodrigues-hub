@@ -349,9 +349,11 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
     const winningBidValue = parseCurrencyValue(formData.winning_bid_value);
 
     // Automatically change status from Solicitada to Review_Required when report is attached
+    // BUT only if the user didn't manually change the status
     let finalStatus = formData.go_no_go;
     if (
       editingOpportunity?.go_no_go === "Solicitada" &&
+      formData.go_no_go === "Solicitada" && // Only auto-change if user didn't manually select another status
       formData.audit_report_path &&
       !editingOpportunity.audit_report_path
     ) {
