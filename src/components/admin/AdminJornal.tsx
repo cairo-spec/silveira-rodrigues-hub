@@ -864,11 +864,11 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
           <TabsTrigger value="andamento">
             Em Andamento ({opportunities.filter(o => o.go_no_go === "Participando").length})
           </TabsTrigger>
-          <TabsTrigger value="execucao">
-            Execução ({opportunities.filter(o => o.go_no_go === "Em_Execucao").length})
-          </TabsTrigger>
           <TabsTrigger value="concluidas">
             Concluídas ({opportunities.filter(o => o.go_no_go === "Vencida" || o.go_no_go === "Perdida" || o.go_no_go === "Confirmada").length})
+          </TabsTrigger>
+          <TabsTrigger value="execucao">
+            Execução ({opportunities.filter(o => o.go_no_go === "Em_Execucao").length})
           </TabsTrigger>
         </TabsList>
 
