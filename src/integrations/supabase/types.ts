@@ -556,6 +556,7 @@ export type Database = {
       }
       user_search_criteria: {
         Row: {
+          capabilities: string | null
           company_presentation: string | null
           created_at: string
           id: string
@@ -566,6 +567,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          capabilities?: string | null
           company_presentation?: string | null
           created_at?: string
           id?: string
@@ -576,6 +578,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          capabilities?: string | null
           company_presentation?: string | null
           created_at?: string
           id?: string

@@ -50,6 +50,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
   const [keywords, setKeywords] = useState<string[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [companyPresentation, setCompanyPresentation] = useState("");
+  const [capabilities, setCapabilities] = useState("");
   const [minimumValue, setMinimumValue] = useState<string>("");
   const [newKeyword, setNewKeyword] = useState("");
   const [selectedState, setSelectedState] = useState("");
@@ -70,7 +71,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
 
       const { data, error } = await supabase
         .from("user_search_criteria")
-        .select("keywords, states, company_presentation, minimum_value")
+        .select("keywords, states, company_presentation, capabilities, minimum_value")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -80,11 +81,13 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
         setKeywords(data.keywords || []);
         setStates(data.states || []);
         setCompanyPresentation(data.company_presentation || "");
+        setCapabilities(data.capabilities || "");
         setMinimumValue(data.minimum_value ? String(data.minimum_value) : "");
       } else {
         setKeywords([]);
         setStates([]);
         setCompanyPresentation("");
+        setCapabilities("");
         setMinimumValue("");
       }
     } catch (error) {
@@ -145,6 +148,7 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
           keywords,
           states,
           company_presentation: companyPresentation,
+          capabilities,
           minimum_value: minimumValue ? parseFloat(minimumValue) : null,
         }, { onConflict: "user_id" });
 
@@ -205,6 +209,25 @@ export function SearchCriteriaModal({ open, onOpenChange }: SearchCriteriaModalP
                 />
                 <p className="text-xs text-muted-foreground text-right">
                   {companyPresentation.length}/1200 caracteres
+                </p>
+              </div>
+
+              {/* Capabilities Section */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">
+                  Capacidades
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Descreva os atestados de capacidade técnica que sua empresa possui.
+                </p>
+                <Textarea
+                  placeholder="Ex: Atestado de manutenção predial para órgão público, Atestado de fornecimento de equipamentos de TI..."
+                  value={capabilities}
+                  onChange={(e) => setCapabilities(e.target.value.slice(0, 2000))}
+                  className="min-h-[120px] resize-none"
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {capabilities.length}/2000 caracteres
                 </p>
               </div>
 
