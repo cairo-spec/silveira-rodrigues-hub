@@ -909,7 +909,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                       <TableRow 
                         key={opp.id} 
                         className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => onShowTickets?.(opp.id)}
+                        onClick={() => openEditModal(opp)}
                       >
                         <TableCell className="font-medium max-w-[200px] truncate">{opp.title}</TableCell>
                         <TableCell>{opp.agency_name}</TableCell>
@@ -967,8 +967,14 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                                 )}
                               </Button>
                             )}
-                            <Button variant="ghost" size="icon" onClick={() => openEditModal(opp)}>
-                              <Pencil className="h-4 w-4" />
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
+                              onClick={() => onShowTickets?.(opp.id)}
+                              title="Ver tickets"
+                            >
+                              <Headphones className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(opp.id)}>
                               <Trash2 className="h-4 w-4" />
