@@ -73,6 +73,48 @@ const JornalAuditado = ({
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
   const [adjudicatedOpportunities, setAdjudicatedOpportunities] = useState<Set<string>>(new Set());
   const [winningBidInput, setWinningBidInput] = useState<string>("");
+  const [criteriaChecked, setCriteriaChecked] = useState(false);
+
+  // Check if user has search criteria on mount
+  useEffect(() => {
+    const checkCriteria = async () => {
+      if (!user || criteriaChecked) return;
+      
+      const { data: criteria } = await supabase
+        .from("user_search_criteria")
+        .select("id, keywords, states")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      const hasValidCriteria = criteria && (
+        (criteria.keywords && criteria.keywords.length > 0) || 
+        (criteria.states && criteria.states.length > 0)
+      );
+      
+      if (!hasValidCriteria) {
+        toast({
+          title: "Critérios de busca não configurados",
+          description: "Configure seus critérios para receber oportunidades personalizadas.",
+          variant: "destructive",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive"
+              onClick={() => setShowCriteriaModal(true)}
+            >
+              <Settings2 className="h-4 w-4 mr-1" />
+              Configurar
+            </Button>
+          ),
+        });
+      }
+      
+      setCriteriaChecked(true);
+    };
+    
+    checkCriteria();
+  }, [user, criteriaChecked, toast]);
 
   // Format currency for display
   const formatCurrencyValue = (value: string): string => {
