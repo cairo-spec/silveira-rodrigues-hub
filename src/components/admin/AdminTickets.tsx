@@ -172,8 +172,22 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
   };
 
   const handleStatusChange = async (ticketId: string, newStatus: string, skipGoNoGoCheck = false) => {
-    const ticket = tickets.find(t => t.id === ticketId);
-    const oldStatus = ticket?.status;
+    let ticket = tickets.find(t => t.id === ticketId);
+    let oldStatus = ticket?.status;
+
+    // If ticket isn't in local state (pagination/filter changes), fetch minimal data for business rules
+    if (!ticket) {
+      const { data: freshTicket } = await supabase
+        .from('tickets')
+        .select('id, status, service_category, opportunity_id')
+        .eq('id', ticketId)
+        .maybeSingle();
+
+      if (freshTicket) {
+        ticket = freshTicket as any;
+        oldStatus = freshTicket.status;
+      }
+    }
     
     // Categories that require petition_path before concluding
     const categoriesRequiringPetition = ['impugnacao-edital', 'recurso-administrativo', 'contrarrazoes'];
