@@ -126,10 +126,9 @@ const Experimente = () => {
         }
 
         navigate("/membros");
-      } else {
-        // User is logged in but not from trial signup - redirect to membros
-        navigate("/membros");
       }
+      // If user is logged in but not from trial signup, let them view the page
+      // They might be a free user wanting to see/activate the trial offer
     };
 
     handleUserSession();
