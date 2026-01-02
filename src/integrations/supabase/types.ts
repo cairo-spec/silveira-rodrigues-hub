@@ -20,7 +20,9 @@ export type Database = {
           audit_report_path: string | null
           client_organization_id: string
           closing_date: string
+          contract_url: string | null
           created_at: string
+          defeat_confirmed: boolean | null
           estimated_value: number | null
           go_no_go: Database["public"]["Enums"]["go_no_go_status"]
           id: string
@@ -39,7 +41,9 @@ export type Database = {
           audit_report_path?: string | null
           client_organization_id: string
           closing_date: string
+          contract_url?: string | null
           created_at?: string
+          defeat_confirmed?: boolean | null
           estimated_value?: number | null
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
@@ -58,7 +62,9 @@ export type Database = {
           audit_report_path?: string | null
           client_organization_id?: string
           closing_date?: string
+          contract_url?: string | null
           created_at?: string
+          defeat_confirmed?: boolean | null
           estimated_value?: number | null
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
