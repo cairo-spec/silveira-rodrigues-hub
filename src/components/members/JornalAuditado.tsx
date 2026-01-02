@@ -37,6 +37,8 @@ interface Opportunity {
   is_published: boolean;
   created_at: string;
   report_requested_at: string | null;
+  contract_url: string | null;
+  defeat_confirmed: boolean;
 }
 
 interface JornalAuditadoProps {
@@ -73,7 +75,8 @@ const JornalAuditado = ({
   const [activeParecerByOpportunity, setActiveParecerByOpportunity] = useState<Set<string>>(new Set());
   const [activeImpugnacaoByOpportunity, setActiveImpugnacaoByOpportunity] = useState<Set<string>>(new Set());
   const [adjudicatedOpportunities, setAdjudicatedOpportunities] = useState<Set<string>>(new Set());
-  const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useState<Set<string>>(new Set());
+const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useState<Set<string>>(new Set());
+  const [activeRecursoByOpportunity, setActiveRecursoByOpportunity] = useState<Set<string>>(new Set());
   const [winningBidInput, setWinningBidInput] = useState<string>("");
   const [criteriaChecked, setCriteriaChecked] = useState(false);
   
@@ -285,19 +288,25 @@ const JornalAuditado = ({
 
     const { data: tickets } = await supabase
       .from("tickets")
-      .select("opportunity_id, service_category")
+      .select("opportunity_id, service_category, status")
       .in("opportunity_id", opportunityIds);
 
     const recursoSet = new Set<string>();
+    const activeRecursoSet = new Set<string>();
     tickets?.forEach((ticket) => {
       if (ticket.opportunity_id && ticket.service_category) {
         const baseCategory = ticket.service_category.replace('+upgrade', '');
         if (baseCategory === 'recurso-administrativo') {
           recursoSet.add(ticket.opportunity_id);
+          // Check if this recurso ticket is still active (not resolved/closed)
+          if (!['resolved', 'closed'].includes(ticket.status)) {
+            activeRecursoSet.add(ticket.opportunity_id);
+          }
         }
       }
     });
     setHasRecursoTicketByOpportunity(recursoSet);
+    setActiveRecursoByOpportunity(activeRecursoSet);
   };
 
   useEffect(() => {
@@ -1000,11 +1009,16 @@ const JornalAuditado = ({
               <Card className="hidden md:block">
                 <CardContent className="p-0">
                   <Table>
-                    <TableHeader>
+                <TableHeader>
                       <TableRow>
                         <TableHead>Título</TableHead>
                         <TableHead>Agência</TableHead>
-                        <TableHead className="text-center">Valor Estimado</TableHead>
+                        {activeTab === "noticias" && (
+                          <TableHead className="text-center">Valor Estimado</TableHead>
+                        )}
+                        {(activeTab === "andamento" || activeTab === "concluidas" || activeTab === "execucao") && (
+                          <TableHead className="text-center">Valor do Lance</TableHead>
+                        )}
                         <TableHead className="text-center">Data Limite</TableHead>
                         <TableHead className="text-center">Parecer</TableHead>
                         <TableHead className="text-center">Atendimento</TableHead>
@@ -1024,12 +1038,22 @@ const JornalAuditado = ({
                           </TableCell>
                           <TableCell>{opp.agency_name}</TableCell>
                           <TableCell className="text-center">
-                            {opp.estimated_value ? (
-                              <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.estimated_value)}
-                              </Badge>
+                            {activeTab === "noticias" ? (
+                              opp.estimated_value ? (
+                                <Badge variant="secondary" className="bg-gold/10 text-gold border-gold/20">
+                                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.estimated_value)}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )
                             ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                              opp.winning_bid_value ? (
+                                <Badge variant="secondary" className={opp.go_no_go === "Perdida" ? "bg-red-100 text-red-600 border-red-200" : "bg-green-100 text-green-600 border-green-200"}>
+                                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.winning_bid_value)}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )
                             )}
                           </TableCell>
                           <TableCell className="text-center">
@@ -1137,10 +1161,18 @@ const JornalAuditado = ({
                             <Calendar className="h-3 w-3 mr-1" />
                             {format(new Date(opp.closing_date), "dd/MM/yyyy")}
                           </Badge>
-                          {opp.estimated_value && (
-                            <Badge variant="secondary" className="text-xs bg-gold/10 text-gold border-gold/20">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.estimated_value)}
-                            </Badge>
+                          {activeTab === "noticias" ? (
+                            opp.estimated_value && (
+                              <Badge variant="secondary" className="text-xs bg-gold/10 text-gold border-gold/20">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.estimated_value)}
+                              </Badge>
+                            )
+                          ) : (
+                            opp.winning_bid_value && (
+                              <Badge variant="secondary" className={`text-xs ${opp.go_no_go === "Perdida" ? "bg-red-100 text-red-600 border-red-200" : "bg-green-100 text-green-600 border-green-200"}`}>
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(opp.winning_bid_value)}
+                              </Badge>
+                            )
                           )}
                         </div>
                         <div className="flex gap-2">
@@ -1232,8 +1264,8 @@ const JornalAuditado = ({
                 </div>
               )}
 
-              {/* Valor Estimado ou Valor do Lance (para concluídas) */}
-              {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada") ? (
+              {/* Valor Estimado ou Valor do Lance (para andamento/concluídas/execução) */}
+              {(selectedOpportunity.go_no_go === "Participando" || selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada" || selectedOpportunity.go_no_go === "Em_Execucao") ? (
                 selectedOpportunity.winning_bid_value && (
                   <div className="text-xs sm:text-sm">
                     <p className="text-muted-foreground">
@@ -1265,8 +1297,34 @@ const JornalAuditado = ({
               )}
 
               <div className="flex flex-col gap-2 pt-2 sm:pt-4">
-                {/* Links - for Participando show both edital and portal */}
-                {selectedOpportunity.go_no_go === "Participando" ? (
+                {/* Links - for Em_Execucao show contract link, for Participando show both edital and portal */}
+                {selectedOpportunity.go_no_go === "Em_Execucao" ? (
+                  <>
+                    {selectedOpportunity.contract_url ? (
+                      <Button variant="default" size="sm" className="text-xs sm:text-sm h-9" asChild>
+                        <a href={selectedOpportunity.contract_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                          Ver Contrato
+                        </a>
+                      </Button>
+                    ) : selectedOpportunity.opportunity_url && (
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-9" asChild>
+                        <a href={selectedOpportunity.opportunity_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                          Ver Edital Original
+                        </a>
+                      </Button>
+                    )}
+                    {selectedOpportunity.portal_url && (
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-9" asChild>
+                        <a href={selectedOpportunity.portal_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                          Acessar Portal
+                        </a>
+                      </Button>
+                    )}
+                  </>
+                ) : selectedOpportunity.go_no_go === "Participando" ? (
                   <>
                     {selectedOpportunity.opportunity_url && (
                       <Button variant="outline" size="sm" className="text-xs sm:text-sm h-9" asChild>
@@ -1339,10 +1397,10 @@ const JornalAuditado = ({
                 {/* Status-specific actions */}
                 {selectedOpportunity.go_no_go !== "Participando" && (
                   <>
-                    {/* Actions for Go - Participar, Parecer Go/No Go, Solicitar Recurso or Rejeitar */}
+                    {/* Actions for Go - Participar, Parecer Go/No Go, Solicitar Impugnação or Rejeitar */}
                     {selectedOpportunity.go_no_go === "Go" && (
                       <div className="flex flex-col gap-1.5 sm:gap-2">
-                        {/* Parecer Go/No Go and Solicitar Recurso buttons */}
+                        {/* Parecer Go/No Go and Solicitar Impugnação buttons */}
                         {onRequestParecer && (
                           <div className="flex gap-1.5 sm:gap-2">
                             <Button
@@ -1358,7 +1416,7 @@ const JornalAuditado = ({
                             </Button>
                             <Button
                               onClick={() => {
-                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, 'recurso-administrativo');
+                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, 'impugnacao');
                                 setSelectedOpportunity(null);
                               }}
                               size="sm"
@@ -1366,7 +1424,7 @@ const JornalAuditado = ({
                               className="flex-1 border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700 text-xs sm:text-sm h-9"
                             >
                               <FileText className="h-3.5 w-3.5 mr-1.5" />
-                              Solicitar Recurso
+                              Impugnação
                             </Button>
                           </div>
                         )}
@@ -1818,29 +1876,98 @@ const JornalAuditado = ({
                 {/* Action buttons for Vencida/Perdida/Confirmada/Em_Execucao (concluded) */}
                 {(selectedOpportunity.go_no_go === "Vencida" || selectedOpportunity.go_no_go === "Perdida" || selectedOpportunity.go_no_go === "Confirmada" || selectedOpportunity.go_no_go === "Em_Execucao") && (
                   <div className="flex flex-col gap-2">
-                    {/* Disputa Revertida section - only for Perdida */}
-                    {selectedOpportunity.go_no_go === "Perdida" && hasRecursoTicketByOpportunity.has(selectedOpportunity.id) && (
-                      concludedRecursoByOpportunity.has(selectedOpportunity.id) ? (
-                        <Button
-                          onClick={() => handleDisputaRevertida(selectedOpportunity)}
-                          disabled={isUpdating === selectedOpportunity.id}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {isUpdating === selectedOpportunity.id ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Disputa Revertida
-                            </>
-                          )}
-                        </Button>
-                      ) : (
+                    {/* For Perdida: show different UI based on defeat_confirmed */}
+                    {selectedOpportunity.go_no_go === "Perdida" && (
+                      selectedOpportunity.defeat_confirmed ? (
+                        // Defeat confirmed - show only ticket button
+                        onRequestParecer && (
+                          <Button
+                            onClick={() => {
+                              onRequestParecer(selectedOpportunity.id, selectedOpportunity.title);
+                              setSelectedOpportunity(null);
+                            }}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            Abrir Novo Ticket
+                          </Button>
+                        )
+                      ) : activeRecursoByOpportunity.has(selectedOpportunity.id) ? (
+                        // Active recurso ticket - show aguardando recurso
                         <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg p-3 text-center">
                           <p className="text-amber-800 dark:text-amber-200 text-sm font-medium flex items-center justify-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Aguardando a elaboração de Recurso
                           </p>
+                        </div>
+                      ) : concludedRecursoByOpportunity.has(selectedOpportunity.id) ? (
+                        // Recurso concluded - show Disputa Revertida and Confirmar Derrota
+                        <div className="space-y-2">
+                          <Button
+                            onClick={() => handleDisputaRevertida(selectedOpportunity)}
+                            disabled={isUpdating === selectedOpportunity.id}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                          >
+                            {isUpdating === selectedOpportunity.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Disputa Revertida
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              setIsUpdating(selectedOpportunity.id);
+                              await supabase
+                                .from("audited_opportunities")
+                                .update({ defeat_confirmed: true })
+                                .eq("id", selectedOpportunity.id);
+                              fetchOpportunities();
+                              setSelectedOpportunity(null);
+                              setIsUpdating(null);
+                            }}
+                            variant="outline"
+                            className="w-full border-red-500 text-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Confirmar Derrota
+                          </Button>
+                        </div>
+                      ) : (
+                        // No recurso yet - show Solicitar Recurso and Confirmar Derrota
+                        <div className="space-y-2">
+                          {onRequestParecer && (
+                            <Button
+                              onClick={() => {
+                                onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "recurso-administrativo");
+                                setSelectedOpportunity(null);
+                              }}
+                              className="w-full bg-primary"
+                            >
+                              <ClipboardList className="h-4 w-4 mr-2" />
+                              Solicitar Recurso
+                            </Button>
+                          )}
+                          <Button
+                            onClick={async () => {
+                              setIsUpdating(selectedOpportunity.id);
+                              await supabase
+                                .from("audited_opportunities")
+                                .update({ defeat_confirmed: true })
+                                .eq("id", selectedOpportunity.id);
+                              fetchOpportunities();
+                              setSelectedOpportunity(null);
+                              setIsUpdating(null);
+                            }}
+                            variant="outline"
+                            className="w-full border-red-500 text-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Confirmar Derrota
+                          </Button>
                         </div>
                       )
                     )}
@@ -1954,20 +2081,6 @@ const JornalAuditado = ({
                           </Button>
                         )}
                       </div>
-                    )}
-                    
-                    {/* For Perdida: show Solicitar Recurso button */}
-                    {selectedOpportunity.go_no_go === "Perdida" && onRequestParecer && (
-                      <Button
-                        onClick={() => {
-                          onRequestParecer(selectedOpportunity.id, selectedOpportunity.title, "recurso");
-                          setSelectedOpportunity(null);
-                        }}
-                        className="bg-primary"
-                      >
-                        <ClipboardList className="h-4 w-4 mr-2" />
-                        Solicitar Recurso
-                      </Button>
                     )}
                     
                     {onShowTickets && (

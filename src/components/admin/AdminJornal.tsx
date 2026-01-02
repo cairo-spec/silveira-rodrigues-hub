@@ -35,6 +35,7 @@ type FormData = {
   petition_path: string;
   estimated_value: string;
   winning_bid_value: string;
+  contract_url: string;
   is_published: boolean;
 };
 
@@ -84,6 +85,8 @@ interface Opportunity {
   created_at: string;
   updated_at: string;
   report_requested_at: string | null;
+  contract_url: string | null;
+  defeat_confirmed: boolean;
 }
 
 interface Organization {
@@ -123,6 +126,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
     petition_path: "",
     estimated_value: "",
     winning_bid_value: "",
+    contract_url: "",
     is_published: false,
   };
 
@@ -145,6 +149,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       formData.petition_path !== originalFormData.petition_path ||
       formData.estimated_value !== originalFormData.estimated_value ||
       formData.winning_bid_value !== originalFormData.winning_bid_value ||
+      formData.contract_url !== originalFormData.contract_url ||
       formData.is_published !== originalFormData.is_published
     );
   }, [formData, originalFormData]);
@@ -292,6 +297,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       petition_path: opportunity.petition_path || "",
       estimated_value: (opportunity as any).estimated_value != null ? formatCurrencyValue((opportunity as any).estimated_value) : "",
       winning_bid_value: (opportunity as any).winning_bid_value != null ? formatCurrencyValue((opportunity as any).winning_bid_value) : "",
+      contract_url: opportunity.contract_url || "",
       is_published: opportunity.is_published,
     };
     setFormData(editFormData);
@@ -373,6 +379,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       petition_path: formData.petition_path || null,
       estimated_value: estimatedValue,
       winning_bid_value: winningBidValue,
+      contract_url: formData.contract_url || null,
       is_published: formData.is_published,
     };
 
@@ -837,6 +844,34 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                       variant="ghost"
                       size="sm"
                       onClick={() => window.open(formData.petition_path, "_blank")}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Abrir
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="contract_url">Link do Contrato (para execução)</Label>
+                <Input
+                  id="contract_url"
+                  type="url"
+                  value={formData.contract_url}
+                  onChange={(e) => setFormData({ ...formData, contract_url: e.target.value })}
+                  placeholder="https://..."
+                />
+                {formData.contract_url && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-indigo-600 border-indigo-600">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Link configurado
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(formData.contract_url, "_blank")}
                     >
                       <Download className="h-4 w-4 mr-1" />
                       Abrir
