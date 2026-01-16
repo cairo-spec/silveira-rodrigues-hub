@@ -26,12 +26,14 @@ export type Database = {
           estimated_value: number | null
           go_no_go: Database["public"]["Enums"]["go_no_go_status"]
           id: string
+          impugnacao_link: string | null
           is_published: boolean
           no_go_justification: string | null
           opportunity_abstract: string | null
           opportunity_url: string | null
           petition_path: string | null
           portal_url: string | null
+          recurso_link: string | null
           report_requested_at: string | null
           title: string
           updated_at: string
@@ -48,12 +50,14 @@ export type Database = {
           estimated_value?: number | null
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
+          impugnacao_link?: string | null
           is_published?: boolean
           no_go_justification?: string | null
           opportunity_abstract?: string | null
           opportunity_url?: string | null
           petition_path?: string | null
           portal_url?: string | null
+          recurso_link?: string | null
           report_requested_at?: string | null
           title: string
           updated_at?: string
@@ -70,12 +74,14 @@ export type Database = {
           estimated_value?: number | null
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
+          impugnacao_link?: string | null
           is_published?: boolean
           no_go_justification?: string | null
           opportunity_abstract?: string | null
           opportunity_url?: string | null
           petition_path?: string | null
           portal_url?: string | null
+          recurso_link?: string | null
           report_requested_at?: string | null
           title?: string
           updated_at?: string

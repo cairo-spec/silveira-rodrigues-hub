@@ -33,6 +33,8 @@ interface Opportunity {
   go_no_go: GoNoGoStatus;
   audit_report_path: string | null;
   petition_path: string | null;
+  impugnacao_link: string | null;
+  recurso_link: string | null;
   portal_url: string | null;
   estimated_value: number | null;
   winning_bid_value: number | null;
@@ -1408,7 +1410,34 @@ const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useSta
                     <OpportunityChecklist opportunityId={selectedOpportunity.id} />
                   </div>
                 )}
-                {selectedOpportunity.petition_path && (
+                {/* Show impugnação link if available */}
+                {selectedOpportunity.impugnacao_link && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs sm:text-sm h-9"
+                    onClick={() => window.open(selectedOpportunity.impugnacao_link!, "_blank")}
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Baixar Impugnação
+                  </Button>
+                )}
+                
+                {/* Show recurso link if available */}
+                {selectedOpportunity.recurso_link && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs sm:text-sm h-9"
+                    onClick={() => window.open(selectedOpportunity.recurso_link!, "_blank")}
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Baixar Recurso
+                  </Button>
+                )}
+                
+                {/* Legacy petition_path support */}
+                {selectedOpportunity.petition_path && !selectedOpportunity.impugnacao_link && (
                   <Button
                     variant="outline"
                     size="sm"
