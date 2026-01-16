@@ -15,7 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw, Headphones } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw, Headphones, ClipboardList } from "lucide-react";
+import OpportunityChecklistEditor from "./OpportunityChecklistEditor";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -408,11 +409,11 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
             for (const ticket of relatedTickets) {
               await supabase.from("tickets").update({ status: "resolved" }).eq("id", ticket.id);
 
-              // Record event for the ticket
+              // Record event for the ticket with proper event_type
               await supabase.from("ticket_events").insert({
                 ticket_id: ticket.id,
                 user_id: ticket.user_id,
-                event_type: "status_change",
+                event_type: "status_changed",
                 old_value: ticket.status,
                 new_value: "resolved",
               });
@@ -879,6 +880,19 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                   </div>
                 )}
               </div>
+
+              {/* Checklist editor - show when Go, Participando, Em_Execucao, or impugnacao concluded */}
+              {editingOpportunity && (
+                formData.go_no_go === "Go" || 
+                formData.go_no_go === "Participando" ||
+                formData.go_no_go === "Em_Execucao" ||
+                formData.go_no_go === "Vencida" ||
+                formData.go_no_go === "Confirmada"
+              ) && (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <OpportunityChecklistEditor opportunityId={editingOpportunity.id} />
+                </div>
+              )}
 
               <div className="flex items-center gap-2">
                 <Switch
