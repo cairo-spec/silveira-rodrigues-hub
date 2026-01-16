@@ -17,6 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw, Headphones, ClipboardList, MessageCircle } from "lucide-react";
 import OpportunityChecklistEditor from "./OpportunityChecklistEditor";
+import AdminChecklistStatus from "./AdminChecklistStatus";
 import OpportunityChat from "@/components/members/OpportunityChat";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -34,7 +35,8 @@ type FormData = {
   agency_name: string;
   go_no_go: GoNoGoStatus;
   audit_report_path: string;
-  petition_path: string;
+  impugnacao_link: string;
+  recurso_link: string;
   estimated_value: string;
   winning_bid_value: string;
   contract_url: string;
@@ -83,6 +85,8 @@ interface Opportunity {
   go_no_go: GoNoGoStatus;
   audit_report_path: string | null;
   petition_path: string | null;
+  impugnacao_link: string | null;
+  recurso_link: string | null;
   is_published: boolean;
   created_at: string;
   updated_at: string;
@@ -126,7 +130,8 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
     agency_name: "",
     go_no_go: "Review_Required",
     audit_report_path: "",
-    petition_path: "",
+    impugnacao_link: "",
+    recurso_link: "",
     estimated_value: "",
     winning_bid_value: "",
     contract_url: "",
@@ -149,7 +154,8 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       formData.agency_name !== originalFormData.agency_name ||
       formData.go_no_go !== originalFormData.go_no_go ||
       formData.audit_report_path !== originalFormData.audit_report_path ||
-      formData.petition_path !== originalFormData.petition_path ||
+      formData.impugnacao_link !== originalFormData.impugnacao_link ||
+      formData.recurso_link !== originalFormData.recurso_link ||
       formData.estimated_value !== originalFormData.estimated_value ||
       formData.winning_bid_value !== originalFormData.winning_bid_value ||
       formData.contract_url !== originalFormData.contract_url ||
@@ -297,7 +303,8 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       agency_name: opportunity.agency_name,
       go_no_go: opportunity.go_no_go,
       audit_report_path: opportunity.audit_report_path || "",
-      petition_path: opportunity.petition_path || "",
+      impugnacao_link: (opportunity as any).impugnacao_link || "",
+      recurso_link: (opportunity as any).recurso_link || "",
       estimated_value: (opportunity as any).estimated_value != null ? formatCurrencyValue((opportunity as any).estimated_value) : "",
       winning_bid_value: (opportunity as any).winning_bid_value != null ? formatCurrencyValue((opportunity as any).winning_bid_value) : "",
       contract_url: opportunity.contract_url || "",
@@ -379,7 +386,8 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       agency_name: formData.agency_name,
       go_no_go: finalStatus,
       audit_report_path: formData.audit_report_path || null,
-      petition_path: formData.petition_path || null,
+      impugnacao_link: formData.impugnacao_link || null,
+      recurso_link: formData.recurso_link || null,
       estimated_value: estimatedValue,
       winning_bid_value: winningBidValue,
       contract_url: formData.contract_url || null,
@@ -395,23 +403,41 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
       } else {
-        // If petition_path was added, auto-conclude associated recurso/impugnacao tickets
-        // (these service_category values may include suffixes like "+upgrade")
-        if (formData.petition_path && !editingOpportunity.petition_path) {
-          const { data: relatedTickets } = await supabase
+        // If impugnacao_link was added, auto-conclude associated impugnacao tickets
+        if (formData.impugnacao_link && !(editingOpportunity as any).impugnacao_link) {
+          const { data: impugnacaoTickets } = await supabase
             .from("tickets")
             .select("id, user_id, status, service_category")
             .eq("opportunity_id", editingOpportunity.id)
-            .or(
-              "service_category.ilike.recurso-administrativo%,service_category.ilike.impugnacao%"
-            )
+            .ilike("service_category", "impugnacao%")
             .neq("status", "resolved");
 
-          if (relatedTickets && relatedTickets.length > 0) {
-            for (const ticket of relatedTickets) {
+          if (impugnacaoTickets && impugnacaoTickets.length > 0) {
+            for (const ticket of impugnacaoTickets) {
               await supabase.from("tickets").update({ status: "resolved" }).eq("id", ticket.id);
+              await supabase.from("ticket_events").insert({
+                ticket_id: ticket.id,
+                user_id: ticket.user_id,
+                event_type: "status_changed",
+                old_value: ticket.status,
+                new_value: "resolved",
+              });
+            }
+          }
+        }
 
-              // Record event for the ticket with proper event_type
+        // If recurso_link was added, auto-conclude associated recurso tickets
+        if (formData.recurso_link && !(editingOpportunity as any).recurso_link) {
+          const { data: recursoTickets } = await supabase
+            .from("tickets")
+            .select("id, user_id, status, service_category")
+            .eq("opportunity_id", editingOpportunity.id)
+            .ilike("service_category", "recurso-administrativo%")
+            .neq("status", "resolved");
+
+          if (recursoTickets && recursoTickets.length > 0) {
+            for (const ticket of recursoTickets) {
+              await supabase.from("tickets").update({ status: "resolved" }).eq("id", ticket.id);
               await supabase.from("ticket_events").insert({
                 ticket_id: ticket.id,
                 user_id: ticket.user_id,
@@ -828,15 +854,43 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="petition">Link da Petição (Google Drive)</Label>
+                <Label htmlFor="impugnacao_link">Link da Impugnação (Google Drive)</Label>
                 <Input
-                  id="petition"
+                  id="impugnacao_link"
                   type="url"
-                  value={formData.petition_path}
-                  onChange={(e) => setFormData({ ...formData, petition_path: e.target.value })}
+                  value={formData.impugnacao_link}
+                  onChange={(e) => setFormData({ ...formData, impugnacao_link: e.target.value })}
                   placeholder="https://drive.google.com/..."
                 />
-                {formData.petition_path && (
+                {formData.impugnacao_link && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-amber-600 border-amber-600">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Link configurado
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(formData.impugnacao_link, "_blank")}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Abrir
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="recurso_link">Link do Recurso (Google Drive)</Label>
+                <Input
+                  id="recurso_link"
+                  type="url"
+                  value={formData.recurso_link}
+                  onChange={(e) => setFormData({ ...formData, recurso_link: e.target.value })}
+                  placeholder="https://drive.google.com/..."
+                />
+                {formData.recurso_link && (
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-emerald-600 border-emerald-600">
                       <FileText className="h-3 w-3 mr-1" />
@@ -846,7 +900,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(formData.petition_path, "_blank")}
+                      onClick={() => window.open(formData.recurso_link, "_blank")}
                     >
                       <Download className="h-4 w-4 mr-1" />
                       Abrir
@@ -891,8 +945,13 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                 formData.go_no_go === "Vencida" ||
                 formData.go_no_go === "Confirmada"
               ) && (
-                <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
                   <OpportunityChecklistEditor opportunityId={editingOpportunity.id} />
+                  
+                  {/* Admin view of checklist status by user */}
+                  <div className="border-t pt-4">
+                    <AdminChecklistStatus opportunityId={editingOpportunity.id} />
+                  </div>
                 </div>
               )}
 
@@ -1002,10 +1061,16 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                                 Rel
                               </Badge>
                             )}
-                            {opp.petition_path && (
+                            {opp.impugnacao_link && (
+                              <Badge variant="outline" className="text-[10px] px-1 border-amber-500 text-amber-600">
+                                <FileText className="h-3 w-3 mr-0.5" />
+                                Imp
+                              </Badge>
+                            )}
+                            {opp.recurso_link && (
                               <Badge variant="outline" className="text-[10px] px-1 border-emerald-500 text-emerald-600">
                                 <FileText className="h-3 w-3 mr-0.5" />
-                                Pet
+                                Rec
                               </Badge>
                             )}
                           </div>
