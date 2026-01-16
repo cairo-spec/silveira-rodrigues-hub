@@ -27,6 +27,7 @@ export type Database = {
           go_no_go: Database["public"]["Enums"]["go_no_go_status"]
           id: string
           is_published: boolean
+          no_go_justification: string | null
           opportunity_abstract: string | null
           opportunity_url: string | null
           petition_path: string | null
@@ -48,6 +49,7 @@ export type Database = {
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
           is_published?: boolean
+          no_go_justification?: string | null
           opportunity_abstract?: string | null
           opportunity_url?: string | null
           petition_path?: string | null
@@ -69,6 +71,7 @@ export type Database = {
           go_no_go?: Database["public"]["Enums"]["go_no_go_status"]
           id?: string
           is_published?: boolean
+          no_go_justification?: string | null
           opportunity_abstract?: string | null
           opportunity_url?: string | null
           petition_path?: string | null

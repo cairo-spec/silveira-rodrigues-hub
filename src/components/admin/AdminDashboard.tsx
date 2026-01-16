@@ -81,11 +81,18 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <NotificationBell 
-                onNotificationClick={(type) => {
+                onNotificationClick={(type, refId) => {
                   if (type === 'ticket_message' || type === 'new_ticket') {
                     setActiveTab('tickets');
                   } else if (type === 'chat_message') {
                     setActiveTab('chats');
+                  } else if (type === 'opportunity_update' && refId) {
+                    // Navigate to jornal and open the opportunity for editing
+                    setEditOpportunityId(refId);
+                    setActiveTab('jornal');
+                  } else if (type === 'ticket_status' && refId) {
+                    // Navigate to tickets
+                    setActiveTab('tickets');
                   }
                 }}
               />
