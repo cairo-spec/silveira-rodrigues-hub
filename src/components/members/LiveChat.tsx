@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2, Paperclip, X, AlertTriangle } from "lucide-react";
+import { Send, Loader2, User, ShieldCheck, MessageCircle, Users, Headphones, Trash2, Paperclip, X, AlertTriangle, MessagesSquare } from "lucide-react";
+import OpportunityChatsModal from "./OpportunityChatsModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LinkifiedText from "@/components/ui/linkified-text";
@@ -47,6 +48,7 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string>("");
+  const [showOpportunityChats, setShowOpportunityChats] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -425,17 +427,30 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-          {roomIcon}
-          {roomTitle}
-        </h2>
-        <p className="text-muted-foreground">
-          {isLobby 
-            ? "Sala pública - todos podem ver as mensagens" 
-            : "Chat privado com a equipe de suporte"
-          }
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+            {roomIcon}
+            {roomTitle}
+          </h2>
+          <p className="text-muted-foreground">
+            {isLobby 
+              ? "Sala pública - todos podem ver as mensagens" 
+              : "Chat privado com a equipe de suporte"
+            }
+          </p>
+        </div>
+        {!isLobby && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowOpportunityChats(true)}
+            className="shrink-0"
+          >
+            <MessagesSquare className="h-4 w-4 mr-2" />
+            Chats de Oportunidades
+          </Button>
+        )}
       </div>
 
       <Card className="flex flex-col h-[500px] md:h-[calc(100vh-280px)] min-h-[500px] relative">
@@ -663,6 +678,12 @@ const LiveChat = ({ roomType, onMentionClick }: LiveChatProps) => {
           </form>
         </div>
       </Card>
+
+      {/* Opportunity Chats Modal */}
+      <OpportunityChatsModal
+        open={showOpportunityChats}
+        onOpenChange={setShowOpportunityChats}
+      />
     </div>
   );
 };
