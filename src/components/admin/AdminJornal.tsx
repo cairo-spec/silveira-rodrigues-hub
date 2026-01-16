@@ -15,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw, Headphones, ClipboardList } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, CalendarIcon, FileText, Upload, Download, RotateCcw, Headphones, ClipboardList, MessageCircle } from "lucide-react";
 import OpportunityChecklistEditor from "./OpportunityChecklistEditor";
+import OpportunityChat from "@/components/members/OpportunityChat";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -112,6 +113,7 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
   const [isReopening, setIsReopening] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"noticias" | "andamento" | "execucao" | "concluidas">("noticias");
   const [activeTicketsByOpportunity, setActiveTicketsByOpportunity] = useState<Map<string, number>>(new Map());
+  const [chatOpportunity, setChatOpportunity] = useState<Opportunity | null>(null);
 
   // Form state
   const initialFormData: FormData = {
@@ -1048,6 +1050,15 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
                             <Button 
                               variant="ghost" 
                               size="icon" 
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => setChatOpportunity(opp)}
+                              title="Chat da oportunidade"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
                               className="text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
                               onClick={() => onShowTickets?.(opp.id)}
                               title="Ver tickets"
@@ -1068,6 +1079,17 @@ const AdminJornal = ({ onShowTickets, editOpportunityId, onClearEditOpportunity 
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Opportunity Chat Modal */}
+      {chatOpportunity && (
+        <OpportunityChat
+          opportunityId={chatOpportunity.id}
+          opportunityTitle={chatOpportunity.title}
+          open={!!chatOpportunity}
+          onOpenChange={(open) => !open && setChatOpportunity(null)}
+          isAdmin
+        />
+      )}
     </div>
   );
 };
