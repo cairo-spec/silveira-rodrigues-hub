@@ -29,14 +29,13 @@ const AdminDashboardHome = ({ onNavigate }: AdminDashboardHomeProps) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Fetch new tickets count
-        const { count: ticketsNovos } = await supabase
-          .from("tickets")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "open");
+  const fetchStats = async () => {
+    try {
+      // Fetch new tickets count
+      const { count: ticketsNovos } = await supabase
+        .from("tickets")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "open");
 
         // Fetch in-progress tickets count
         const { count: ticketsEmAndamento } = await supabase
@@ -89,7 +88,52 @@ const AdminDashboardHome = ({ onNavigate }: AdminDashboardHomeProps) => {
       }
     };
 
+  useEffect(() => {
     fetchStats();
+
+    // Subscribe to realtime updates for relevant tables
+    const ticketsChannel = supabase
+      .channel('admin-dashboard-tickets')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tickets' },
+        () => fetchStats()
+      )
+      .subscribe();
+
+    const profilesChannel = supabase
+      .channel('admin-dashboard-profiles')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => fetchStats()
+      )
+      .subscribe();
+
+    const messagesChannel = supabase
+      .channel('admin-dashboard-messages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_messages' },
+        () => fetchStats()
+      )
+      .subscribe();
+
+    const opportunitiesChannel = supabase
+      .channel('admin-dashboard-opportunities')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'audited_opportunities' },
+        () => fetchStats()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ticketsChannel);
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(opportunitiesChannel);
+    };
   }, []);
 
   const statCards = [

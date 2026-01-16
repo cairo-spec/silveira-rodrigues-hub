@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones, RefreshCw, Play } from "lucide-react";
+import { Loader2, FileText, Search, ExternalLink, Download, Calendar, Building2, X, ClipboardList, CheckCircle, Settings2, Headphones, RefreshCw, Play, MessageCircle } from "lucide-react";
 import { SearchCriteriaModal } from "./SearchCriteriaModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +16,8 @@ import LeadCaptureModal from "@/components/LeadCaptureModal";
 import { useToast } from "@/hooks/use-toast";
 import { notifyAdmins } from "@/lib/notifications";
 import { playParecerSound } from "@/lib/parecer-sounds";
+import OpportunityChecklist from "./OpportunityChecklist";
+import OpportunityChat from "./OpportunityChat";
 
 const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
 
@@ -80,6 +82,8 @@ const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useSta
   const [activeRecursoByOpportunity, setActiveRecursoByOpportunity] = useState<Set<string>>(new Set());
   const [winningBidInput, setWinningBidInput] = useState<string>("");
   const [criteriaChecked, setCriteriaChecked] = useState(false);
+  const [chatOpportunityId, setChatOpportunityId] = useState<string | null>(null);
+  const [chatOpportunityTitle, setChatOpportunityTitle] = useState<string>("");
   
   // Track previous go_no_go status for each opportunity to detect changes
   const previousStatusRef = useRef<Map<string, GoNoGoStatus>>(new Map());
@@ -1380,7 +1384,30 @@ const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useSta
                   )
                 )}
 
-                {/* Download documents - always show petition if available */}
+                {/* Chat button - always show for all opportunities */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs sm:text-sm h-9 border-primary text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    setChatOpportunityId(selectedOpportunity.id);
+                    setChatOpportunityTitle(selectedOpportunity.title);
+                  }}
+                >
+                  <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+                  Chat da Oportunidade
+                </Button>
+
+                {/* Checklist - show for Go, Participando, Em_Execucao, Vencida, Confirmada */}
+                {(selectedOpportunity.go_no_go === "Go" || 
+                  selectedOpportunity.go_no_go === "Participando" ||
+                  selectedOpportunity.go_no_go === "Em_Execucao" ||
+                  selectedOpportunity.go_no_go === "Vencida" ||
+                  selectedOpportunity.go_no_go === "Confirmada") && (
+                  <div className="border rounded-lg p-3 bg-muted/30">
+                    <OpportunityChecklist opportunityId={selectedOpportunity.id} />
+                  </div>
+                )}
                 {selectedOpportunity.petition_path && (
                   <Button
                     variant="outline"
@@ -2131,6 +2158,21 @@ const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useSta
 
       {/* Lead Capture Modal */}
       <LeadCaptureModal open={showLeadModal} onOpenChange={setShowLeadModal} checkoutUrl={ASAAS_CHECKOUT_URL} />
+
+      {/* Opportunity Chat */}
+      {chatOpportunityId && (
+        <OpportunityChat
+          opportunityId={chatOpportunityId}
+          opportunityTitle={chatOpportunityTitle}
+          open={!!chatOpportunityId}
+          onOpenChange={(open) => {
+            if (!open) {
+              setChatOpportunityId(null);
+              setChatOpportunityTitle("");
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

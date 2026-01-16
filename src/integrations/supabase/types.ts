@@ -131,6 +131,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean | null
+          opportunity_id: string | null
           room_type: string
           ticket_id: string | null
           user_id: string
@@ -139,6 +140,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          opportunity_id?: string | null
           room_type?: string
           ticket_id?: string | null
           user_id: string
@@ -147,11 +149,19 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          opportunity_id?: string | null
           room_type?: string
           ticket_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_rooms_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "audited_opportunities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_rooms_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -277,6 +287,76 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      opportunity_checklist_items: {
+        Row: {
+          created_at: string
+          document_name: string
+          id: string
+          opportunity_id: string
+          order_index: number | null
+        }
+        Insert: {
+          created_at?: string
+          document_name: string
+          id?: string
+          opportunity_id: string
+          order_index?: number | null
+        }
+        Update: {
+          created_at?: string
+          document_name?: string
+          id?: string
+          opportunity_id?: string
+          order_index?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_checklist_items_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "audited_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_checklist_user_status: {
+        Row: {
+          checklist_item_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checklist_item_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checklist_item_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_checklist_user_status_checklist_item_id_fkey"
+            columns: ["checklist_item_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_checklist_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizations: {
         Row: {
