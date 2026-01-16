@@ -62,6 +62,8 @@ interface GoNoGoModalState {
   ticketId: string | null;
   opportunityId: string | null;
   opportunityTitle: string | null;
+  step: 'decision' | 'justification';
+  decision: 'Go' | 'No_Go' | null;
 }
 
 const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }: AdminTicketsProps) => {
@@ -80,8 +82,11 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
     isOpen: false,
     ticketId: null,
     opportunityId: null,
-    opportunityTitle: null
+    opportunityTitle: null,
+    step: 'decision',
+    decision: null
   });
+  const [noGoJustification, setNoGoJustification] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -227,8 +232,11 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
         isOpen: true,
         ticketId: ticketId,
         opportunityId: ticket.opportunity_id,
-        opportunityTitle: ticket.opportunity?.title || null
+        opportunityTitle: ticket.opportunity?.title || null,
+        step: 'decision',
+        decision: null
       });
+      setNoGoJustification("");
       return;
     }
     
@@ -291,13 +299,26 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
     }
   };
 
-  const handleGoNoGoSelection = async (decision: 'Go' | 'No_Go') => {
+  const handleGoNoGoSelection = async (decision: 'Go' | 'No_Go', justification?: string) => {
     if (!goNoGoModal.ticketId || !goNoGoModal.opportunityId) return;
 
-    // Update the opportunity status
+    // If No_Go, check if we need to ask for justification
+    if (decision === 'No_Go' && goNoGoModal.step === 'decision') {
+      setGoNoGoModal(prev => ({ ...prev, step: 'justification', decision: 'No_Go' }));
+      return;
+    }
+
+    // Update the opportunity status with justification if No_Go
+    const updateData: Record<string, unknown> = { go_no_go: decision };
+    if (decision === 'No_Go' && justification) {
+      updateData.no_go_justification = justification;
+    } else if (decision === 'Go') {
+      updateData.no_go_justification = null;
+    }
+
     const { error: opportunityError } = await supabase
       .from('audited_opportunities')
-      .update({ go_no_go: decision })
+      .update(updateData)
       .eq('id', goNoGoModal.opportunityId);
 
     if (opportunityError) {
@@ -313,7 +334,22 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
       description: `A oportunidade foi marcada como ${decision === 'Go' ? 'Go' : 'No Go'}` 
     });
 
-    setGoNoGoModal({ isOpen: false, ticketId: null, opportunityId: null, opportunityTitle: null });
+    // Notify the ticket owner about the decision
+    const ticket = tickets.find(t => t.id === goNoGoModal.ticketId);
+    if (ticket) {
+      await supabase.from('notifications').insert({
+        user_id: ticket.user_id,
+        type: 'opportunity_update',
+        title: `Parecer: ${decision === 'Go' ? 'Go' : 'No Go'}`,
+        message: decision === 'Go' 
+          ? `Sua oportunidade "${goNoGoModal.opportunityTitle}" recebeu parecer Go!`
+          : `Sua oportunidade "${goNoGoModal.opportunityTitle}" recebeu parecer No Go.${justification ? ' Veja a justificativa no ticket.' : ''}`,
+        reference_id: goNoGoModal.opportunityId
+      });
+    }
+
+    setGoNoGoModal({ isOpen: false, ticketId: null, opportunityId: null, opportunityTitle: null, step: 'decision', decision: null });
+    setNoGoJustification("");
   };
 
   const handleReopenTicket = async (ticketId: string) => {
@@ -923,32 +959,73 @@ const AdminTickets = ({ filterOpportunityId, onClearFilter, onViewOpportunity }:
       {/* Go/No Go Decision Modal */}
       <Dialog open={goNoGoModal.isOpen} onOpenChange={(open) => {
         if (!open) {
-          setGoNoGoModal({ isOpen: false, ticketId: null, opportunityId: null, opportunityTitle: null });
+          setGoNoGoModal({ isOpen: false, ticketId: null, opportunityId: null, opportunityTitle: null, step: 'decision', decision: null });
+          setNoGoJustification("");
         }
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Parecer Go/No Go</DialogTitle>
             <DialogDescription>
-              Qual é o parecer para a oportunidade{goNoGoModal.opportunityTitle ? ` "${goNoGoModal.opportunityTitle}"` : ''}?
+              {goNoGoModal.step === 'decision' 
+                ? `Qual é o parecer para a oportunidade${goNoGoModal.opportunityTitle ? ` "${goNoGoModal.opportunityTitle}"` : ''}?`
+                : 'Informe a justificativa do parecer No Go (obrigatório):'
+              }
             </DialogDescription>
           </DialogHeader>
+          
+          {goNoGoModal.step === 'justification' && (
+            <div className="space-y-2">
+              <Textarea
+                value={noGoJustification}
+                onChange={(e) => setNoGoJustification(e.target.value.slice(0, 600))}
+                placeholder="Explique o motivo do parecer No Go..."
+                className="min-h-[120px]"
+                maxLength={600}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {noGoJustification.length}/600 caracteres
+              </p>
+            </div>
+          )}
+          
           <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button 
-              variant="outline" 
-              className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-              onClick={() => handleGoNoGoSelection('No_Go')}
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              No Go
-            </Button>
-            <Button 
-              className="flex-1 bg-green-600 hover:bg-green-700"
-              onClick={() => handleGoNoGoSelection('Go')}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Go
-            </Button>
+            {goNoGoModal.step === 'decision' ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => handleGoNoGoSelection('No_Go')}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  No Go
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={() => handleGoNoGoSelection('Go')}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Go
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setGoNoGoModal(prev => ({ ...prev, step: 'decision', decision: null }))}
+                >
+                  Voltar
+                </Button>
+                <Button 
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  onClick={() => handleGoNoGoSelection('No_Go', noGoJustification)}
+                  disabled={!noGoJustification.trim()}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Confirmar No Go
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

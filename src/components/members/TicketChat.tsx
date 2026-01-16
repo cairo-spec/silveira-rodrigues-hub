@@ -74,6 +74,8 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [opportunityTitle, setOpportunityTitle] = useState<string | null>(null);
+  const [opportunityGoNoGo, setOpportunityGoNoGo] = useState<string | null>(null);
+  const [noGoJustification, setNoGoJustification] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,12 +120,14 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
     
     const { data } = await supabase
       .from('audited_opportunities')
-      .select('title')
+      .select('title, go_no_go, no_go_justification')
       .eq('id', ticket.opportunity_id)
       .single();
     
     if (data) {
       setOpportunityTitle(data.title);
+      setOpportunityGoNoGo(data.go_no_go);
+      setNoGoJustification(data.no_go_justification);
     }
   };
 
@@ -273,6 +277,30 @@ const TicketChat = ({ ticket, onBack, onViewOpportunity }: TicketChatProps) => {
             >
               Vinculado à oportunidade: <strong>{opportunityTitle}</strong>
             </button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Go/No Go Decision Card - Show when ticket is resolved and is a parecer ticket */}
+      {ticket.status === 'resolved' && ticket.service_category === 'parecer-go-no-go' && opportunityGoNoGo && (
+        <Card className={opportunityGoNoGo === 'Go' 
+          ? "bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800" 
+          : "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800"
+        }>
+          <CardContent className="py-4 space-y-2">
+            <div className="flex items-center gap-2">
+              {opportunityGoNoGo === 'Go' ? (
+                <Badge className="bg-green-600 text-white">✓ Parecer: GO</Badge>
+              ) : (
+                <Badge className="bg-red-600 text-white">✕ Parecer: NO GO</Badge>
+              )}
+            </div>
+            {opportunityGoNoGo === 'No_Go' && noGoJustification && (
+              <div className="mt-2 p-3 bg-red-100 dark:bg-red-900/30 rounded-md">
+                <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">Justificativa:</p>
+                <p className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">{noGoJustification}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

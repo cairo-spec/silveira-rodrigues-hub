@@ -39,6 +39,7 @@ interface Opportunity {
   report_requested_at: string | null;
   contract_url: string | null;
   defeat_confirmed: boolean;
+  no_go_justification: string | null;
 }
 
 interface JornalAuditadoProps {
@@ -513,9 +514,31 @@ const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useSta
 
     setIsUpdating(opportunity.id);
     
-    // If opportunity already has audit report, set report_requested_at so canRequestParecer works
+    // If opportunity already has a Go/No Go decision, restore it instead of going back to Review_Required
+    const alreadyHasDecision = opportunity.go_no_go === 'Go' || opportunity.go_no_go === 'No_Go' || 
+                               (opportunity.audit_report_path && (opportunity.go_no_go === 'Rejeitada'));
+    
+    // Determine what status to restore to
+    let newStatus: GoNoGoStatus;
+    
+    // Check if we have a previously stored decision - if audit_report exists and it was rejected after decision
+    // We need to look at the audit_report_path - if it exists, the opportunity already received an analysis
+    if (opportunity.audit_report_path) {
+      // Has report - check if there's no_go_justification to know it was No_Go
+      if (opportunity.no_go_justification) {
+        newStatus = "No_Go";
+      } else if (opportunity.go_no_go === "Rejeitada") {
+        // Was rejected but has report - restore to Go (assuming report was positive if no justification)
+        newStatus = "Go";
+      } else {
+        newStatus = "Review_Required";
+      }
+    } else {
+      newStatus = "Review_Required";
+    }
+    
     const updateData: Record<string, unknown> = { 
-      go_no_go: "Review_Required" as GoNoGoStatus 
+      go_no_go: newStatus
     };
     
     // If there's already an audit report, mark report as requested so the flow shows "Participar"
@@ -539,7 +562,10 @@ const [hasRecursoTicketByOpportunity, setHasRecursoTicketByOpportunity] = useSta
         user?.id
       );
       
-      toast({ title: "Oportunidade reativada para análise" });
+      const message = newStatus === "Review_Required" 
+        ? "Oportunidade reativada para análise" 
+        : `Oportunidade reativada - Parecer: ${newStatus === 'Go' ? 'Go' : 'No Go'}`;
+      toast({ title: message });
       fetchOpportunities();
       setSelectedOpportunity(null);
     }

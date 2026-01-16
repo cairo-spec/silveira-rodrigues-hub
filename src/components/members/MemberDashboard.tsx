@@ -226,12 +226,20 @@ const MemberDashboard = () => {
                 onNotificationClick={(type, refId) => {
                   if (type === 'ticket_message' || type === 'ticket_status') {
                     if (isSubscriber) {
+                      // Set the opportunity ID to navigate to if it's a ticket notification
+                      if (refId) {
+                        setSelectedOpportunityId(refId);
+                      }
                       setShowTicketsInJornal(true);
                     } else {
                       setActiveTab('tickets');
                     }
                   } else if (type === 'chat_message') {
                     setActiveTab('suporte');
+                  } else if (type === 'opportunity_update' && refId) {
+                    // For opportunity updates, navigate to the jornal and select the opportunity
+                    setSelectedOpportunityId(refId);
+                    setActiveTab('jornal');
                   }
                 }}
               />
