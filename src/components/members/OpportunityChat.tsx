@@ -35,9 +35,10 @@ interface OpportunityChatProps {
   opportunityTitle: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isAdmin?: boolean;
 }
 
-const OpportunityChat = ({ opportunityId, opportunityTitle, open, onOpenChange }: OpportunityChatProps) => {
+const OpportunityChat = ({ opportunityId, opportunityTitle, open, onOpenChange, isAdmin = false }: OpportunityChatProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [room, setRoom] = useState<ChatRoom | null>(null);
@@ -178,7 +179,7 @@ const OpportunityChat = ({ opportunityId, opportunityTitle, open, onOpenChange }
         room_id: room.id,
         user_id: user.id,
         message: messageText,
-        is_admin: false
+        is_admin: isAdmin
       });
 
     if (error) {
