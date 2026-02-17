@@ -112,7 +112,7 @@ const AuthoritySection = () => {
 
               </span>
             </div>
-            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Gerimos com Zelo Profissional a sua carteira de oportunidades, mantendo todos os documentos 
+            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Gerimos com Zelo Profissional a sua carteira de oportunidades. Os documentos precisam estar sempre em dia e as capacidades devem ser devidamente comprovadas
 
 
             </p>
