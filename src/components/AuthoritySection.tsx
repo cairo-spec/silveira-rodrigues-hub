@@ -1,6 +1,7 @@
 import { Linkedin, Shield, Award, BookOpen, Scale, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cairoPhoto from "@/assets/cairo-rodrigues.jpg";
+import leoniPhoto from "@/assets/leoni-silveira.jpg";
 
 const AuthoritySection = () => {
   return (
@@ -137,11 +138,11 @@ const AuthoritySection = () => {
             <div className="relative">
               <div className="absolute inset-0 rounded-full border-2 border-primary/10 transform scale-110" />
               <div className="absolute inset-0 rounded-full border-2 border-gold/10 transform scale-125" />
-              <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-background shadow-2xl flex items-center justify-center">
-                {/* Placeholder inicial — substitua pelo import da foto real */}
-                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-muted flex items-center justify-center">
-                  <span className="text-5xl font-bold text-primary/40">?</span>
-                </div>
+              <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-background shadow-2xl">
+                <img
+                  src={leoniPhoto}
+                  alt="Leoni Silveira - Sucesso do Cliente / Operações"
+                  className="w-full h-full object-cover object-[center_15%]" />
               </div>
               <div className="absolute -bottom-4 -left-4 bg-background rounded-xl shadow-lg p-3 border border-border">
                 <div className="flex items-center gap-2">
