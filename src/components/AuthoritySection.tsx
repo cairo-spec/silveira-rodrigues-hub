@@ -16,11 +16,11 @@ const AuthoritySection = () => {
               
               {/* Main avatar container */}
               <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 border-4 border-background shadow-2xl">
-                <img 
-                  src={cairoPhoto} 
-                  alt="Cairo Rodrigues - Analista de Controle Interno" 
-                  className="w-full h-full object-cover object-[center_15%]"
-                />
+                <img
+                  src={cairoPhoto}
+                  alt="Cairo Rodrigues - Analista de Controle Interno"
+                  className="w-full h-full object-cover object-[center_15%]" />
+
               </div>
 
               {/* Floating badge */}
@@ -44,8 +44,8 @@ const AuthoritySection = () => {
               Quem Somos
             </span>
             
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Liderado por Cairo Rodrigues
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Cairo Rodrigues
+
             </h2>
 
             {/* Badge highlight */}
@@ -91,14 +91,14 @@ const AuthoritySection = () => {
             <Button
               asChild
               variant="outline"
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+
               <a
                 href="https://www.linkedin.com/in/cairo-rodrigues-026188147/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
-              >
+                className="inline-flex items-center gap-2">
+
                 <Linkedin className="w-4 h-4" />
                 Conectar no LinkedIn
               </a>
@@ -106,8 +106,8 @@ const AuthoritySection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default AuthoritySection;
