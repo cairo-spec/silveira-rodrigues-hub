@@ -122,7 +122,7 @@ const AuthoritySection = () => {
             className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
 
               <a
-                href="https://www.linkedin.com/"
+                href="https://www.linkedin.com/in/leonisilveira-adv/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2">
