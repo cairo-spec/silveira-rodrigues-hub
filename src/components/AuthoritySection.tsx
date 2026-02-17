@@ -108,13 +108,13 @@ const AuthoritySection = () => {
             </h2>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 border border-gold/20 mb-6">
               <Scale className="w-4 h-4 text-gold" />
-              <span className="text-sm font-semibold text-foreground">
-                Cargo / Especialidade do Sócio
+              <span className="text-sm font-semibold text-foreground">Sucesso do Cliente / Operações
+
               </span>
             </div>
-            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              Breve descrição sobre o segundo sócio, sua trajetória e a contribuição única que traz
-              para a equipe e para os clientes da empresa.
+            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Gerimos com Zelo Profissional a sua carteira de oportunidades, mantendo todos os documentos 
+
+
             </p>
             <Button asChild
             variant="outline"
