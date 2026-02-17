@@ -115,30 +115,6 @@ const AuthoritySection = () => {
               Breve descrição sobre o segundo sócio, sua trajetória e a contribuição única que traz
               para a equipe e para os clientes da empresa.
             </p>
-            <div className="space-y-4 mb-8">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground">Área de Expertise 1</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Descrição da primeira competência ou área de atuação do segundo sócio.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground">Área de Expertise 2</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Descrição da segunda competência ou área de atuação do segundo sócio.
-                  </p>
-                </div>
-              </div>
-            </div>
             <Button
               asChild
               variant="outline"
