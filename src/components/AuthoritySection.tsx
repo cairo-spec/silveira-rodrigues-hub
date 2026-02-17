@@ -18,8 +18,8 @@ const AuthoritySection = () => {
                 <img
                   src={cairoPhoto}
                   alt="Cairo Rodrigues - Analista de Controle Interno"
-                  className="w-full h-full object-cover object-[center_15%]"
-                />
+                  className="w-full h-full object-cover object-[center_15%]" />
+
               </div>
               <div className="absolute -bottom-4 -right-4 bg-background rounded-xl shadow-lg p-3 border border-border">
                 <div className="flex items-center gap-2">
@@ -79,14 +79,14 @@ const AuthoritySection = () => {
             <Button
               asChild
               variant="outline"
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+
               <a
                 href="https://www.linkedin.com/in/cairo-rodrigues-026188147/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
-              >
+                className="inline-flex items-center gap-2">
+
                 <Linkedin className="w-4 h-4" />
                 Conectar no LinkedIn
               </a>
@@ -104,7 +104,8 @@ const AuthoritySection = () => {
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary font-medium text-sm mb-4">
               Quem Somos
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Nome do Sócio</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Leoni Silveira
+            </h2>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/10 border border-gold/20 mb-6">
               <Scale className="w-4 h-4 text-gold" />
               <span className="text-sm font-semibold text-foreground">
@@ -115,17 +116,16 @@ const AuthoritySection = () => {
               Breve descrição sobre o segundo sócio, sua trajetória e a contribuição única que traz
               para a equipe e para os clientes da empresa.
             </p>
-            <Button
-              asChild
-              variant="outline"
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
+            <Button asChild
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+
               <a
                 href="https://www.linkedin.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2"
-              >
+                className="inline-flex items-center gap-2">
+
                 <Linkedin className="w-4 h-4" />
                 Conectar no LinkedIn
               </a>
@@ -159,8 +159,8 @@ const AuthoritySection = () => {
         </div>
 
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default AuthoritySection;
