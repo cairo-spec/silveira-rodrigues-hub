@@ -142,7 +142,7 @@ const AuthoritySection = () => {
                 <img
                   src={leoniPhoto}
                   alt="Leoni Silveira - Sucesso do Cliente / Operações"
-                  className="w-full h-full object-cover object-[center_15%]" />
+                  className="w-full h-full object-cover object-[center_15%] scale-x-[-1]" />
               </div>
               <div className="absolute -bottom-4 -left-4 bg-background rounded-xl shadow-lg p-3 border border-border">
                 <div className="flex items-center gap-2">
