@@ -113,7 +113,7 @@ const AuthoritySection = () => {
 
               </span>
             </div>
-            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Gerimos com Zelo Profissional a sua carteira de oportunidades. Os documentos precisam estar sempre em dia e as capacidades devem ser devidamente comprovadas
+            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">Gerimos com Zelo Profissional a sua carteira de oportunidades, garantindo que os documentos estejam sempre em dia e as capacidades sejam devidamente comprovadas
 
 
             </p>
@@ -150,8 +150,8 @@ const AuthoritySection = () => {
                     <Award className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Experiência</p>
-                    <p className="text-sm font-semibold text-foreground">Área de Atuação</p>
+                    <p className="text-xs text-muted-foreground">Advogado</p>
+                    <p className="text-sm font-semibold text-foreground">Executivo de Operações</p>
                   </div>
                 </div>
               </div>
