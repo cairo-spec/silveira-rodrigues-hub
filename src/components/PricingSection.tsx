@@ -21,9 +21,11 @@ const benefits = [{
   highlight: true
 }];
 
-const ASAAS_CHECKOUT_URL = "https://www.asaas.com/c/g8pj49zuijh6swzc";
+const whatsappNumber = "5531993475792";
+const whatsappMessage = encodeURIComponent("Olá! Vi as soluções corporativas no site e gostaria de agendar um diagnóstico gratuito para minha empresa.");
+const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
 const PricingSection = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   return <section id="jornal" className="section-padding bg-background scroll-mt-20">
       <div className="container-custom">
         <div className="text-center max-w-2xl mx-auto mb-12">
@@ -74,19 +76,17 @@ const PricingSection = () => {
                 ))}
               </ul>
 
-              <Button onClick={() => setIsModalOpen(true)} size="lg" className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity">
-                Assinar Agora
+              <Button asChild size="lg" className="w-full gradient-gold text-primary font-semibold py-6 text-lg hover:opacity-90 transition-opacity">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  Entre em Contato
+                </a>
               </Button>
-
-              <p className="text-center text-sm text-muted-foreground mt-4">
-                Você será redirecionado para a plataforma de pagamento segura
-              </p>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      <LeadCaptureModal open={isModalOpen} onOpenChange={setIsModalOpen} checkoutUrl={ASAAS_CHECKOUT_URL} />
+      
     </section>;
 };
 export default PricingSection;
